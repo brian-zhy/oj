@@ -1,0 +1,206 @@
+/* Markdown 样式 - 使用原生CSS代替 @apply */
+.prose {
+  color: #374151;
+  line-height: 1.7;
+}
+
+.prose h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  margin-top: 1.5rem;
+  color: #111827;
+}
+
+.prose h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  margin-top: 1.25rem;
+  color: #111827;
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+  color: #111827;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose ul li {
+  margin-bottom: 0.5rem;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose ol li {
+  margin-bottom: 0.5rem;
+}
+
+.prose li {
+  line-height: 1.7;
+}
+
+.prose code {
+  background-color: #f3f4f6;
+  color: #dc2626;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.prose pre {
+  background-color: #111827;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.prose pre code {
+  background-color: transparent;
+  color: white;
+  padding: 0;
+}
+
+.prose blockquote {
+  border-left: 4px solid #d1d5db;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #4b5563;
+  margin-bottom: 1rem;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.prose table th {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.prose table td {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 1rem;
+}
+
+.prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #1d4ed8;
+}
+
+.prose strong {
+  font-weight: 700;
+  color: #111827;
+}
+
+.prose em {
+  font-style: italic;
+}
+
+/* 代码高亮基础样式 */
+.prose .hljs {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.prose .hljs-comment,
+.prose .hljs-quote {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.prose .hljs-keyword,
+.prose .hljs-selector-tag,
+.prose .hljs-subst {
+  color: #f472b6;
+}
+
+.prose .hljs-number,
+.prose .hljs-literal {
+  color: #fbbf24;
+}
+
+.prose .hljs-string,
+.prose .hljs-doctag {
+  color: #a3e635;
+}
+
+.prose .hljs-title,
+.prose .hljs-section,
+.prose .hljs-selector-id {
+  color: #60a5fa;
+}
+
+.prose .hljs-type,
+.prose .hljs-class .hljs-title {
+  color: #c084fc;
+}
+
+.prose .hljs-tag,
+.prose .hljs-name,
+.prose .hljs-attribute {
+  color: #f87171;
+}
+
+.prose .hljs-regexp,
+.prose .hljs-link {
+  color: #fb923c;
+}
+
+.prose .hljs-symbol,
+.prose .hljs-bullet {
+  color: #2dd4bf;
+}
+
+.prose .hljs-built_in,
+.prose .hljs-builtin-name {
+  color: #34d399;
+}
+
+.prose .hljs-meta {
+  color: #9ca3af;
+}
+
+.prose .hljs-deletion {
+  background-color: #fecaca;
+}
+
+.prose .hljs-addition {
+  background-color: #bbf7d0;
+}
+
+.prose .hljs-emphasis {
+  font-style: italic;
+}
+
+.prose .hljs-strong {
+  font-weight: bold;
+}

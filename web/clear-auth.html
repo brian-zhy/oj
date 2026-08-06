@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>强制登出</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f5f7fa;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+        }
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .button:hover {
+            background: #c0392b;
+        }
+        .button:active {
+            transform: scale(0.98);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        .success {
+            background: #d1fae5;
+            color: #047857;
+        }
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 强制登出工具</h1>
+        <p>点击下方按钮清理所有登录数据并强制登出</p>
+
+        <button onclick="forceLogout()" class="button">🚪 强制登出并清理数据</button>
+        <button onclick="clearAndReload()" class="button">🗑️ 清理数据并刷新</button>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function forceLogout() {
+            try {
+                // 清理所有认证相关的localStorage
+                const authKeys = ['accessToken', 'refreshToken', 'user'];
+                let clearedCount = 0;
+
+                authKeys.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+
+                // 清理所有sessionStorage
+                sessionStorage.clear();
+
+                // 显示结果
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ 成功清理 ${clearedCount} 个认证数据！3秒后刷新页面...`;
+
+                // 延迟刷新
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+
+            } catch (error) {
+                showError('清理失败: ' + error.message);
+            }
+        }
+
+        function clearAndReload() {
+            try {
+                // 彻底清理
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // 清理cookies
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ + /, "").replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/");
+                });
+
+                // 显示结果
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = '✅ 所有数据已清理！3秒后刷新页面...';
+
+                // 延迟刷新
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+
+            } catch (error) {
+                showError('清理失败: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result error';
+            resultDiv.innerHTML = '❌ ' + message;
+        }
+
+        // 显示当前存储状态
+        function showStorageStatus() {
+            const items = {
+                accessToken: localStorage.getItem('accessToken'),
+                refreshToken: localStorage.getItem('refreshToken'),
+                user: localStorage.getItem('user')
+            };
+
+            const hasAuthData = items.accessToken || items.refreshToken || items.user;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+
+            if (hasAuthData) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '⚠️ 检测到登录数据存在！请点击上方按钮清理';
+            } else {
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = '✅ 没有检测到登录数据，您已经退出登录';
+            }
+        }
+
+        // 页面加载时检查状态
+        window.onload = showStorageStatus;
+    </script>
+</body>
+</html>

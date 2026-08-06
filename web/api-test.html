@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API连接测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 8px 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>API连接测试工具</h1>
+
+    <div class="test-section">
+        <h3>1. 测试后端服务连接</h3>
+        <button onclick="testBackend()">测试后端</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 测试验证码API</h3>
+        <button onclick="testCaptcha()">测试验证码</button>
+        <div id="captcha-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 测试登录API</h3>
+        <button onclick="testLogin()">测试登录</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 显示当前API配置</h3>
+        <button onclick="showConfig()">显示配置</button>
+        <div id="config-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('backend-result');
+            try {
+                resultDiv.innerHTML = '正在测试...';
+                const response = await fetch(`${API_BASE}/`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<span class="success">✓ 后端服务正常: ${JSON.stringify(data)}</span>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ 后端连接失败: ${error.message}</span>`;
+            }
+        }
+
+        async function testCaptcha() {
+            const resultDiv = document.getElementById('captcha-result');
+            try {
+                resultDiv.innerHTML = '正在测试...';
+                const response = await fetch(`${API_BASE}/auth/captcha`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<span class="success">✓ 验证码API正常: ${JSON.stringify(data)}</span>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ 验证码API失败: ${error.message}</span>`;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('login-result');
+            try {
+                resultDiv.innerHTML = '正在测试...';
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        identifier: 'test',
+                        password: 'test',
+                        captcha_id: 'test',
+                        captcha: 'test'
+                    })
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<span class="success">✓ 登录API响应: ${JSON.stringify(data).substring(0,100)}...</span>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ 登录API失败: ${error.message}</span>`;
+            }
+        }
+
+        function showConfig() {
+            const resultDiv = document.getElementById('config-result');
+            resultDiv.innerHTML = `
+                <strong>API基础URL:</strong> ${API_BASE}<br>
+                <strong>当前页面URL:</strong> ${window.location.href}<br>
+                <strong>浏览器用户代理:</strong> ${navigator.userAgent}
+            `;
+        }
+    </script>
+</body>
+</html>
