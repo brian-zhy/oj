@@ -38,7 +38,6 @@ const logs = ref<JudgementLog[]>([])
 const page = ref(0)
 const loading = ref(false)
 const hasMore = ref(true)
-const canManageLogs = ref(false)
 const loadError = ref('')
 
 // ================================================================
@@ -195,7 +194,6 @@ async function loadLogs(append = false) {
 
   try {
     const data: any = await apiClient.get(`/api/judgement/logs?page=${page.value}&page_size=${PAGE_SIZE}`)
-    canManageLogs.value = !!data.can_manage
 
     const fetched: JudgementLog[] = data.logs || []
 
@@ -221,21 +219,6 @@ async function loadLogs(append = false) {
     loadError.value = err.response?.data?.detail || err.message || ''
   } finally {
     loading.value = false
-  }
-}
-
-// ================================================================
-// 7. 删除陶片（仅秩序管理权限）
-// ================================================================
-async function deleteLog(id: number) {
-  if (!canManageLogs.value || !id) return
-  if (!confirm('永久删除这条管理日志？此操作不可恢复。')) return
-  try {
-    await apiClient.delete(`/api/judgement/logs/${id}`)
-    logs.value = logs.value.filter(l => l.id !== id)
-    renderedLogs.value = logs.value.map(buildRenderedLog)
-  } catch (err: any) {
-    alert('删除失败：' + (err.response?.data?.detail || err.message || err))
   }
 }
 
@@ -277,63 +260,60 @@ onUnmounted(() => {
       <p class="err-detail">{{ loadError }}</p>
     </div>
 
-    <!-- ===== 日志行列表（截图样式） ===== -->
-    <div class="log-rows">
-      <div v-for="log in renderedLogs" :key="log.id" class="log-row">
-        <!-- 时间 -->
-        <span class="log-time">{{ log.time }}</span>
-
-        <!-- 操作人（仅管理日志页显示） -->
-        <template v-if="props.showAdmin">
-          <router-link
-            :to="log.admin.user_number ? `/user/${log.admin.user_number}` : '#'"
-            class="log-user"
-            :style="{ color: log.adminColor }"
-          >{{ log.admin.username }}</router-link>
-          <span
-            v-if="log.admin.user_tag"
-            class="user-tag-display"
-            :style="{ backgroundColor: log.adminColor }"
-          >{{ log.admin.user_tag }}</span>
-          <span class="log-arrow">→</span>
-        </template>
-
-        <!-- 目标用户 -->
-        <router-link
-          :to="log.target.user_number ? `/user/${log.target.user_number}` : '#'"
-          class="log-user"
-          :style="{ color: log.targetColor }"
-        >{{ log.target.username }}</router-link>
-        <span
-          v-if="log.target.user_tag"
-          class="user-tag-display"
-          :style="{ backgroundColor: log.targetColor }"
-        >{{ log.target.user_tag }}</span>
-
-        <!-- 权限变更（与陶片放逐页一致的撤销/授予样式） -->
-        <span
-          v-for="(change, i) in log.changes"
-          :key="'c' + i"
-          class="permission-change"
-        >
-          <span :class="change.cls">{{ change.word }}</span>
-          <span class="perm-name">{{ change.name }}</span>
-          权限
-        </span>
-        <span v-if="log.extra" class="permission-change">{{ log.extra }}</span>
-
-        <!-- 原因 -->
-        <span class="log-reason">{{ log.reason }}</span>
-
-        <!-- 删除（仅秩序管理权限） -->
-        <button
-          v-if="canManageLogs"
-          class="log-delete-btn"
-          title="删除这条日志"
-          @click="deleteLog(log.id)"
-        >删除</button>
-      </div>
-    </div>
+    <!-- ===== 日志分栏表格 ===== -->
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th class="col-time">时间</th>
+          <th v-if="props.showAdmin">操作人</th>
+          <th>目标用户</th>
+          <th>权限</th>
+          <th>理由</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="log in renderedLogs" :key="log.id">
+          <td class="col-time">{{ log.time }}</td>
+          <td v-if="props.showAdmin" class="col-user">
+            <router-link
+              :to="log.admin.user_number ? `/user/${log.admin.user_number}` : '#'"
+              class="log-user"
+              :style="{ color: log.adminColor }"
+            >{{ log.admin.username }}</router-link>
+            <span
+              v-if="log.admin.user_tag"
+              class="user-tag-display"
+              :style="{ backgroundColor: log.adminColor }"
+            >{{ log.admin.user_tag }}</span>
+          </td>
+          <td class="col-user">
+            <router-link
+              :to="log.target.user_number ? `/user/${log.target.user_number}` : '#'"
+              class="log-user"
+              :style="{ color: log.targetColor }"
+            >{{ log.target.username }}</router-link>
+            <span
+              v-if="log.target.user_tag"
+              class="user-tag-display"
+              :style="{ backgroundColor: log.targetColor }"
+            >{{ log.target.user_tag }}</span>
+          </td>
+          <td class="col-perm">
+            <span
+              v-for="(change, i) in log.changes"
+              :key="'c' + i"
+              class="permission-change"
+            >
+              <span :class="change.cls">{{ change.word }}</span>
+              <span class="perm-name">{{ change.name }}</span>
+              权限
+            </span>
+            <span v-if="log.extra" class="permission-change">{{ log.extra }}</span>
+          </td>
+          <td class="col-reason">{{ log.reason }}</td>
+        </tr>
+      </tbody>
+    </table>
 
     <!-- ===== 加载更多 ===== -->
     <div class="load-more-wrap">
@@ -355,36 +335,52 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* ===== 日志行列表 ===== */
-.log-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.log-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 14px 8px;
-  border-bottom: 1px solid #f0f2f5;
+/* ===== 日志分栏表格 ===== */
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 14px;
   line-height: 1.5;
 }
 
-.log-row:last-child {
-  border-bottom: none;
+.log-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: #8a9aa8;
+  font-size: 13px;
+  font-weight: 600;
+  border-bottom: 2px solid #edf2f7;
+  white-space: nowrap;
 }
 
-.log-row:hover {
+.log-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #f0f2f5;
+  vertical-align: middle;
+}
+
+.log-table tbody tr:hover {
   background: #fafbfc;
 }
 
-.log-time {
+.col-time {
   color: #8a9aa8;
   font-size: 13px;
-  flex-shrink: 0;
-  min-width: 130px;
+  white-space: nowrap;
+}
+
+.col-user {
+  white-space: nowrap;
+}
+
+.col-perm {
+  white-space: nowrap;
+}
+
+.col-reason {
+  color: #2c3e50;
+  word-break: break-word;
+  min-width: 180px;
 }
 
 .log-user {
@@ -394,11 +390,6 @@ onUnmounted(() => {
 
 .log-user:hover {
   text-decoration: underline;
-}
-
-.log-arrow {
-  color: #c0c8d0;
-  flex-shrink: 0;
 }
 
 /* 权限变更（撤销/授予） */
@@ -439,22 +430,6 @@ onUnmounted(() => {
   flex: 1;
   min-width: 160px;
   word-break: break-word;
-}
-
-.log-delete-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: #c0c8d0;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0 4px;
-  flex-shrink: 0;
-  transition: color 0.2s;
-}
-
-.log-delete-btn:hover {
-  color: #e74c3c;
 }
 
 .user-tag-display {
@@ -572,12 +547,9 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
-  .log-time {
-    min-width: 0;
-  }
-
-  .log-reason {
-    min-width: 100%;
+  .log-table th:nth-child(2),
+  .log-table td:nth-child(2) {
+    display: none;
   }
 
   #back-to-top {
