@@ -515,9 +515,19 @@ onMounted(() => loadTicket())
 }
 
 .assign-pop {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   gap: 8px;
+}
+
+.assign-pop select {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-status {
+  white-space: nowrap;
 }
 
 .creator-link:hover {
