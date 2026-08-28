@@ -17,3 +17,33 @@ wheels/
 *.db
 *.db-journal
 oj.db
+
+# Production config (keep .env.production.example if created)
+.env.production
+
+# Logs
+logs/
+*.log
+
+# Runtime files
+*.pid
+*.sock
+
+# Static uploads
+static/uploads/*
+
+# Editor backup files
+*~
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug/test output
+debug_*.py
+test_*.py
+check_*.py
+fix_*.py
+show_*.py

@@ -28,7 +28,8 @@ const loginSuccess = ref(false)
 const fetchCaptcha = async () => {
   try {
     console.log('正在获取验证码...')
-    const data = await apiClient.get('/auth/captcha')
+    // 响应拦截器已解包 response.data
+    const data = (await apiClient.get('/auth/captcha')) as any
     captchaId.value = data.captcha_id
     currentCaptcha.value = data.captcha_text
     console.log('验证码获取成功:', { captchaId: data.captcha_id, text: data.captcha_text })
@@ -209,7 +210,7 @@ watch(currentCaptcha, () => {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1 class="login-title">✨ Online Judge</h1>
+      <h1 class="login-title">✨ Jason227</h1>
       <div class="login-subtitle">登录账号</div>
 
       <!-- 登录表单 -->

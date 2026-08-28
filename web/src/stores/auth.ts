@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { authApi } from '@/api/auth'
 import type { LoginCredentials, RegisterData, User } from '@/types'
 
@@ -22,6 +22,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       accessToken.value = response.access_token
       refreshToken.value = response.refresh_token
+
+      // 立即持久化状态到localStorage，确保后续请求能获取到token
+      persistState()
 
       console.log('AuthStore: 获取当前用户...')
       const user = await fetchCurrentUser()
@@ -48,6 +51,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       accessToken.value = response.access_token
       refreshToken.value = response.refresh_token
+
+      // 立即持久化状态到localStorage，确保后续请求能获取到token
+      persistState()
 
       console.log('AuthStore: 获取当前用户...')
       const user = await fetchCurrentUser()
@@ -196,6 +202,3 @@ export const useAuthStore = defineStore('auth', () => {
     restoreState
   }
 })
-
-// 导入 watch 函数
-import { watch } from 'vue'

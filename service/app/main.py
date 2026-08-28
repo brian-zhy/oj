@@ -5,9 +5,12 @@ Run the development server with:
     uv run uvicorn app.main:app --reload
 """
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
 from app.api.router import api_router
@@ -116,6 +119,12 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+# 静态文件（上传的头像等）
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+_STATIC_DIR.mkdir(exist_ok=True)
+(_STATIC_DIR / "uploads" / "avatars").mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 @app.get("/docs", include_in_schema=False)

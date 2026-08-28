@@ -21,9 +21,18 @@ const showSidebar = computed(() => {
 })
 
 // 监听路由变化，恢复认证状态
-watch(() => route.path, () => {
+watch(() => route.path, async () => {
   if (!authStore.accessToken && localStorage.getItem('accessToken')) {
     authStore.restoreState()
+  }
+
+  // 确保用户信息是最新的
+  if (authStore.accessToken && !authStore.currentUser) {
+    try {
+      await authStore.fetchCurrentUser()
+    } catch (error) {
+      console.error('恢复用户信息失败:', error)
+    }
   }
 }, { immediate: true })
 
@@ -49,7 +58,7 @@ const handleLogout = async () => {
     <!-- 页脚 -->
     <footer v-if="showNav" class="page-footer">
       <div class="footer-content">
-        <p class="footer-text">© 2025 Online Judge - 基于原项目重构</p>
+        <p class="footer-text">© 2025 Jason227 - 基于原项目重构</p>
         <p class="footer-text">基于 FastAPI + Vue 3 + Tailwind CSS 构建</p>
       </div>
     </footer>

@@ -4,19 +4,22 @@ export interface User {
   username: string
   email: string
   user_number: number
-  phone?: string
+  phone?: string | null
   is_active: boolean
   is_banned: boolean
   is_admin: boolean
+  is_super_admin: boolean
   is_cheater: boolean
   can_speak: boolean
   can_manage_users: boolean
   can_manage_posts: boolean
-  avatar_url?: string
-  user_tag?: string
-  username_color?: string
-  bio?: string
+  can_assign_admin: boolean
+  avatar_url?: string | null
+  user_tag?: string | null
+  username_color?: string | null
+  bio?: string | null
   created_at: string
+  updated_at?: string
 }
 
 export interface LoginCredentials {
@@ -96,3 +99,23 @@ export interface ApiError {
   detail: string
   status_code?: number
 }
+
+// 全局类型扩展
+declare global {
+  interface Window {
+    __AUTH_TOKENS__?: {
+      accessToken: string
+      refreshToken: string
+      apiUrl: string
+    }
+    __AUTH_INFO__?: {
+      accessToken: string
+      refreshToken: string
+      apiUrl: string
+      currentUser: User | null
+    }
+    supabase?: any
+  }
+}
+
+export {} // 确保这是模块文件

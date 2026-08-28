@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,3 +42,14 @@ async def read_current_user(
     须声明在其之前，以免 ``me`` 被当作 id 捕获。
     """
     return current_user
+
+
+@router.post("/me/seen", summary="心跳上报在线状态")
+async def heartbeat_seen(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """更新当前用户的 last_seen（管理后台在线状态判断依据，60秒内视为在线）。"""
+    current_user.last_seen = datetime.now(UTC)
+    await db.commit()
+    return {"success": True}

@@ -119,11 +119,14 @@ async def create_user_with_number(
     Returns:
         创建的用户对象
     """
-    # 获取当前最大用户编号
+    # 顺序分配：取最小未占用的用户编号（从 1 开始递增）
     result = await db.execute(
-        select(User.user_number).order_by(User.user_number.desc()).limit(1)
+        select(User.user_number).order_by(User.user_number)
     )
-    max_number = result.scalar_one_or_none() or 1000
+    used_numbers = set(result.scalars().all())
+    user_number = 1
+    while user_number in used_numbers:
+        user_number += 1
 
     # 创建新用户
     user = User(
@@ -131,7 +134,7 @@ async def create_user_with_number(
         email=email,
         hashed_password=hashed_password,
         phone=phone,
-        user_number=max_number + 1,
+        user_number=user_number,
         **extra_fields
     )
 

@@ -322,7 +322,7 @@ const switchRegisterType = (type: 'email' | 'phone') => {
 <template>
   <div class="register-page">
     <div class="register-card">
-      <h1 class="register-title">✨ Online Judge</h1>
+      <h1 class="register-title">✨ Jason227</h1>
       <div class="register-subtitle">注册新账户</div>
 
       <!-- 注册方式选择 -->

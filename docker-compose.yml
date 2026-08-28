@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # ===== 后端 FastAPI =====
+  oj-service:
+    build:
+      context: ./service
+      dockerfile: Dockerfile
+    container_name: oj-service
+    restart: unless-stopped
+    expose:
+      - "8000"
+    # 后端配置全部来自 service/.env（在服务器上由 .env.production 复制而来）
+    env_file:
+      - ./service/.env
+    environment:
+      - ENV=prod
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      # 挂载日志目录
+      - ./service/logs:/app/logs
+      # 挂载上传的静态文件
+      - ./service/static:/app/static
+    networks:
+      - oj-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===== 前端 nginx（托管静态文件 + 反代 API） =====
+  oj-web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: oj-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - oj-service
+    networks:
+      - oj-network
+
+networks:
+  oj-network:
+    driver: bridge
+
+# 使用说明:
+# 1. 配置 service/.env（参照 service/.env.production，必须填 DATABASE_URL 和 JWT_SECRET）
+# 2. 运行: docker compose up -d --build
+# 3. 查看日志: docker compose logs -f
+# 4. 停止服务: docker compose down
+# 5. 访问: http://服务器IP/（nginx 80 端口，API 同域反代）

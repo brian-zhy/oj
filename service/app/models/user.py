@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Integer, String, Text, text
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -44,6 +46,9 @@ class User(Base, TimestampMixin):
     )
 
     # 管理员权限
+    is_super_admin: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
     is_admin: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
@@ -54,6 +59,9 @@ class User(Base, TimestampMixin):
         Boolean, default=False, server_default=text("false"), nullable=False
     )
     can_manage_posts: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
+    can_assign_admin: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
 
@@ -70,9 +78,22 @@ class User(Base, TimestampMixin):
     bio: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )
+    # 管理员备注名（仅管理后台可见可编辑）
+    remark: Mapped[str | None] = mapped_column(
+        String(100), nullable=True
+    )
+    # 最后在线时间（60秒内视为在线）
+    last_seen: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Forward-ref string target is resolved from the Base registry; no import
     # needed here, which keeps user <-> refresh_token free of import cycles.
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+
+    # 犇犇帖子关系
+    benben_posts: Mapped[list["Benben"]] = relationship(
+        "Benben", back_populates="user", cascade="all, delete-orphan"
     )

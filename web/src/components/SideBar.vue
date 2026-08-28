@@ -18,8 +18,9 @@ watch(() => route.path, (newPath) => {
 
 // 判断是否激活
 const isActive = (path: string) => {
-  if (path === '/') {
-    return activePath.value === '/'
+  // 精确匹配：主页、用户管理（避免 /admin/logs 误高亮 /admin）
+  if (path === '/' || path === '/admin') {
+    return activePath.value === path
   }
   return activePath.value.startsWith(path)
 }
@@ -48,21 +49,6 @@ const navigateTo = (path: string) => {
               </svg>
             </span>
             <span class="nav-text">主页</span>
-          </a>
-        </li>
-        <li>
-          <a
-            class="nav-item"
-            :class="{ 'active': isActive('/problems') }"
-            href="/problems"
-            @click.prevent="navigateTo('/problems')"
-          >
-            <span class="nav-icon">
-              <svg viewBox="0 0 448 512" width="20" height="20" fill="currentColor">
-                <path d="M88 0C39.4 0 0 39.4 0 88L0 432c0 44.2 35.8 80 80 80l344 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-8 0 0-76.1C435.3 375 448 353 448 328l0-256c0-39.8-32.2-72-72-72L88 0zM368 400l0 64-288 0c-17.7 0-32-14.3-32-32s14.3-32 32-32l288 0zM80 352c-11.4 0-22.2 2.4-32 6.7L48 88c0-22.1 17.9-40 40-40l288 0c13.3 0 24 10.7 24 24l0 256c0 13.3-10.7 24-24 24L80 352zm48-200c0 13.3 10.7 24 24 24l176 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-176 0c-13.3 0-24 10.7-24 24zm24 72c-13.3 0-24 10.7-24 24s10.7 24 24 24l176 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-176 0z" />
-              </svg>
-            </span>
-            <span class="nav-text">题库</span>
           </a>
         </li>
         <li>
@@ -276,6 +262,39 @@ const navigateTo = (path: string) => {
           >
             <span class="nav-icon">📜</span>
             <span class="nav-text">社区规则</span>
+          </a>
+        </li>
+        <li>
+          <a
+            class="nav-item"
+            :class="{ 'active': isActive('/judgement') }"
+            href="/judgement"
+            @click.prevent="navigateTo('/judgement')"
+          >
+            <span class="nav-icon">⚖️</span>
+            <span class="nav-text">陶片放逐</span>
+          </a>
+        </li>
+        <li v-if="authStore.currentUser && (authStore.currentUser.is_super_admin || authStore.currentUser.is_admin || authStore.currentUser.can_manage_users)">
+          <a
+            class="nav-item"
+            :class="{ 'active': isActive('/admin/logs') }"
+            href="/admin/logs"
+            @click.prevent="navigateTo('/admin/logs')"
+          >
+            <span class="nav-icon">📜</span>
+            <span class="nav-text">管理日志</span>
+          </a>
+        </li>
+        <li v-if="authStore.currentUser && (authStore.currentUser.is_super_admin || authStore.currentUser.is_admin || authStore.currentUser.can_manage_users)">
+          <a
+            class="nav-item"
+            :class="{ 'active': isActive('/admin') }"
+            href="/admin"
+            @click.prevent="navigateTo('/admin')"
+          >
+            <span class="nav-icon">👥</span>
+            <span class="nav-text">用户管理</span>
           </a>
         </li>
         <li>

@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import router from './router'
 import './style.css'
 import './assets/markdown.css'
+import 'sweetalert2/dist/sweetalert2.min.css'
 import App from './App.vue'
 import { useAuthStore } from './stores/auth'
 

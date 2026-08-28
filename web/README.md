@@ -1,6 +1,6 @@
 # OJ Frontend
 
-基于 Vue 3 + TypeScript + Vite 的 Online Judge 前端应用。
+基于 Vue 3 + TypeScript + Vite 的 Jason227 前端应用。
 
 ## 技术栈
 

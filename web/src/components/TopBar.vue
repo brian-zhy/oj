@@ -158,7 +158,7 @@ onUnmounted(() => {
 <template>
   <div class="topbar">
     <!-- Logo -->
-    <a href="/" class="logo">✨ Online Judge</a>
+    <a href="/" class="logo">✨ Jason227</a>
 
     <!-- 认证按钮区域 -->
     <div class="auth-buttons" v-if="!authStore.isAuthenticated">
@@ -170,7 +170,7 @@ onUnmounted(() => {
     <div class="auth-buttons" v-else>
       <!-- 头像下拉菜单 -->
       <div class="top-avatar-wrap">
-        <a :href="`/user/${userId}`" :title="displayName">
+        <a :href="`/user/${userNumber}`" :title="displayName">
           <img
             :src="avatarUrl"
             :alt="displayName"
@@ -178,8 +178,8 @@ onUnmounted(() => {
             onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23e74c3c%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27white%27 font-size=%2716%27 font-family=%27Arial%27%3EU%3C/text%3E%3C/svg%3E'"
           />
         </a>
-        <div class="top-avatar-menu" v-show="showAvatarMenu">
-          <a :href="`/user/${userId}`" class="top-avatar-menu-link">👤 个人主页</a>
+        <div class="top-avatar-menu">
+          <a :href="`/user/${userNumber}`" class="top-avatar-menu-link">👤 个人主页</a>
           <button @click="handleLogout" class="auth-btn logout">登出</button>
         </div>
       </div>
@@ -192,13 +192,13 @@ onUnmounted(() => {
         <sup v-if="unreadCount > 0" class="bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</sup>
       </a>
 
-      <!-- 管理员入口 -->
-      <a
+      <!-- 管理后台入口（仅管理员可见，与原站一致的齿轮按钮） -->
+      <router-link
         v-if="authStore.currentUser?.is_admin"
-        href="/admin/user"
-        title="进入管理后台"
+        to="/admin"
         class="admin-gear"
-      >⚙️</a>
+        title="进入管理后台"
+      >⚙️</router-link>
     </div>
   </div>
 </template>

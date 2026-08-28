@@ -20,8 +20,10 @@ const userProfile = ref({
   is_active: false,
   is_admin: false,
   can_speak: false,
+  can_manage_users: false,
+  can_manage_posts: false,
   phone: ''
-})
+} as any)
 
 // 编辑模式
 const isEditing = ref(false)
@@ -74,7 +76,8 @@ const formatDate = (dateString: string) => {
 const loadProfile = async () => {
   loading.value = true
   try {
-    const response = await apiClient.get('/auth/me')
+    // 响应拦截器已解包 response.data
+    const response: any = await apiClient.get('/auth/me')
     userProfile.value = response
     editForm.value = {
       bio: response.bio || '',
@@ -147,6 +150,48 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   setTimeout(() => {
     message.value = ''
   }, 3000)
+}
+
+// ===== 安全设置（修改自己的密码） =====
+const passwordForm = ref({
+  old_password: '',
+  new_password: '',
+  confirm_password: ''
+})
+const changingPassword = ref(false)
+const showPasswordForm = ref(false)
+
+const changePassword = async () => {
+  const { old_password, new_password, confirm_password } = passwordForm.value
+
+  if (!old_password || !new_password || !confirm_password) {
+    showMessage('请填写完整', 'error')
+    return
+  }
+  if (new_password.length < 8) {
+    showMessage('新密码至少需要 8 位', 'error')
+    return
+  }
+  if (new_password === old_password) {
+    showMessage('新密码不能与旧密码相同', 'error')
+    return
+  }
+  if (new_password !== confirm_password) {
+    showMessage('两次输入的新密码不一致', 'error')
+    return
+  }
+
+  changingPassword.value = true
+  try {
+    await apiClient.put('/users/me/password', { old_password, new_password })
+    passwordForm.value = { old_password: '', new_password: '', confirm_password: '' }
+    showPasswordForm.value = false
+    showMessage('密码修改成功', 'success')
+  } catch (error: any) {
+    showMessage(error.response?.data?.detail || '修改失败，请稍后重试', 'error')
+  } finally {
+    changingPassword.value = false
+  }
 }
 
 // 退出登录
@@ -297,6 +342,62 @@ onMounted(() => {
             </span>
           </div>
         </div>
+      </div>
+
+      <!-- 安全设置 -->
+      <div class="account-section security-section">
+        <h2 class="section-title">安全设置</h2>
+        <p class="security-hint">为了账号安全，请定期更换密码。密码需至少 8 位。</p>
+
+        <button v-if="!showPasswordForm" class="btn-change-password" @click="showPasswordForm = true">
+          修改密码
+        </button>
+
+        <form v-else class="password-form" @submit.prevent="changePassword">
+          <div class="form-group">
+            <label>当前密码</label>
+            <input
+              v-model="passwordForm.old_password"
+              type="password"
+              class="form-input"
+              placeholder="请输入当前密码"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>新密码</label>
+            <input
+              v-model="passwordForm.new_password"
+              type="password"
+              class="form-input"
+              placeholder="至少 8 位"
+              maxlength="72"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>确认新密码</label>
+            <input
+              v-model="passwordForm.confirm_password"
+              type="password"
+              class="form-input"
+              placeholder="再次输入新密码"
+              maxlength="72"
+              autocomplete="new-password"
+              required
+            />
+          </div>
+          <div class="password-actions">
+            <button type="submit" :disabled="changingPassword" class="btn-save">
+              {{ changingPassword ? '提交中...' : '确认修改' }}
+            </button>
+            <button type="button" :disabled="changingPassword" class="btn-cancel" @click="showPasswordForm = false">
+              取消
+            </button>
+          </div>
+        </form>
       </div>
 
       <!-- 权限信息 -->
@@ -638,6 +739,44 @@ onMounted(() => {
 .account-section {
   padding: 32px;
   border-bottom: 1px solid #f3f4f6;
+}
+
+/* 安全设置 */
+.security-hint {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: -8px 0 16px;
+}
+
+.btn-change-password {
+  padding: 8px 20px;
+  background: white;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-change-password:hover {
+  background: #fef2f2;
+}
+
+.password-form {
+  max-width: 420px;
+}
+
+.password-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.password-actions .btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .info-grid {
