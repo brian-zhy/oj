@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user, get_current_user_optional
+from app.models.benben import Benben
 from app.models.user import User
 from app.schemas.benben import BenbenCreate, BenbenResponse
 from app.services.benben import benben_service
