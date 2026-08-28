@@ -22,6 +22,11 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // GET 请求统一加时间戳参数：绕开浏览器缓存的 301 跳转劫持
+    //（按 URL 匹配，URL 不同即不命中缓存的错误重定向）
+    if ((config.method || 'get').toLowerCase() === 'get') {
+      config.params = { ...config.params, _t: Date.now() }
+    }
     return config
   },
   (error) => {

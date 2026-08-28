@@ -44,7 +44,8 @@ const onTitleInput = () => {
   searchTimer = window.setTimeout(async () => {
     try {
       const data: any = await apiClient.get(`/tickets/similar?title=${encodeURIComponent(title.value.trim())}`)
-      similar.value = data || []
+      // 响应必须是数组（防止被劫持/改写的请求返回 HTML 等非预期内容）
+      similar.value = Array.isArray(data) ? data : []
       showSimilar.value = similar.value.length > 0
     } catch {
       similar.value = []
