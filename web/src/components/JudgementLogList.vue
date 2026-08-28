@@ -90,60 +90,47 @@ function isUnbrownAction(action_type: string): boolean {
 }
 
 // ================================================================
-// 4. 操作徽章（截图样式：圆角胶囊，授予绿 / 撤销红 / 封禁类黄 / 管理紫）
+// 4. 权限变更（与陶片放逐页一致：撤销红字/授予绿字 + 灰底权限名，管理轮换紫字）
 // ================================================================
-interface Badge {
-  text: string
-  color: string
+interface PermChange {
+  word: string
+  cls: string
+  name: string
 }
 
-const BADGE_GRANT = '#52C41A'
-const BADGE_REVOKE = '#E74C3C'
-const BADGE_BAN = '#E6A23C'
-const BADGE_MANAGE = '#9D3DCF'
-const BADGE_BROWN = '#8d6e63'
-const BADGE_UNKNOWN = '#909399'
-
-function makeBadge(word: string, permName: string, color: string): Badge {
-  return { text: `${word} ${permName} 权限`, color }
+function permLine(word: string, perm: string): PermChange {
+  const isGrant = word === '授予'
+  return {
+    word,
+    cls: isGrant ? 'lcolor--green-3' : 'lcolor--red-3',
+    name: getPermName(perm),
+  }
 }
 
-function buildBadges(log: JudgementLog): { badges: Badge[]; extra: string } {
+function buildBadges(log: JudgementLog): { changes: PermChange[]; extra: string } {
   const d = log.action_detail || {}
-  const badges: Badge[] = []
+  const changes: PermChange[] = []
   let extra = ''
 
-  const permLine = (word: string, perm: string): Badge => {
-    // 封禁类权限（进入主站）的撤销用黄色，其余沿用红绿
-    if (perm === 'is_banned') {
-      return makeBadge(word, getPermName(perm), word === '撤销' ? BADGE_BAN : BADGE_GRANT)
-    }
-    return makeBadge(word, getPermName(perm), word === '撤销' ? BADGE_REVOKE : BADGE_GRANT)
-  }
-
-  const pickChanges = (): Badge[] => {
+  if (['grant_normal', 'revoke_normal', 'ostracism', 'admin_rotation', 'unbrown', 'perm_update'].includes(log.action_type)) {
     const cs = Array.isArray(d?.changes) ? d.changes : []
-    return cs.map((c: any) => {
+    cs.forEach((c: any) => {
       // is_banned 的值语义相反（false = 解封/授予）
       const isGrant = c.permission === 'is_banned' ? c.new_value === false : c.new_value === true
-      return permLine(isGrant ? '授予' : '撤销', c.permission)
+      changes.push(permLine(isGrant ? '授予' : '撤销', c.permission))
     })
-  }
-
-  if (['grant_normal', 'revoke_normal', 'ostracism', 'admin_rotation', 'unbrown', 'perm_update'].includes(log.action_type)) {
-    badges.push(...pickChanges())
   } else if (log.action_type === 'grant_perm' || log.action_type === 'revoke_perm') {
     const perm = d?.permission
+    const line = permLine(log.action_type === 'grant_perm' ? '授予' : '撤销', perm)
     const managerPerms = ['is_admin', 'can_manage_users', 'can_manage_posts']
     if (managerPerms.includes(perm)) {
-      badges.push(makeBadge(log.action_type === 'grant_perm' ? '授予' : '撤销', getPermName(perm), BADGE_MANAGE))
-    } else {
-      badges.push(permLine(log.action_type === 'grant_perm' ? '授予' : '撤销', perm))
+      line.cls = 'lcolor--purple-3'
     }
+    changes.push(line)
   } else if (log.action_type === 'ban') {
-    badges.push(makeBadge('撤销', '进入主站', BADGE_BAN))
+    changes.push(permLine('撤销', 'is_banned'))
   } else if (log.action_type === 'unban') {
-    badges.push(makeBadge('授予', '进入主站', BADGE_GRANT))
+    changes.push(permLine('授予', 'is_banned'))
   } else if (log.action_type === 'brown_penalty') {
     extra = '学术不端惩罚'
   } else if (log.action_type === 'manager_rotate') {
@@ -152,7 +139,7 @@ function buildBadges(log: JudgementLog): { badges: Badge[]; extra: string } {
     extra = '管理操作'
   }
 
-  return { badges, extra }
+  return { changes, extra }
 }
 
 // ================================================================
@@ -165,7 +152,7 @@ interface RenderedLog {
   adminColor: string
   target: LogUser
   targetColor: string
-  badges: Badge[]
+  changes: PermChange[]
   extra: string
   reason: string
 }
@@ -182,7 +169,7 @@ function buildRenderedLog(log: JudgementLog): RenderedLog {
     username_color: '', is_cheater: false,
   }
 
-  const { badges, extra } = buildBadges(log)
+  const { changes, extra } = buildBadges(log)
 
   return {
     id: log.id,
@@ -191,7 +178,7 @@ function buildRenderedLog(log: JudgementLog): RenderedLog {
     adminColor: getUserColor(admin),
     target,
     targetColor: getUserColor(target),
-    badges,
+    changes,
     extra,
     reason: log.reason || '（无）',
   }
@@ -323,14 +310,17 @@ onUnmounted(() => {
           :style="{ backgroundColor: log.targetColor }"
         >{{ log.target.user_tag }}</span>
 
-        <!-- 操作徽章 -->
+        <!-- 权限变更（与陶片放逐页一致的撤销/授予样式） -->
         <span
-          v-for="(badge, i) in log.badges"
-          :key="'b' + i"
-          class="log-badge"
-          :style="{ backgroundColor: badge.color }"
-        >{{ badge.text }}</span>
-        <span v-if="log.extra" class="log-badge" :style="{ backgroundColor: BADGE_BROWN }">{{ log.extra }}</span>
+          v-for="(change, i) in log.changes"
+          :key="'c' + i"
+          class="permission-change"
+        >
+          <span :class="change.cls">{{ change.word }}</span>
+          <span class="perm-name">{{ change.name }}</span>
+          权限
+        </span>
+        <span v-if="log.extra" class="permission-change">{{ log.extra }}</span>
 
         <!-- 原因 -->
         <span class="log-reason">{{ log.reason }}</span>
@@ -411,16 +401,37 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* 操作徽章 */
-.log-badge {
-  display: inline-block;
-  padding: 3px 12px;
-  border-radius: 20px;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
+/* 权限变更（撤销/授予） */
+.permission-change {
+  font-size: 14px;
+  color: #2d3748;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.lcolor--red-3 {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.lcolor--green-3 {
+  color: #52C41A;
+  font-weight: 600;
+}
+
+.lcolor--purple-3 {
+  color: #9d3dcf;
+  font-weight: 600;
+}
+
+.perm-name {
+  display: inline-block;
+  background: #e8e8e8;
+  padding: 1px 8px;
+  border-radius: 4px;
+  color: #575757;
+  border: 1px solid #bfbfbf;
+  margin: 0 4px;
 }
 
 .log-reason {
