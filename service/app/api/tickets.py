@@ -87,6 +87,15 @@ async def list_tickets(
     )
 
 
+@router.get("/staff", summary="可指派的管理员列表")
+async def list_staff(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[dict]:
+    _require_staff(current_user)
+    return await TicketService.list_staff(db)
+
+
 @router.get("/{ticket_id}", summary="工单详情")
 async def get_ticket_detail(
     ticket_id: int,
@@ -147,15 +156,6 @@ async def reply_ticket(
 
 class TicketAssignPayload(BaseModel):
     assignee_id: Optional[int] = None
-
-
-@router.get("/staff", summary="可指派的管理员列表")
-async def list_staff(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> list[dict]:
-    _require_staff(current_user)
-    return await TicketService.list_staff(db)
 
 
 @router.put("/{ticket_id}/assign", summary="指派责任人")
