@@ -109,6 +109,7 @@ class TicketService:
             "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
             "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
             "creator": TicketService._user_brief(ticket.creator),
+            "assignee": TicketService._user_brief(ticket.assignee) if ticket.assignee_id else None,
         }
 
     @staticmethod
@@ -260,6 +261,52 @@ class TicketService:
 
         ticket.replies[0].content = content.strip()
         await db.commit()
+
+    @staticmethod
+    async def assign(
+        db: AsyncSession,
+        ticket: Ticket,
+        operator: User,
+        assignee: Optional[User],
+    ) -> None:
+        """指派/更改/取消责任人（仅管理员）。
+
+        - assignee 为 None 表示取消指派
+        - 被指派人必须具备用户管理权限
+        - 留下时间线记录
+        """
+        if not TicketService.is_staff_user(operator):
+            raise PermissionError("需要用户管理权限")
+        if assignee is not None and not TicketService.is_staff_user(assignee):
+            raise PermissionError("责任人必须是具备用户管理权限的管理员")
+
+        ticket.assignee_id = assignee.id if assignee else None
+
+        action = (
+            f"将责任人指派为 {assignee.username}" if assignee
+            else "取消了责任人"
+        )
+        db.add(TicketReply(
+            ticket_id=ticket.id,
+            user_id=operator.id,
+            content="",
+            is_staff=True,
+            action_text=action,
+        ))
+        await db.commit()
+        await db.refresh(ticket)
+
+    @staticmethod
+    async def list_staff(db: AsyncSession) -> list[dict[str, Any]]:
+        """可被指派为责任人的管理员列表。"""
+        result = await db.execute(
+            select(User).where(
+                (User.can_manage_users.is_(True))
+                | (User.is_admin.is_(True))
+                | (User.is_super_admin.is_(True))
+            ).order_by(User.id)
+        )
+        return [TicketService._user_brief(u) for u in result.scalars().all()]
 
     @staticmethod
     async def update_status(

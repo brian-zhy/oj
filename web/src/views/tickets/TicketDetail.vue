@@ -36,6 +36,37 @@ const replySubmitting = ref(false)
 const newStatus = ref('')
 const statusSubmitting = ref(false)
 
+// 责任人指派
+const staffList = ref<any[]>([])
+const showAssign = ref(false)
+const assigneeId = ref<number | null>(null)
+const assigning = ref(false)
+
+const toggleAssign = async () => {
+  showAssign.value = !showAssign.value
+  if (showAssign.value && staffList.value.length === 0) {
+    try {
+      const data: any = await apiClient.get('/api/tickets/staff')
+      staffList.value = Array.isArray(data) ? data : []
+    } catch {
+      staffList.value = []
+    }
+  }
+}
+
+const doAssign = async () => {
+  assigning.value = true
+  try {
+    await apiClient.put(`/api/tickets/${route.params.id}/assign`, { assignee_id: assigneeId.value })
+    showAssign.value = false
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '指派失败')
+  } finally {
+    assigning.value = false
+  }
+}
+
 // 工单描述编辑
 const editingDesc = ref(false)
 const descContent = ref('')
@@ -179,7 +210,35 @@ onMounted(() => loadTicket())
             </div>
             <div class="meta-item">
               <div class="meta-label">责任人</div>
-              <div class="meta-value muted">暂无</div>
+              <div class="meta-value">
+                <template v-if="ticket.assignee">
+                  <router-link
+                    :to="ticket.assignee.user_number ? `/user/${ticket.assignee.user_number}` : '#'"
+                    class="creator-link"
+                    :style="{ color: ticket.assignee.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  >{{ ticket.assignee.username }}</router-link>
+                  <span
+                    v-if="ticket.assignee.user_tag"
+                    class="user-tag-display"
+                    :style="{ backgroundColor: ticket.assignee.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  >{{ ticket.assignee.user_tag }}</span>
+                </template>
+                <span v-else class="muted">暂无</span>
+                <button v-if="isStaff" class="btn-assign" @click="toggleAssign">
+                  {{ ticket.assignee ? '更改' : '指派' }}
+                </button>
+                <span v-if="showAssign" class="assign-pop">
+                  <select v-model="assigneeId" class="status-select">
+                    <option :value="null">取消指派</option>
+                    <option v-for="u in staffList" :key="u.user_id" :value="u.user_id">
+                      {{ u.username }}{{ u.user_tag ? ` (${u.user_tag})` : '' }}
+                    </option>
+                  </select>
+                  <button class="btn-status" :disabled="assigning" @click="doAssign">
+                    {{ assigning ? '处理中...' : '确认' }}
+                  </button>
+                </span>
+              </div>
             </div>
             <div class="meta-item">
               <div class="meta-label">工单类型</div>
@@ -266,7 +325,11 @@ onMounted(() => loadTicket())
                   class="user-tag-display"
                   :style="{ backgroundColor: userColor(r.user) }"
                 >{{ r.user?.user_tag || '管理员' }}</span>
-                <span class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
+                <span v-if="r.action_text.startsWith('将责任人')" class="action-text">
+                  将责任人指派为 <b class="action-status">{{ r.action_text.replace('将责任人指派为 ', '') }}</b>
+                </span>
+                <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>
+                <span v-else class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
               </div>
               <div class="action-time-line">{{ relTime(r.created_at) }}</div>
             </div>
@@ -434,6 +497,27 @@ onMounted(() => loadTicket())
 .creator-link {
   font-weight: 700;
   text-decoration: none;
+}
+
+.btn-assign {
+  padding: 3px 12px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-assign:hover {
+  background: #2980b9;
+}
+
+.assign-pop {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .creator-link:hover {

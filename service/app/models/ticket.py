@@ -28,6 +28,10 @@ class Ticket(Base, TimestampMixin):
     creator_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), index=True, nullable=False
     )
+    # 责任人（处理该工单的管理员，可空）
+    assignee_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=True
+    )
     # 综合类工单默认公开（登录用户可见），申诉类私密
     is_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -39,6 +43,9 @@ class Ticket(Base, TimestampMixin):
 
     creator: Mapped["User"] = relationship(  # noqa: F821
         "User", foreign_keys=[creator_id], lazy="joined"
+    )
+    assignee: Mapped["User | None"] = relationship(  # noqa: F821
+        "User", foreign_keys=[assignee_id], lazy="joined"
     )
     replies: Mapped[list["TicketReply"]] = relationship(
         back_populates="ticket", cascade="all, delete-orphan",

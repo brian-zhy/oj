@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -141,6 +143,46 @@ async def reply_ticket(
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     return {"success": True}
+
+
+class TicketAssignPayload(BaseModel):
+    assignee_id: Optional[int] = None
+
+
+@router.get("/staff", summary="可指派的管理员列表")
+async def list_staff(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[dict]:
+    _require_staff(current_user)
+    return await TicketService.list_staff(db)
+
+
+@router.put("/{ticket_id}/assign", summary="指派责任人")
+async def assign_ticket(
+    ticket_id: int,
+    payload: TicketAssignPayload,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    ticket = await TicketService.get_ticket(db, ticket_id)
+    if not ticket or ticket.status == "deleted":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+
+    assignee: Optional[User] = None
+    if payload.assignee_id is not None:
+        result = await db.execute(
+            select(User).where(User.id == payload.assignee_id)
+        )
+        assignee = result.scalar_one_or_none()
+        if not assignee:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="被指派的管理员不存在")
+
+    try:
+        await TicketService.assign(db, ticket, current_user, assignee)
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    return TicketService._ticket_dict(ticket)
 
 
 @router.put("/{ticket_id}/status", summary="流转工单状态")
