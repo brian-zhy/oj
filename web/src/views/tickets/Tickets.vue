@@ -14,14 +14,14 @@ const CATEGORIES: Record<string, string> = {
   appeal: '账号申诉',
 }
 
-const STATUS: Record<string, { text: string; color: string }> = {
-  pending: { text: '待处理', color: '#E6A23C' },
-  replied: { text: '待补充', color: '#3498db' },
-  processing: { text: '处理中', color: '#3498db' },
-  suspended: { text: '挂起', color: '#909399' },
-  resolved: { text: '已完成', color: '#52C41A' },
-  closed: { text: '已关闭', color: '#909399' },
-  deleted: { text: '已删除', color: '#e74c3c' },
+const STATUS: Record<string, { text: string; color: string; bg: string }> = {
+  pending: { text: '待处理', color: '#00BCD4', bg: '#E0F7FA' },
+  replied: { text: '待补充', color: '#FF9800', bg: '#FFF3E0' },
+  processing: { text: '处理中', color: '#D4AC0D', bg: '#FDF6DD' },
+  suspended: { text: '挂起', color: '#909399', bg: '#F4F4F5' },
+  resolved: { text: '已完成', color: '#52C41A', bg: '#F0FAE5' },
+  closed: { text: '已关闭', color: '#E74C3C', bg: '#FDECEC' },
+  deleted: { text: '已删除', color: '#909399', bg: '#F4F4F5' },
 }
 
 const isStaff = computed(() => {
@@ -122,7 +122,7 @@ onMounted(() => loadTickets(false))
               <td class="col-title">{{ t.title }}</td>
               <td>{{ CATEGORIES[t.category] || t.category }}</td>
               <td>
-                <span class="status-badge" :style="{ backgroundColor: STATUS[t.status]?.color }">
+                <span class="status-badge" :style="{ color: STATUS[t.status]?.color, backgroundColor: STATUS[t.status]?.bg }">
                   {{ STATUS[t.status]?.text || t.status }}
                 </span>
               </td>
@@ -284,7 +284,6 @@ onMounted(() => loadTickets(false))
   display: inline-block;
   padding: 2px 12px;
   border-radius: 20px;
-  color: #fff;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;

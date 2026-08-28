@@ -15,14 +15,14 @@ const CATEGORIES: Record<string, string> = {
   appeal: '账号申诉',
 }
 
-const STATUS: Record<string, { text: string; color: string }> = {
-  pending: { text: '待处理', color: '#E6A23C' },
-  replied: { text: '待补充', color: '#3498db' },
-  processing: { text: '处理中', color: '#3498db' },
-  suspended: { text: '挂起', color: '#909399' },
-  resolved: { text: '已完成', color: '#52C41A' },
-  closed: { text: '已关闭', color: '#909399' },
-  deleted: { text: '已删除', color: '#e74c3c' },
+const STATUS: Record<string, { text: string; color: string; bg: string }> = {
+  pending: { text: '待处理', color: '#00BCD4', bg: '#E0F7FA' },
+  replied: { text: '待补充', color: '#FF9800', bg: '#FFF3E0' },
+  processing: { text: '处理中', color: '#D4AC0D', bg: '#FDF6DD' },
+  suspended: { text: '挂起', color: '#909399', bg: '#F4F4F5' },
+  resolved: { text: '已完成', color: '#52C41A', bg: '#F0FAE5' },
+  closed: { text: '已关闭', color: '#E74C3C', bg: '#FDECEC' },
+  deleted: { text: '已删除', color: '#909399', bg: '#F4F4F5' },
 }
 
 const OPEN_STATUSES = ['pending', 'replied', 'processing', 'suspended']
@@ -186,7 +186,7 @@ onMounted(() => loadTicket())
           <div class="head-row">
             <span class="ticket-no">{{ ticket.ticket_no }}</span>
             <h2 class="ticket-title">{{ ticket.title }}</h2>
-            <span class="status-badge" :style="{ backgroundColor: STATUS[ticket.status]?.color }">
+            <span class="status-badge" :style="{ color: STATUS[ticket.status]?.color, backgroundColor: STATUS[ticket.status]?.bg }">
               {{ STATUS[ticket.status]?.text || ticket.status }}
             </span>
           </div>
@@ -459,7 +459,6 @@ onMounted(() => loadTicket())
   display: inline-block;
   padding: 3px 14px;
   border-radius: 20px;
-  color: #fff;
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
