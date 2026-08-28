@@ -121,11 +121,41 @@ onMounted(() => loadTicket())
               {{ STATUS[ticket.status]?.text || ticket.status }}
             </span>
           </div>
+
+          <!-- 字段信息网格 -->
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">创建者</div>
+              <div class="meta-value">
+                <router-link
+                  :to="ticket.creator?.user_number ? `/user/${ticket.creator.user_number}` : '#'"
+                  class="creator-link"
+                  :style="{ color: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                >{{ ticket.creator?.username || '未知用户' }}</router-link>
+                <span
+                  v-if="ticket.creator?.user_tag"
+                  class="user-tag-display"
+                  :style="{ backgroundColor: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                >{{ ticket.creator.user_tag }}</span>
+              </div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">责任人</div>
+              <div class="meta-value muted">暂无</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">工单类型</div>
+              <div class="meta-value">{{ CATEGORIES[ticket.category] || ticket.category }}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">创建时间</div>
+              <div class="meta-value">{{ fmtTime(ticket.created_at) }}</div>
+            </div>
+          </div>
+
           <div class="head-meta">
-            <span>类别：{{ CATEGORIES[ticket.category] || ticket.category }}</span>
-            <span v-if="ticket.is_public">· 公开工单</span>
-            <span v-else>· 私密工单</span>
-            <span>· 创建于 {{ fmtTime(ticket.created_at) }}</span>
+            <span v-if="ticket.is_public">🌐 公开工单（登录用户可见）</span>
+            <span v-else>🔒 私密工单（仅创建者与管理员可见）</span>
           </div>
 
           <!-- 管理员状态操作 -->
@@ -271,12 +301,62 @@ onMounted(() => loadTicket())
 }
 
 .head-meta {
-  margin-top: 10px;
+  margin-top: 12px;
   color: #8a9aa8;
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px 20px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #f8f9fc;
+  border-radius: 10px;
+}
+
+.meta-label {
+  font-size: 12px;
+  color: #8a9aa8;
+  margin-bottom: 4px;
+}
+
+.meta-value {
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.meta-value.muted {
+  color: #b0b8c1;
+  font-weight: 400;
+}
+
+.creator-link {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.creator-link:hover {
+  text-decoration: underline;
+}
+
+.user-tag-display {
+  display: inline-block;
+  border-radius: 2px;
+  padding: 1px 8px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: default;
 }
 
 .staff-bar {
