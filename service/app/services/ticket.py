@@ -188,7 +188,12 @@ class TicketService:
     async def get_ticket(db: AsyncSession, ticket_id: int) -> Optional[Ticket]:
         result = await db.execute(
             select(Ticket)
-            .options(selectinload(Ticket.creator), selectinload(Ticket.replies).selectinload(TicketReply.user))
+            .options(
+                selectinload(Ticket.creator),
+                selectinload(Ticket.assignee),
+                selectinload(Ticket.replies).selectinload(TicketReply.user),
+                selectinload(Ticket.replies).selectinload(TicketReply.action_target),
+            )
             .where(Ticket.id == ticket_id)
         )
         return result.scalar_one_or_none()
@@ -292,6 +297,7 @@ class TicketService:
             content="",
             is_staff=True,
             action_text=action,
+            action_target_user_id=assignee.id if assignee else None,
         ))
         await db.commit()
         await db.refresh(ticket)

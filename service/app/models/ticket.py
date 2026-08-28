@@ -68,8 +68,15 @@ class TicketReply(Base, TimestampMixin):
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 状态变更动作记录（非空 = 系统动作横幅，如「将工单状态设置为 已完成」）
     action_text: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # 动作关联的目标用户（如被指派的责任人）
+    action_target_user_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=True
+    )
 
     user: Mapped["User"] = relationship(  # noqa: F821
         "User", foreign_keys=[user_id], lazy="joined"
+    )
+    action_target: Mapped["User | None"] = relationship(  # noqa: F821
+        "User", foreign_keys=[action_target_user_id], lazy="joined"
     )
     ticket: Mapped["Ticket"] = relationship(back_populates="replies")

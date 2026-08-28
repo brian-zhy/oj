@@ -325,8 +325,19 @@ onMounted(() => loadTicket())
                   class="user-tag-display"
                   :style="{ backgroundColor: userColor(r.user) }"
                 >{{ r.user?.user_tag || '管理员' }}</span>
-                <span v-if="r.action_text.startsWith('将责任人')" class="action-text">
-                  将责任人指派为 <b class="action-status">{{ r.action_text.replace('将责任人指派为 ', '') }}</b>
+                <!-- 指派记录：被指派人以彩色名+标签展示 -->
+                <span v-if="r.action_text.startsWith('将责任人') && r.action_target" class="action-text">
+                  将责任人指派为
+                  <router-link
+                    :to="r.action_target.user_number ? `/user/${r.action_target.user_number}` : '#'"
+                    class="action-user"
+                    :style="{ color: r.action_target.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  >{{ r.action_target.username }}</router-link>
+                  <span
+                    v-if="r.action_target.user_tag"
+                    class="user-tag-display"
+                    :style="{ backgroundColor: r.action_target.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  >{{ r.action_target.user_tag }}</span>
                 </span>
                 <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>
                 <span v-else class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
@@ -678,6 +689,15 @@ onMounted(() => loadTicket())
 .action-status {
   color: #52C41A;
   font-weight: 700;
+}
+
+.action-user {
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.action-user:hover {
+  text-decoration: underline;
 }
 
 .action-time-line {
