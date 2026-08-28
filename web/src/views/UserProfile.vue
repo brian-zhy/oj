@@ -62,7 +62,8 @@ const onAvatarChange = async (e: Event) => {
   try {
     const fd = new FormData()
     fd.append('file', file)
-    const res: any = await apiClient.post('/users/me/avatar', fd, {
+    // 加时间戳参数绕开浏览器缓存的 301 跳转劫持（按 URL 匹配，URL 不同即不命中）
+    const res: any = await apiClient.post(`/users/me/avatar?_t=${Date.now()}`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     userProfile.value.avatar_url = res.avatar_url
@@ -70,7 +71,7 @@ const onAvatarChange = async (e: Event) => {
     failMsg = error.response?.data?.detail || ''
     // 请求报错时向服务端核实真实结果——请求可能被代理/插件改写，但实际已成功
     try {
-      const me: any = await apiClient.get('/auth/me')
+      const me: any = await apiClient.get(`/auth/me?_t=${Date.now()}`)
       if (me?.avatar_url && me.avatar_url !== previousAvatar) {
         userProfile.value.avatar_url = me.avatar_url
         failMsg = ''
@@ -84,9 +85,10 @@ const onAvatarChange = async (e: Event) => {
   if (failMsg) {
     showMessage(failMsg || '头像上传失败，请稍后重试', 'error')
   } else {
-    // 同步顶栏等处的本地缓存
-    if (authStore.currentUser) {
-      authStore.currentUser.avatar_url = userProfile.value.avatar_url
+    // 替换引用而非改属性：触发 authStore 的持久化 watch，把新头像写入 localStorage，
+    // 这样刷新页面后顶栏/各处读到的一直是新头像
+    if (authStore.user) {
+      authStore.user = { ...authStore.user, avatar_url: userProfile.value.avatar_url }
     }
     showMessage('头像更新成功', 'success')
   }

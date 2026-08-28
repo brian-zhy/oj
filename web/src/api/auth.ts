@@ -47,7 +47,8 @@ export const authApi = {
 
   // 获取当前用户信息
   async getCurrentUser(): Promise<User> {
-    return apiClient.get('/auth/me')
+    // 加时间戳避免浏览器/中间层缓存旧资料（如刚上传的头像在刷新后仍显示旧图）
+    return apiClient.get(`/auth/me?_t=${Date.now()}`)
   },
 
   // 请求密码重置
