@@ -97,10 +97,32 @@ async def get_ticket_detail(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权查看该工单")
 
     data = TicketService._ticket_dict(ticket)
+    # 工单描述 = 创建时的首条内容（独立于回复展示）
+    data["description"] = ticket.replies[0].content if ticket.replies else ""
     data["replies"] = [_reply_dict(r) for r in ticket.replies]
     data["can_manage"] = TicketService.is_staff_user(current_user)
     data["is_creator"] = ticket.creator_id == current_user.id
     return data
+
+
+@router.put("/{ticket_id}/description", summary="编辑工单描述")
+async def update_ticket_description(
+    ticket_id: int,
+    payload: TicketReplyCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """编辑工单描述（仅创建者，工单未完结时）。"""
+    ticket = await TicketService.get_ticket(db, ticket_id)
+    if not ticket or ticket.status == "deleted":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+    try:
+        await TicketService.update_description(db, ticket, current_user, payload.content)
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"success": True}
 
 
 @router.post("/{ticket_id}/replies", summary="回复工单")

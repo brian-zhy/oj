@@ -36,6 +36,30 @@ const replySubmitting = ref(false)
 const newStatus = ref('')
 const statusSubmitting = ref(false)
 
+// 工单描述编辑
+const editingDesc = ref(false)
+const descContent = ref('')
+const descSaving = ref(false)
+
+const startEditDesc = () => {
+  descContent.value = ticket.value.description || ''
+  editingDesc.value = true
+}
+
+const saveDesc = async () => {
+  if (!descContent.value.trim()) return
+  descSaving.value = true
+  try {
+    await apiClient.put(`/api/tickets/${route.params.id}/description`, { content: descContent.value.trim() })
+    editingDesc.value = false
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '保存失败')
+  } finally {
+    descSaving.value = false
+  }
+}
+
 const me = computed(() => authStore.currentUser)
 const isStaff = computed(() => ticket.value?.can_manage)
 const isCreator = computed(() => ticket.value?.is_creator)
@@ -145,6 +169,35 @@ onMounted(() => loadTicket())
 
         </div>
 
+        <!-- 工单描述 -->
+        <div class="desc-card card">
+          <div class="desc-head">
+            <span class="desc-title">工单描述</span>
+            <button
+              v-if="isCreator && OPEN_STATUSES.includes(ticket.status) && !editingDesc"
+              class="btn-edit-desc"
+              @click="startEditDesc"
+            >编辑</button>
+          </div>
+          <template v-if="!editingDesc">
+            <div class="desc-content">{{ ticket.description }}</div>
+          </template>
+          <template v-else>
+            <textarea
+              v-model="descContent"
+              rows="5"
+              class="reply-textarea"
+              maxlength="5000"
+            ></textarea>
+            <div class="reply-actions">
+              <button class="btn-submit" :disabled="descSaving || !descContent.trim()" @click="saveDesc">
+                {{ descSaving ? '保存中...' : '保存' }}
+              </button>
+              <button class="btn-cancel-2" :disabled="descSaving" @click="editingDesc = false">取消</button>
+            </div>
+          </template>
+        </div>
+
         <!-- 操作状态条（工单描述之下、回复之上） -->
         <div class="action-bar card">
           <template v-if="isStaff">
@@ -165,9 +218,10 @@ onMounted(() => loadTicket())
         </div>
 
         <!-- 回复时间线 -->
-        <div class="replies">
+        <div v-if="ticket.replies.length > 1" class="replies">
+          <div class="replies-title">回复（{{ ticket.replies.length - 1 }}）</div>
           <div
-            v-for="r in ticket.replies"
+            v-for="r in ticket.replies.slice(1)"
             :key="r.id"
             class="reply-item"
             :class="{ staff: r.is_staff }"
@@ -399,6 +453,62 @@ onMounted(() => loadTicket())
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 16px;
+}
+
+.desc-card {
+  margin-bottom: 16px;
+}
+
+.desc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.desc-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #2c3e50;
+}
+
+.btn-edit-desc {
+  padding: 4px 16px;
+  background: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-edit-desc:hover {
+  background: #2980b9;
+}
+
+.desc-content {
+  color: #2d3748;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.btn-cancel-2 {
+  padding: 8px 22px;
+  background: #f3f4f6;
+  color: #4a5568;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.replies-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #8a9aa8;
+  padding: 0 4px;
 }
 
 .replies {

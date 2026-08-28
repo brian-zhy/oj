@@ -244,6 +244,24 @@ class TicketService:
         return reply
 
     @staticmethod
+    async def update_description(
+        db: AsyncSession,
+        ticket: Ticket,
+        user: User,
+        content: str,
+    ) -> None:
+        """编辑工单描述（即创建时的首条内容，仅创建者、工单未完结时可改）。"""
+        if ticket.creator_id != user.id:
+            raise PermissionError("只有创建者可以编辑工单描述")
+        if ticket.status not in OPEN_STATUSES:
+            raise PermissionError("工单已完结，描述不可修改")
+        if not ticket.replies:
+            raise ValueError("工单缺少描述")
+
+        ticket.replies[0].content = content.strip()
+        await db.commit()
+
+    @staticmethod
     async def update_status(
         db: AsyncSession,
         ticket: Ticket,
