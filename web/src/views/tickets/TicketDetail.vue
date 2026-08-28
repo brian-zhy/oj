@@ -149,6 +149,21 @@ onMounted(() => loadTicket())
           <!-- 字段信息网格 -->
           <div class="meta-grid">
             <div class="meta-item">
+              <div class="meta-label">发起人</div>
+              <div class="meta-value">
+                <router-link
+                  :to="ticket.creator?.user_number ? `/user/${ticket.creator.user_number}` : '#'"
+                  class="creator-link"
+                  :style="{ color: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                >{{ ticket.creator?.username || '未知用户' }}</router-link>
+                <span
+                  v-if="ticket.creator?.user_tag"
+                  class="user-tag-display"
+                  :style="{ backgroundColor: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                >{{ ticket.creator.user_tag }}</span>
+              </div>
+            </div>
+            <div class="meta-item">
               <div class="meta-label">责任人</div>
               <div class="meta-value muted">暂无</div>
             </div>
