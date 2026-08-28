@@ -56,7 +56,7 @@ const loadTicket = async () => {
   loading.value = true
   error.value = ''
   try {
-    ticket.value = await apiClient.get(`/tickets/${route.params.id}`)
+    ticket.value = await apiClient.get(`/api/tickets/${route.params.id}`)
     newStatus.value = ticket.value.status
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '加载失败'
@@ -69,7 +69,7 @@ const submitReply = async () => {
   if (!replyContent.value.trim()) return
   replySubmitting.value = true
   try {
-    await apiClient.post(`/tickets/${route.params.id}/replies`, { content: replyContent.value.trim() })
+    await apiClient.post(`/api/tickets/${route.params.id}/replies`, { content: replyContent.value.trim() })
     replyContent.value = ''
     await loadTicket()
   } catch (err: any) {
@@ -83,7 +83,7 @@ const changeStatus = async () => {
   if (!newStatus.value || newStatus.value === ticket.value.status) return
   statusSubmitting.value = true
   try {
-    await apiClient.put(`/tickets/${route.params.id}/status`, { status: newStatus.value })
+    await apiClient.put(`/api/tickets/${route.params.id}/status`, { status: newStatus.value })
     await loadTicket()
   } catch (err: any) {
     alert(err.response?.data?.detail || '状态更新失败')
@@ -95,7 +95,7 @@ const changeStatus = async () => {
 const closeOwn = async () => {
   if (!confirm('确定关闭这个工单吗？')) return
   try {
-    await apiClient.put(`/tickets/${route.params.id}/status`, { status: 'closed' })
+    await apiClient.put(`/api/tickets/${route.params.id}/status`, { status: 'closed' })
     await loadTicket()
   } catch (err: any) {
     alert(err.response?.data?.detail || '关闭失败')

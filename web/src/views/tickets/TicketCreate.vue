@@ -43,7 +43,7 @@ const onTitleInput = () => {
   }
   searchTimer = window.setTimeout(async () => {
     try {
-      const data: any = await apiClient.get(`/tickets/similar?title=${encodeURIComponent(title.value.trim())}`)
+      const data: any = await apiClient.get(`/api/tickets/similar?title=${encodeURIComponent(title.value.trim())}`)
       // 响应必须是数组（防止被劫持/改写的请求返回 HTML 等非预期内容）
       similar.value = Array.isArray(data) ? data : []
       showSimilar.value = similar.value.length > 0
@@ -78,7 +78,7 @@ const submit = async () => {
 
   submitting.value = true
   try {
-    const data: any = await apiClient.post('/tickets', {
+    const data: any = await apiClient.post('/api/tickets', {
       title: title.value.trim(),
       category: category.value,
       content: content.value.trim()
