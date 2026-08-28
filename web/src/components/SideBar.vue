@@ -275,6 +275,17 @@ const navigateTo = (path: string) => {
             <span class="nav-text">陶片放逐</span>
           </a>
         </li>
+        <li v-if="authStore.currentUser">
+          <a
+            class="nav-item"
+            :class="{ 'active': isActive('/tickets') }"
+            href="/tickets"
+            @click.prevent="navigateTo('/tickets')"
+          >
+            <span class="nav-icon">🎫</span>
+            <span class="nav-text">工单/反馈</span>
+          </a>
+        </li>
         <li v-if="authStore.currentUser && authStore.currentUser.can_manage_users">
           <a
             class="nav-item"

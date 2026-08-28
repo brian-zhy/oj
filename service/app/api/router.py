@@ -10,6 +10,7 @@ from app.api.benben import router as benben_router
 from app.api.admin import router as admin_router
 from app.api.admin_users import router as admin_users_router
 from app.api.judgement import router as judgement_router
+from app.api.tickets import router as tickets_router
 from app.api.admin_upload import router as admin_upload_router
 
 api_router = APIRouter()
@@ -21,4 +22,5 @@ api_router.include_router(benben_router)
 api_router.include_router(admin_router)
 api_router.include_router(admin_users_router)
 api_router.include_router(judgement_router)
+api_router.include_router(tickets_router)
 api_router.include_router(admin_upload_router)

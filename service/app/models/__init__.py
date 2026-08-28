@@ -9,5 +9,6 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.models.benben import Benben
 from app.models.judgement import JudgementLog
+from app.models.ticket import Ticket, TicketReply
 
-__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog"]
+__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog", "Ticket", "TicketReply"]

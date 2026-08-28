@@ -63,6 +63,24 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/tickets',
+    name: 'Tickets',
+    component: () => import('@/views/tickets/Tickets.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tickets/new',
+    name: 'TicketCreate',
+    component: () => import('@/views/tickets/TicketCreate.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/tickets/:id',
+    name: 'TicketDetail',
+    component: () => import('@/views/tickets/TicketDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin.vue'),

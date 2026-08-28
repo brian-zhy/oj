@@ -1,0 +1,462 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import apiClient from '@/api/client'
+
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+
+const CATEGORIES: Record<string, string> = {
+  consult: '一般咨询',
+  suggestion: '建议反馈',
+  bug: 'Bug反馈',
+  appeal: '账号申诉',
+}
+
+const STATUS: Record<string, { text: string; color: string }> = {
+  pending: { text: '待处理', color: '#E6A23C' },
+  replied: { text: '待补充', color: '#3498db' },
+  processing: { text: '处理中', color: '#3498db' },
+  suspended: { text: '挂起', color: '#909399' },
+  resolved: { text: '已完成', color: '#52C41A' },
+  closed: { text: '已关闭', color: '#909399' },
+  deleted: { text: '已删除', color: '#e74c3c' },
+}
+
+const OPEN_STATUSES = ['pending', 'replied', 'processing', 'suspended']
+
+const ticket = ref<any>(null)
+const loading = ref(true)
+const error = ref('')
+
+const replyContent = ref('')
+const replySubmitting = ref(false)
+const newStatus = ref('')
+const statusSubmitting = ref(false)
+
+const me = computed(() => authStore.currentUser)
+const isStaff = computed(() => ticket.value?.can_manage)
+const isCreator = computed(() => ticket.value?.is_creator)
+const canReply = computed(() => {
+  if (!ticket.value) return false
+  if (isStaff.value) return true
+  return isCreator.value && OPEN_STATUSES.includes(ticket.value.status)
+})
+
+const letterAvatar = (name: string) => {
+  const ch = (name || 'U').trim().charAt(0).toUpperCase() || 'U'
+  return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23e74c3c'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='16' font-family='Arial'%3E${encodeURIComponent(ch)}%3C/text%3E%3C/svg%3E`
+}
+
+const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '')
+
+const loadTicket = async () => {
+  loading.value = true
+  error.value = ''
+  try {
+    ticket.value = await apiClient.get(`/tickets/${route.params.id}`)
+    newStatus.value = ticket.value.status
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || err.message || '加载失败'
+  } finally {
+    loading.value = false
+  }
+}
+
+const submitReply = async () => {
+  if (!replyContent.value.trim()) return
+  replySubmitting.value = true
+  try {
+    await apiClient.post(`/tickets/${route.params.id}/replies`, { content: replyContent.value.trim() })
+    replyContent.value = ''
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '回复失败')
+  } finally {
+    replySubmitting.value = false
+  }
+}
+
+const changeStatus = async () => {
+  if (!newStatus.value || newStatus.value === ticket.value.status) return
+  statusSubmitting.value = true
+  try {
+    await apiClient.put(`/tickets/${route.params.id}/status`, { status: newStatus.value })
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '状态更新失败')
+  } finally {
+    statusSubmitting.value = false
+  }
+}
+
+const closeOwn = async () => {
+  if (!confirm('确定关闭这个工单吗？')) return
+  try {
+    await apiClient.put(`/tickets/${route.params.id}/status`, { status: 'closed' })
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '关闭失败')
+  }
+}
+
+onMounted(() => loadTicket())
+</script>
+
+<template>
+  <div class="ticket-detail-page">
+    <div class="detail-container">
+      <div v-if="loading" class="state-box">加载中...</div>
+      <div v-else-if="error" class="state-box error-text">❌ {{ error }}</div>
+
+      <template v-else-if="ticket">
+        <!-- 头部 -->
+        <div class="ticket-head card">
+          <div class="head-row">
+            <span class="ticket-no">{{ ticket.ticket_no }}</span>
+            <h2 class="ticket-title">{{ ticket.title }}</h2>
+            <span class="status-badge" :style="{ backgroundColor: STATUS[ticket.status]?.color }">
+              {{ STATUS[ticket.status]?.text || ticket.status }}
+            </span>
+          </div>
+          <div class="head-meta">
+            <span>类别：{{ CATEGORIES[ticket.category] || ticket.category }}</span>
+            <span v-if="ticket.is_public">· 公开工单</span>
+            <span v-else>· 私密工单</span>
+            <span>· 创建于 {{ fmtTime(ticket.created_at) }}</span>
+          </div>
+
+          <!-- 管理员状态操作 -->
+          <div v-if="isStaff" class="staff-bar">
+            <span class="staff-label">处理操作：</span>
+            <select v-model="newStatus" class="status-select">
+              <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
+            </select>
+            <button
+              class="btn-status"
+              :disabled="statusSubmitting || newStatus === ticket.status"
+              @click="changeStatus"
+            >{{ statusSubmitting ? '更新中...' : '更新状态' }}</button>
+          </div>
+
+          <!-- 创建者关闭 -->
+          <div v-else-if="isCreator && OPEN_STATUSES.includes(ticket.status)" class="staff-bar">
+            <span class="staff-label">问题已解决？</span>
+            <button class="btn-close-own" @click="closeOwn">关闭工单</button>
+          </div>
+        </div>
+
+        <!-- 回复时间线 -->
+        <div class="replies">
+          <div
+            v-for="r in ticket.replies"
+            :key="r.id"
+            class="reply-item"
+            :class="{ staff: r.is_staff }"
+          >
+            <div class="reply-head">
+              <img
+                :src="r.user?.avatar_url || letterAvatar(r.user?.username)"
+                class="reply-avatar"
+                :alt="r.user?.username"
+              >
+              <span class="reply-user">{{ r.user?.username || '未知用户' }}</span>
+              <span v-if="r.is_staff" class="staff-badge">管理员</span>
+              <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
+              <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
+            </div>
+            <div class="reply-content">{{ r.content }}</div>
+          </div>
+        </div>
+
+        <!-- 回复框 -->
+        <div v-if="canReply" class="reply-box card">
+          <div class="reply-box-head">
+            {{ isStaff ? '以管理员身份回复（回复后状态将变为「待补充」）' : '补充信息 / 追问' }}
+          </div>
+          <textarea
+            v-model="replyContent"
+            rows="4"
+            class="reply-textarea"
+            placeholder="请输入回复内容……"
+            maxlength="5000"
+          ></textarea>
+          <div class="reply-actions">
+            <button class="btn-submit" :disabled="replySubmitting || !replyContent.trim()" @click="submitReply">
+              {{ replySubmitting ? '发送中...' : '回复' }}
+            </button>
+          </div>
+        </div>
+        <div v-else class="state-box closed-tip">该工单已完结，如仍有问题请返回<a href="/tickets" class="link">工单中心</a>新建工单。</div>
+
+        <div class="back-bar">
+          <button class="btn-back" @click="router.push('/tickets')">← 返回工单中心</button>
+        </div>
+      </template>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.ticket-detail-page {
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.detail-container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 18px 22px;
+}
+
+.state-box {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.error-text {
+  color: #e74c3c;
+}
+
+.closed-tip .link {
+  color: #e74c3c;
+  margin: 0 4px;
+}
+
+.ticket-head {
+  margin-bottom: 16px;
+}
+
+.head-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ticket-no {
+  color: #8a9aa8;
+  font-weight: 600;
+}
+
+.ticket-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0;
+  flex: 1;
+  min-width: 200px;
+  word-break: break-word;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 14px;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.head-meta {
+  margin-top: 10px;
+  color: #8a9aa8;
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.staff-bar {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #edf2f7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staff-label {
+  font-size: 13px;
+  color: #8a9aa8;
+}
+
+.status-select {
+  padding: 7px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #4a5568;
+}
+
+.btn-status {
+  padding: 7px 18px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-status:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-close-own {
+  padding: 7px 18px;
+  background: #f3f4f6;
+  color: #4a5568;
+  border: none;
+  border-radius: 18px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.replies {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reply-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 14px 18px;
+}
+
+.reply-item.staff {
+  border-left: 3px solid #e74c3c;
+}
+
+.reply-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.reply-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #f0f2f5;
+}
+
+.reply-user {
+  font-weight: 700;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.staff-badge {
+  background: #e74c3c;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.creator-badge {
+  background: #3498db;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.reply-time {
+  color: #a0aec0;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.reply-content {
+  color: #2d3748;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.reply-box-head {
+  font-size: 13px;
+  color: #8a9aa8;
+  margin-bottom: 10px;
+}
+
+.reply-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.reply-textarea:focus {
+  border-color: #e74c3c;
+}
+
+.reply-actions {
+  margin-top: 10px;
+  text-align: right;
+}
+
+.btn-submit {
+  padding: 8px 28px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.back-bar {
+  margin-top: 16px;
+}
+
+.btn-back {
+  padding: 8px 22px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+</style>
