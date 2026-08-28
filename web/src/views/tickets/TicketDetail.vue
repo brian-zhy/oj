@@ -125,21 +125,6 @@ onMounted(() => loadTicket())
           <!-- 字段信息网格 -->
           <div class="meta-grid">
             <div class="meta-item">
-              <div class="meta-label">创建者</div>
-              <div class="meta-value">
-                <router-link
-                  :to="ticket.creator?.user_number ? `/user/${ticket.creator.user_number}` : '#'"
-                  class="creator-link"
-                  :style="{ color: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
-                >{{ ticket.creator?.username || '未知用户' }}</router-link>
-                <span
-                  v-if="ticket.creator?.user_tag"
-                  class="user-tag-display"
-                  :style="{ backgroundColor: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
-                >{{ ticket.creator.user_tag }}</span>
-              </div>
-            </div>
-            <div class="meta-item">
               <div class="meta-label">责任人</div>
               <div class="meta-value muted">暂无</div>
             </div>
@@ -158,8 +143,11 @@ onMounted(() => loadTicket())
             <span v-else>🔒 私密工单（仅创建者与管理员可见）</span>
           </div>
 
-          <!-- 管理员状态操作 -->
-          <div v-if="isStaff" class="staff-bar">
+        </div>
+
+        <!-- 操作状态条（工单描述之下、回复之上） -->
+        <div class="action-bar card">
+          <template v-if="isStaff">
             <span class="staff-label">处理操作：</span>
             <select v-model="newStatus" class="status-select">
               <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
@@ -169,13 +157,11 @@ onMounted(() => loadTicket())
               :disabled="statusSubmitting || newStatus === ticket.status"
               @click="changeStatus"
             >{{ statusSubmitting ? '更新中...' : '更新状态' }}</button>
-          </div>
-
-          <!-- 创建者关闭 -->
-          <div v-else-if="isCreator && OPEN_STATUSES.includes(ticket.status)" class="staff-bar">
+          </template>
+          <template v-else-if="isCreator && OPEN_STATUSES.includes(ticket.status)">
             <span class="staff-label">问题已解决？</span>
             <button class="btn-close-own" @click="closeOwn">关闭工单</button>
-          </div>
+          </template>
         </div>
 
         <!-- 回复时间线 -->
@@ -405,6 +391,14 @@ onMounted(() => loadTicket())
   border-radius: 18px;
   font-size: 13px;
   cursor: pointer;
+}
+
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
 }
 
 .replies {
