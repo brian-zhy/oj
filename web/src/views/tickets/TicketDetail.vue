@@ -278,8 +278,12 @@ onMounted(() => loadTicket())
                   class="reply-avatar"
                   :alt="r.user?.username"
                 >
-                <span class="reply-user">{{ r.user?.username || '未知用户' }}</span>
-                <span v-if="r.is_staff" class="staff-badge">管理员</span>
+                <span class="reply-user" :style="{ color: userColor(r.user) }">{{ r.user?.username || '未知用户' }}</span>
+                <span
+                  v-if="r.user?.user_tag || r.user?.is_admin"
+                  class="user-tag-display"
+                  :style="{ backgroundColor: userColor(r.user) }"
+                >{{ r.user?.user_tag || '管理员' }}</span>
                 <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
                 <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
               </div>
