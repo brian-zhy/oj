@@ -56,6 +56,9 @@ const onAvatarChange = async (e: Event) => {
   }
 
   avatarUploading.value = true
+  const previousAvatar = userProfile.value.avatar_url || ''
+  let failMsg = ''
+
   try {
     const fd = new FormData()
     fd.append('file', file)
@@ -63,17 +66,31 @@ const onAvatarChange = async (e: Event) => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     userProfile.value.avatar_url = res.avatar_url
+  } catch (error: any) {
+    failMsg = error.response?.data?.detail || ''
+    // 请求报错时向服务端核实真实结果——请求可能被代理/插件改写，但实际已成功
+    try {
+      const me: any = await apiClient.get('/auth/me')
+      if (me?.avatar_url && me.avatar_url !== previousAvatar) {
+        userProfile.value.avatar_url = me.avatar_url
+        failMsg = ''
+      }
+    } catch {
+      /* 核实也失败则维持失败判定 */
+    }
+  }
+
+  avatarUploading.value = false
+  if (failMsg) {
+    showMessage(failMsg || '头像上传失败，请稍后重试', 'error')
+  } else {
     // 同步顶栏等处的本地缓存
     if (authStore.currentUser) {
-      authStore.currentUser.avatar_url = res.avatar_url
+      authStore.currentUser.avatar_url = userProfile.value.avatar_url
     }
     showMessage('头像更新成功', 'success')
-  } catch (error: any) {
-    showMessage(error.response?.data?.detail || '头像上传失败，请稍后重试', 'error')
-  } finally {
-    avatarUploading.value = false
-    if (avatarInputRef.value) avatarInputRef.value.value = ''
   }
+  if (avatarInputRef.value) avatarInputRef.value.value = ''
 }
 
 // 加载状态
