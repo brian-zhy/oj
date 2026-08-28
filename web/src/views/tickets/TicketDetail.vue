@@ -76,6 +76,20 @@ const letterAvatar = (name: string) => {
 
 const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '')
 
+// 相对时间（如「25 天前」）
+const relTime = (iso: string) => {
+  if (!iso) return ''
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`
+  if (diff < 2592000) return `${Math.floor(diff / 86400)} 天前`
+  return new Date(iso).toLocaleDateString('zh-CN')
+}
+
+// 用户名颜色（管理员紫 / 普通红）
+const userColor = (u: any) => (u?.is_admin ? '#9C3DCF' : '#e74c3c')
+
 const loadTicket = async () => {
   loading.value = true
   error.value = ''
@@ -236,11 +250,19 @@ onMounted(() => loadTicket())
         <div v-if="ticket.replies.filter((r: any) => !r.action_text).length > 1" class="replies">
           <div class="replies-title">回复（{{ ticket.replies.filter((r: any) => !r.action_text).length - 1 }}）</div>
           <template v-for="r in ticket.replies.slice(1)" :key="r.id">
-            <!-- 状态变更动作横幅 -->
+            <!-- 状态变更记录（洛谷样式：头像+彩色名+徽章+状态名，下方相对时间） -->
             <div v-if="r.action_text" class="action-record">
-              <b>{{ r.user?.username || '未知用户' }}</b>
-              {{ r.action_text }}
-              <span class="action-time">{{ fmtTime(r.created_at) }}</span>
+              <div class="action-head">
+                <img
+                  :src="r.user?.avatar_url || letterAvatar(r.user?.username)"
+                  class="reply-avatar"
+                  :alt="r.user?.username"
+                >
+                <span class="reply-user" :style="{ color: userColor(r.user) }">{{ r.user?.username || '未知用户' }}</span>
+                <span v-if="r.user?.is_admin" class="staff-badge">管理员</span>
+                <span class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
+              </div>
+              <div class="action-time-line">{{ relTime(r.created_at) }}</div>
             </div>
             <!-- 普通回复 -->
             <div v-else class="reply-item" :class="{ staff: r.is_staff }">
@@ -531,24 +553,32 @@ onMounted(() => loadTicket())
 }
 
 .action-record {
-  text-align: center;
-  padding: 8px 16px;
-  background: #f0f2f5;
-  border-radius: 20px;
-  color: #6b7280;
-  font-size: 13px;
-  margin: 0 auto;
-  width: fit-content;
-  max-width: 100%;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 12px 18px;
 }
 
-.action-record b {
-  color: #2c3e50;
+.action-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-text {
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.action-status {
+  color: #52C41A;
   font-weight: 700;
 }
 
-.action-time {
-  margin-left: 8px;
+.action-time-line {
+  margin-top: 4px;
+  padding-left: 34px;
   font-size: 12px;
   color: #a0aec0;
 }

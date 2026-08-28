@@ -283,14 +283,14 @@ class TicketService:
         else:
             raise PermissionError("无权限操作该工单")
 
-        # 留下状态变更记录（时间线中的系统横幅）
+        # 留下状态变更记录（存纯状态名，前端渲染为「某某 将工单状态设置为 已完成」）
         action = TICKET_STATUSES.get(new_status, new_status)
         db.add(TicketReply(
             ticket_id=ticket.id,
             user_id=user.id,
             content="",
             is_staff=True,
-            action_text=f"将工单状态设置为「{action}」",
+            action_text=action,
         ))
 
         await db.commit()
