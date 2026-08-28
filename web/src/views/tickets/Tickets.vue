@@ -42,7 +42,7 @@ const loadTickets = async (append = false) => {
   loading.value = true
   error.value = ''
   try {
-    let url = `/tickets?scope=${scope.value}&page=${page.value}&page_size=20`
+    let url = `/api/tickets?scope=${scope.value}&page=${page.value}&page_size=20`
     if (statusFilter.value) url += `&status=${statusFilter.value}`
     const data: any = await apiClient.get(url)
     // 响应校验：防止被劫持/改写的请求返回非预期内容
