@@ -247,8 +247,10 @@ onMounted(() => loadTicket())
         </div>
 
         <!-- 回复时间线 -->
-        <div v-if="ticket.replies.filter((r: any) => !r.action_text).length > 1" class="replies">
-          <div class="replies-title">回复（{{ ticket.replies.filter((r: any) => !r.action_text).length - 1 }}）</div>
+        <div v-if="ticket.replies.slice(1).length > 0" class="replies">
+          <div v-if="ticket.replies.filter((r: any) => !r.action_text).length > 1" class="replies-title">
+            回复（{{ ticket.replies.filter((r: any) => !r.action_text).length - 1 }}）
+          </div>
           <template v-for="r in ticket.replies.slice(1)" :key="r.id">
             <!-- 状态变更记录（洛谷样式：头像+彩色名+徽章+状态名，下方相对时间） -->
             <div v-if="r.action_text" class="action-record">
