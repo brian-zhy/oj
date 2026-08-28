@@ -29,9 +29,52 @@ const userProfile = ref({
 const isEditing = ref(false)
 const editForm = ref({
   bio: '',
-  user_tag: '',
-  avatar_url: ''
+  user_tag: ''
 })
+
+// ===== 头像上传 =====
+const avatarUploading = ref(false)
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+
+const pickAvatar = () => {
+  if (avatarUploading.value) return
+  avatarInputRef.value?.click()
+}
+
+const onAvatarChange = async (e: Event) => {
+  const files = (e.target as HTMLInputElement).files
+  if (!files || !files.length) return
+  const file = files[0]
+
+  if (!file.type.startsWith('image/')) {
+    showMessage('请选择图片文件', 'error')
+    return
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showMessage('图片不能超过 5MB', 'error')
+    return
+  }
+
+  avatarUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res: any = await apiClient.post('/users/me/avatar', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    userProfile.value.avatar_url = res.avatar_url
+    // 同步顶栏等处的本地缓存
+    if (authStore.currentUser) {
+      authStore.currentUser.avatar_url = res.avatar_url
+    }
+    showMessage('头像更新成功', 'success')
+  } catch (error: any) {
+    showMessage(error.response?.data?.detail || '头像上传失败，请稍后重试', 'error')
+  } finally {
+    avatarUploading.value = false
+    if (avatarInputRef.value) avatarInputRef.value.value = ''
+  }
+}
 
 // 加载状态
 const loading = ref(false)
@@ -50,9 +93,6 @@ const messageType = ref<'success' | 'error'>('success')
 
 // 计算头像显示
 const avatarDisplay = computed(() => {
-  if (editForm.value.avatar_url) {
-    return editForm.value.avatar_url
-  }
   if (userProfile.value.avatar_url) {
     return userProfile.value.avatar_url
   }
@@ -81,8 +121,7 @@ const loadProfile = async () => {
     userProfile.value = response
     editForm.value = {
       bio: response.bio || '',
-      user_tag: response.user_tag || '',
-      avatar_url: response.avatar_url || ''
+      user_tag: response.user_tag || ''
     }
 
     // 加载统计信息（如果有相关API）
@@ -100,8 +139,7 @@ const startEdit = () => {
   isEditing.value = true
   editForm.value = {
     bio: userProfile.value.bio || '',
-    user_tag: userProfile.value.user_tag || '',
-    avatar_url: userProfile.value.avatar_url || ''
+    user_tag: userProfile.value.user_tag || ''
   }
 }
 
@@ -110,8 +148,7 @@ const cancelEdit = () => {
   isEditing.value = false
   editForm.value = {
     bio: userProfile.value.bio || '',
-    user_tag: userProfile.value.user_tag || '',
-    avatar_url: userProfile.value.avatar_url || ''
+    user_tag: userProfile.value.user_tag || ''
   }
 }
 
@@ -121,10 +158,9 @@ const saveProfile = async () => {
 
   saving.value = true
   try {
-    const response = await apiClient.put('/users/me/profile', {
+    const response: any = await apiClient.put('/users/me/profile', {
       bio: editForm.value.bio,
-      user_tag: editForm.value.user_tag,
-      avatar_url: editForm.value.avatar_url
+      user_tag: editForm.value.user_tag
     })
 
     // 更新本地用户信息
@@ -212,15 +248,24 @@ onMounted(() => {
       <!-- 头部 -->
       <div class="profile-header">
         <div class="avatar-section">
-          <div class="avatar-wrapper">
+          <div class="avatar-wrapper avatar-clickable" title="点击更换头像" @click="pickAvatar">
             <img
               :src="avatarDisplay"
               :alt="userProfile.username"
               class="avatar"
               onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23e74c3c%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2216%22 font-family=%22Arial%22%3EU%3C/text%3E%3C/svg%3E'"
             />
+            <div v-if="avatarUploading" class="avatar-overlay">上传中…</div>
+            <div v-else class="avatar-overlay avatar-overlay-hover">📷 更换</div>
             <div v-if="userProfile.is_admin" class="admin-badge">管理员</div>
           </div>
+          <input
+            ref="avatarInputRef"
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            style="display: none"
+            @change="onAvatarChange"
+          >
         </div>
 
         <div class="user-info">
@@ -284,13 +329,8 @@ onMounted(() => {
         </div>
 
         <div class="form-group">
-          <label>头像URL</label>
-          <input
-            v-model="editForm.avatar_url"
-            type="url"
-            class="form-input"
-            placeholder="https://example.com/avatar.jpg"
-          />
+          <label>头像</label>
+          <p class="avatar-hint">直接点击左上角头像即可上传新头像（支持 jpg/png/gif/webp，5MB 以内）</p>
         </div>
       </div>
 
@@ -452,6 +492,36 @@ onMounted(() => {
 .avatar-wrapper {
   position: relative;
   display: inline-block;
+}
+
+.avatar-clickable {
+  cursor: pointer;
+}
+
+.avatar-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 0;
+  text-align: center;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 0 0 80px 80px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-clickable:hover .avatar-overlay-hover,
+.avatar-overlay:not(.avatar-overlay-hover) {
+  opacity: 1;
+}
+
+.avatar-hint {
+  color: #9ca3af;
+  font-size: 13px;
 }
 
 .avatar {

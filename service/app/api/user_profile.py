@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import time
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,6 +15,9 @@ from app.schemas.user import UserProfileUpdate, PasswordUpdate, UserOut
 from app.services import user_profile as user_service
 
 router = APIRouter(prefix="/users", tags=["user-profile"])
+
+_ALLOWED_AVATAR_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+_MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 @router.get("/me", response_model=UserOut, summary="获取当前用户信息")
@@ -80,16 +86,39 @@ async def update_user_password(
 
 @router.post("/me/avatar", summary="上传用户头像")
 async def upload_avatar(
+    file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, str]:
-    """上传用户头像（占位实现）。
+    """上传当前用户的头像文件（multipart/form-data，字段名 file）。
 
-    Returns:
-        上传成功消息
+    保存到服务端 static/uploads/avatars/，并将 avatar_url 更新为对应路径。
     """
-    # TODO: 实现文件上传功能
-    return {"message": "头像上传功能待实现"}
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_AVATAR_EXT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="仅支持 jpg/jpeg/png/gif/webp 图片",
+        )
+
+    content = await file.read()
+    if len(content) > _MAX_AVATAR_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片不能超过 5MB",
+        )
+
+    upload_dir = Path(__file__).resolve().parent.parent.parent / "static" / "uploads" / "avatars"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{current_user.user_number}_avatar_{int(time.time() * 1000)}{ext}"
+    (upload_dir / filename).write_bytes(content)
+
+    avatar_url = f"/static/uploads/avatars/{filename}"
+    current_user.avatar_url = avatar_url
+    await db.commit()
+
+    return {"success": True, "avatar_url": avatar_url}
 
 
 @router.get("/{user_id}", response_model=UserOut, summary="获取指定用户信息")
