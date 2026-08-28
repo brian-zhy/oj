@@ -261,7 +261,11 @@ onMounted(() => loadTicket())
                   :alt="r.user?.username"
                 >
                 <span class="reply-user" :style="{ color: userColor(r.user) }">{{ r.user?.username || '未知用户' }}</span>
-                <span v-if="r.user?.is_admin" class="staff-badge">管理员</span>
+                <span
+                  v-if="r.user?.user_tag || r.user?.is_admin"
+                  class="user-tag-display"
+                  :style="{ backgroundColor: userColor(r.user) }"
+                >{{ r.user?.user_tag || '管理员' }}</span>
                 <span class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
               </div>
               <div class="action-time-line">{{ relTime(r.created_at) }}</div>
