@@ -59,6 +59,8 @@ class TicketReply(Base, TimestampMixin):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     # 是否为管理员（处理者）回复
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # 状态变更动作记录（非空 = 系统动作横幅，如「将工单状态设置为 已完成」）
+    action_text: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     user: Mapped["User"] = relationship(  # noqa: F821
         "User", foreign_keys=[user_id], lazy="joined"

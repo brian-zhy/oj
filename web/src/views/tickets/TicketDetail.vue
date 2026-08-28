@@ -233,27 +233,31 @@ onMounted(() => loadTicket())
         </div>
 
         <!-- 回复时间线 -->
-        <div v-if="ticket.replies.length > 1" class="replies">
-          <div class="replies-title">回复（{{ ticket.replies.length - 1 }}）</div>
-          <div
-            v-for="r in ticket.replies.slice(1)"
-            :key="r.id"
-            class="reply-item"
-            :class="{ staff: r.is_staff }"
-          >
-            <div class="reply-head">
-              <img
-                :src="r.user?.avatar_url || letterAvatar(r.user?.username)"
-                class="reply-avatar"
-                :alt="r.user?.username"
-              >
-              <span class="reply-user">{{ r.user?.username || '未知用户' }}</span>
-              <span v-if="r.is_staff" class="staff-badge">管理员</span>
-              <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
-              <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
+        <div v-if="ticket.replies.filter((r: any) => !r.action_text).length > 1" class="replies">
+          <div class="replies-title">回复（{{ ticket.replies.filter((r: any) => !r.action_text).length - 1 }}）</div>
+          <template v-for="r in ticket.replies.slice(1)" :key="r.id">
+            <!-- 状态变更动作横幅 -->
+            <div v-if="r.action_text" class="action-record">
+              <b>{{ r.user?.username || '未知用户' }}</b>
+              {{ r.action_text }}
+              <span class="action-time">{{ fmtTime(r.created_at) }}</span>
             </div>
-            <div class="reply-content">{{ r.content }}</div>
-          </div>
+            <!-- 普通回复 -->
+            <div v-else class="reply-item" :class="{ staff: r.is_staff }">
+              <div class="reply-head">
+                <img
+                  :src="r.user?.avatar_url || letterAvatar(r.user?.username)"
+                  class="reply-avatar"
+                  :alt="r.user?.username"
+                >
+                <span class="reply-user">{{ r.user?.username || '未知用户' }}</span>
+                <span v-if="r.is_staff" class="staff-badge">管理员</span>
+                <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
+                <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
+              </div>
+              <div class="reply-content">{{ r.content }}</div>
+            </div>
+          </template>
         </div>
 
         <!-- 回复框 -->
@@ -524,6 +528,29 @@ onMounted(() => loadTicket())
   font-size: 14px;
   color: #8a9aa8;
   padding: 0 4px;
+}
+
+.action-record {
+  text-align: center;
+  padding: 8px 16px;
+  background: #f0f2f5;
+  border-radius: 20px;
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.action-record b {
+  color: #2c3e50;
+  font-weight: 700;
+}
+
+.action-time {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #a0aec0;
 }
 
 .replies {
