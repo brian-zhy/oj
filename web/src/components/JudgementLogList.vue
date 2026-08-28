@@ -6,7 +6,7 @@ import apiClient from '@/api/client'
 const props = defineProps<{ showAdmin?: boolean }>()
 
 // ================================================================
-// 1. 状态（与参考项目一致：每页30条，倒序分页加载）
+// 1. 状态（每页30条，倒序分页加载）
 // ================================================================
 const PAGE_SIZE = 30
 
@@ -42,14 +42,8 @@ const canManageLogs = ref(false)
 const loadError = ref('')
 
 // ================================================================
-// 2. 工具函数（与参考项目完全一致）
+// 2. 工具函数
 // ================================================================
-function letterAvatar(name: string): string {
-  const ch = (name || 'U').trim().charAt(0).toUpperCase() || 'U'
-  return 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23e74c3c%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22white%22 font-size=%2216%22%3E' +
-    ch + '%3C/text%3E%3C/svg%3E'
-}
-
 function formatTime(iso: string): string {
   if (!iso) return '未知时间'
   try {
@@ -62,91 +56,20 @@ function formatTime(iso: string): string {
   }
 }
 
-// ================================================================
-// 3. 操作类型映射（颜色 + 图标 + 标签，与参考项目完全一致）
-// ================================================================
-interface ActionInfo {
-  label: string
-  color: string
-  iconPath: string
-}
+const COLOR_RED = '#e74c3c'
+const COLOR_PURPLE = '#9C3DCF'
+const COLOR_BROWN = '#AD8B00'
+const COLOR_BANNED = '#95a5a6'
 
-const ICON_GRANT = 'M304 304c97.2 0 176 78.8 176 176l0 8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8c0-70.7-57.3-128-128-128l-96 0c-70.7 0-128 57.3-128 128l0 8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8c0-97.2 78.8-176 176-176l96 0zM528 80c13.3 0 24 10.7 24 24l0 48 48 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-48 0 0 48c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-48-48 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l48 0 0-48c0-13.3 10.7-24 24-24zM256 256a128 128 0 1 1 0-256 128 128 0 1 1 0 256zm0-208a80 80 0 1 0 0 160 80 80 0 1 0 0-160z'
-const ICON_REVOKE = 'M304 304c97.2 0 176 78.8 176 176l0 8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8c0-70.7-57.3-128-128-128l-96 0c-70.7 0-128 57.3-128 128l0 8c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-8c0-97.2 78.8-176 176-176l96 0zm-48-48a128 128 0 1 1 0-256 128 128 0 1 1 0 256zm0-208a80 80 0 1 0 0 160 80 80 0 1 0 0-160zM600 152c13.3 0 24 10.7 24 24s-10.7 24-24 24l-144 0c-13.3 0-24-10.7-24-24s10.7-24 24-24l144 0z'
-const ICON_BAN = 'M385.1 419.1L92.9 126.9c-28.1 35.5-44.9 80.3-44.9 129.1 0 114.9 93.1 208 208 208 48.8 0 93.7-16.8 129.1-44.9zm33.9-33.9c28.1-35.5 44.9-80.3 44.9-129.1 0-114.9-93.1-208-208-208-48.8 0-93.7 16.8-129.1 44.9L419.1 385.1zM0 256a256 256 0 1 1 512 0 256 256 0 1 1 -512 0z'
-const ICON_ROTATE = 'M72 128l24 0 0 16c0 70.7 57.3 128 128 128s128-57.3 128-128l0-16 24 0c13.3 0 24-10.7 24-24s-10.7-24-24-24l-30.7 0c-10.4-53.7-31.9-112-68.3-112-9.6 0-19 3.9-27.5 8.2-8.2 4.1-18.4 7.8-25.5 7.8s-17.3-3.7-25.5-7.8c-8.5-4.3-17.9-8.2-27.5-8.2-36.4 0-57.8 58.3-68.3 112L72 80c-13.3 0-24 10.7-24 24s10.7 24 24 24zm152 0l80 0 0 16c0 44.2-35.8 80-80 80s-80-35.8-80-80l0-16 80 0zM193.5 304c-9.7 0-17.5 7.8-17.5 17.5 0 4.2 1.5 8.2 4.2 11.4l27.2 31.8-18.5 67.8-55.9-102C127 319.5 113.3 315 101.9 320.3 41.8 348.3 0 409.2 0 480l0 8c0 13.3 10.7 24 24 24s24-10.7 24-24l0-8c0-43.4 21.6-81.8 54.7-105L171 499.5c4.2 7.7 12.3 12.5 21 12.5l64 0c8.8 0 16.8-4.8 21-12.5L345.3 375c33.1 23.2 54.7 61.6 54.7 105l0 8c0 13.3 10.7 24 24 24s24-10.7 24-24l0-8c0-70.8-41.8-131.7-101.9-159.7-11.5-5.3-25.1-.9-31.2 10.2l-56.2 102.5-18.4-68.2 27.4-32c2.7-3.2 4.2-7.2 4.2-11.4 0-9.7-7.8-17.5-17.5-17.5l-61 0z'
-const ICON_BROWN = 'M69.3 36l48 32c11 7.4 14 22.3 6.7 33.3s-22.3 14-33.3 6.7l-48-32c-11-7.4-14-22.3-6.7-33.3s22.3-14 33.3-6.7zM597.3 76l-48 32c-11 7.4-25.9 4.4-33.3-6.7s-4.4-25.9 6.7-33.3l48-32c11-7.4 25.9-4.4 33.3 6.7s4.4 25.9-6.7 33.3zM24 192l48 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-48 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zm544 0l48 0c13.3 0 24 10.7 24 24s-10.7 24-24 24l-48 0c-13.3 0-24-10.7-24-24s10.7-24 24-24zM496 320c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-352 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l0-112c0-97.2 78.8-176 176-176s176 78.8 176 176l0 112zm-48 0l0-112c0-70.7-57.3-128-128-128S192 137.3 192 208l0 112 256 0zM144 432l352 0 0-64-352 0 0 64zM312 160c-22.1 0-40 17.9-40 40 0 13.3-10.7 24-24 24s-24-10.7-24-24c0-48.6 39.4-88 88-88 13.3 0 24 10.7 24 24s-10.7 24-24 24z'
-const ICON_UNKNOWN = 'M256 0c-70.7 0-128 57.3-128 128 0 70.7 57.3 128 128 128s128-57.3 128-128C384 57.3 326.7 0 256 0zm0 64c35.3 0 64 28.7 64 64s-28.7 64-64 64-64-28.7-64-64S220.7 64 256 64zM128 384c0-70.7 57.3-128 128-128s128 57.3 128 128v32H128v-32z'
-
-function getActionInfo(log: JudgementLog): ActionInfo {
-  const action = log.action_type
-
-  // 新的分类系统
-  // 1. 授予权限（全是普通权限的授予）
-  if (action === 'grant_normal') {
-    return { label: '授予权限', color: '#52C41A', iconPath: ICON_GRANT }
-  }
-
-  // 2. 撤销权限（全是普通权限的撤销）
-  if (action === 'revoke_normal') {
-    return { label: '撤销权限', color: '#E74C3C', iconPath: ICON_REVOKE }
-  }
-
-  // 3. 陶片放逐（既有普通权限的授予又有撤销）
-  if (action === 'ostracism') {
-    return { label: '陶片放逐', color: '#E67E22', iconPath: ICON_BAN }
-  }
-
-  // 4. 管理轮换（全是管理权限的变更）
-  if (action === 'admin_rotation') {
-    return { label: '管理轮换', color: '#9D3DCF', iconPath: ICON_ROTATE }
-  }
-
-  // 5. 解除棕名（学术不端标记解除）
-  if (action === 'unbrown') {
-    return { label: '解除棕名', color: '#52C41A', iconPath: ICON_GRANT }
-  }
-
-  // 向后兼容：旧的日志类型
-  const perm = log.action_detail?.permission
-
-  // 管理权限批量调整 → 归入"管理轮换"
-  if (action === 'perm_update') {
-    return { label: '管理轮换', color: '#9D3DCF', iconPath: ICON_ROTATE }
-  }
-
-  // 管理轮换
-  const managerPerms = ['is_admin', 'can_manage_users', 'can_manage_posts']
-  if ((action === 'grant_perm' || action === 'revoke_perm') && managerPerms.includes(perm)) {
-    return { label: '管理轮换', color: '#9D3DCF', iconPath: ICON_ROTATE }
-  }
-
-  // 棕名惩罚（作弊者棕标）
-  if (action === 'brown_penalty') {
-    return { label: '棕名惩罚', color: '#8d6e63', iconPath: ICON_BROWN }
-  }
-
-  // 用户封禁
-  if (action === 'ban' || (action === 'revoke_perm' && perm === 'is_banned')) {
-    return { label: '用户封禁', color: '#E74C3C', iconPath: ICON_BAN }
-  }
-
-  // 授予权限（unban / grant_perm - 向后兼容）
-  if (action === 'unban' || action === 'grant_perm') {
-    return { label: '授予权限', color: '#52C41A', iconPath: ICON_GRANT }
-  }
-
-  // 撤销权限（revoke_perm 其他 - 向后兼容）
-  if (action === 'revoke_perm') {
-    return { label: '撤销权限', color: '#E74C3C', iconPath: ICON_REVOKE }
-  }
-
-  // 默认（未知操作）
-  return { label: '未知操作', color: '#718096', iconPath: ICON_UNKNOWN }
+function getUserColor(user: LogUser): string {
+  if (user.is_banned) return COLOR_BANNED
+  if (user.is_cheater) return COLOR_BROWN
+  if (user.is_admin) return COLOR_PURPLE
+  return COLOR_RED
 }
 
 // ================================================================
-// 4. 权限名称映射（与参考项目完全一致）
+// 3. 权限名称映射
 // ================================================================
 function getPermName(perm: string): string {
   const map: Record<string, string> = {
@@ -167,132 +90,109 @@ function isUnbrownAction(action_type: string): boolean {
 }
 
 // ================================================================
-// 5. 单条日志渲染所需数据（与参考项目 renderLog 完全一致）
+// 4. 操作徽章（截图样式：圆角胶囊，授予绿 / 撤销红 / 封禁类黄 / 管理紫）
 // ================================================================
-interface PermChange {
-  word: string
-  cls: string
-  name: string
+interface Badge {
+  text: string
+  color: string
 }
 
+const BADGE_GRANT = '#52C41A'
+const BADGE_REVOKE = '#E74C3C'
+const BADGE_BAN = '#E6A23C'
+const BADGE_MANAGE = '#9D3DCF'
+const BADGE_BROWN = '#8d6e63'
+const BADGE_UNKNOWN = '#909399'
+
+function makeBadge(word: string, permName: string, color: string): Badge {
+  return { text: `${word} ${permName} 权限`, color }
+}
+
+function buildBadges(log: JudgementLog): { badges: Badge[]; extra: string } {
+  const d = log.action_detail || {}
+  const badges: Badge[] = []
+  let extra = ''
+
+  const permLine = (word: string, perm: string): Badge => {
+    // 封禁类权限（进入主站）的撤销用黄色，其余沿用红绿
+    if (perm === 'is_banned') {
+      return makeBadge(word, getPermName(perm), word === '撤销' ? BADGE_BAN : BADGE_GRANT)
+    }
+    return makeBadge(word, getPermName(perm), word === '撤销' ? BADGE_REVOKE : BADGE_GRANT)
+  }
+
+  const pickChanges = (): Badge[] => {
+    const cs = Array.isArray(d?.changes) ? d.changes : []
+    return cs.map((c: any) => {
+      // is_banned 的值语义相反（false = 解封/授予）
+      const isGrant = c.permission === 'is_banned' ? c.new_value === false : c.new_value === true
+      return permLine(isGrant ? '授予' : '撤销', c.permission)
+    })
+  }
+
+  if (['grant_normal', 'revoke_normal', 'ostracism', 'admin_rotation', 'unbrown', 'perm_update'].includes(log.action_type)) {
+    badges.push(...pickChanges())
+  } else if (log.action_type === 'grant_perm' || log.action_type === 'revoke_perm') {
+    const perm = d?.permission
+    const managerPerms = ['is_admin', 'can_manage_users', 'can_manage_posts']
+    if (managerPerms.includes(perm)) {
+      badges.push(makeBadge(log.action_type === 'grant_perm' ? '授予' : '撤销', getPermName(perm), BADGE_MANAGE))
+    } else {
+      badges.push(permLine(log.action_type === 'grant_perm' ? '授予' : '撤销', perm))
+    }
+  } else if (log.action_type === 'ban') {
+    badges.push(makeBadge('撤销', '进入主站', BADGE_BAN))
+  } else if (log.action_type === 'unban') {
+    badges.push(makeBadge('授予', '进入主站', BADGE_GRANT))
+  } else if (log.action_type === 'brown_penalty') {
+    extra = '学术不端惩罚'
+  } else if (log.action_type === 'manager_rotate') {
+    extra = `授予 ${d?.permission || '管理'} 权限（轮换）`
+  } else {
+    extra = '管理操作'
+  }
+
+  return { badges, extra }
+}
+
+// ================================================================
+// 5. 单条日志渲染数据
+// ================================================================
 interface RenderedLog {
   id: number
-  info: ActionInfo
   time: string
-  target: LogUser
-  targetColor: string
-  tagHtml: { text: string; color: string }[]
-  avatar: string
-  userLink: string
   admin: LogUser
   adminColor: string
-  adminAvatar: string
-  adminLink: string
-  changes: PermChange[]
-  extraChange: string
+  target: LogUser
+  targetColor: string
+  badges: Badge[]
+  extra: string
   reason: string
 }
 
-const COLOR_RED = '#e74c3c'
-const COLOR_PURPLE = '#9C3DCF'
-const COLOR_BROWN = '#AD8B00'
-
 function buildRenderedLog(log: JudgementLog): RenderedLog {
-  const target: LogUser = log.target_user || {
-    id: null, username: '已删除', avatar_url: '', user_tag: '',
-    is_admin: false, is_banned: false, user_number: null,
-    username_color: '', is_cheater: false,
-  }
   const admin: LogUser = log.admin || {
-    id: null, username: '未知管理员', avatar_url: '', user_tag: '',
+    id: null, username: '未知', avatar_url: '', user_tag: '',
     is_admin: true, is_banned: false, user_number: null,
     username_color: '', is_cheater: false,
   }
-
-  const info = getActionInfo(log)
-  const time = formatTime(log.created_at)
-
-  // 目标用户颜色（与主页统一）
-  const targetColor = target.is_cheater ? COLOR_BROWN : (target.is_admin ? COLOR_PURPLE : COLOR_RED)
-
-  // 标签
-  const tags: { text: string; color: string }[] = []
-  if (target.user_tag) {
-    tags.push({ text: target.user_tag, color: targetColor })
-  } else if (target.is_admin) {
-    tags.push({ text: '管理员', color: targetColor })
-  }
-  if (target.is_banned) {
-    tags.push({ text: '已封禁', color: '#e53e3e' })
+  const target: LogUser = log.target_user || {
+    id: null, username: '已删除用户', avatar_url: '', user_tag: '',
+    is_admin: false, is_banned: false, user_number: null,
+    username_color: '', is_cheater: false,
   }
 
-  const avatar = target.avatar_url || letterAvatar(target.username)
-  const userLink = target.user_number ? `/user/${target.user_number}` : '#'
-
-  // 操作管理员信息
-  const adminColor = admin.is_cheater ? COLOR_BROWN : (admin.is_admin ? COLOR_PURPLE : COLOR_RED)
-  const adminAvatar = admin.avatar_url || letterAvatar(admin.username)
-  const adminLink = admin.user_number ? `/user/${admin.user_number}` : '#'
-
-  // 权限变更详情
-  const changes: PermChange[] = []
-  let extraChange = ''
-  const d = log.action_detail || {}
-
-  const permLine = (word: string, cls: string, name: string): PermChange =>
-    ({ word, cls, name })
-
-  // 新的分类系统
-  if (['grant_normal', 'revoke_normal', 'ostracism', 'admin_rotation', 'unbrown'].includes(log.action_type)) {
-    const cs = Array.isArray(d?.changes) ? d.changes : []
-    cs.forEach((c: any) => {
-      // 特殊处理 is_banned 字段（逻辑是反的）
-      let isGrant: boolean
-      if (c.permission === 'is_banned') {
-        isGrant = (c.new_value === false)
-      } else {
-        isGrant = (c.new_value === true)
-      }
-      changes.push(permLine(isGrant ? '授予' : '撤销', isGrant ? 'lcolor--green-3' : 'lcolor--red-3', getPermName(c.permission)))
-    })
-  }
-  // 向后兼容：旧的日志类型
-  else if (log.action_type === 'perm_update') {
-    const cs = Array.isArray(d?.changes) ? d.changes : []
-    cs.forEach((c: any) => {
-      let isGrant: boolean
-      if (c.permission === 'is_banned') {
-        isGrant = (c.new_value === false)
-      } else {
-        isGrant = (c.new_value === true)
-      }
-      changes.push(permLine(isGrant ? '授予' : '撤销', isGrant ? 'lcolor--green-3' : 'lcolor--red-3', getPermName(c.permission)))
-    })
-  } else if (log.action_type === 'grant_perm' || log.action_type === 'revoke_perm') {
-    let isGrant = log.action_type === 'grant_perm'
-    const perm = d?.permission
-    changes.push(permLine(isGrant ? '授予' : '撤销', isGrant ? 'lcolor--green-3' : 'lcolor--red-3', getPermName(perm)))
-  } else if (log.action_type === 'ban') {
-    changes.push(permLine('撤销', 'lcolor--red-3', '进入主站'))
-  } else if (log.action_type === 'unban') {
-    changes.push(permLine('授予', 'lcolor--green-3', '进入主站'))
-  } else if (log.action_type === 'cheat') {
-    extraChange = '学术不端惩罚'
-  } else if (log.action_type === 'brown_penalty') {
-    // 作弊惩罚：不显示"标记为作弊者"，只显示原因
-  } else if (log.action_type === 'manager_rotate') {
-    const permName = d?.permission || '管理权限'
-    extraChange = `授予 ${permName} 权限（轮换）`
-  } else {
-    extraChange = info.label
-  }
+  const { badges, extra } = buildBadges(log)
 
   return {
     id: log.id,
-    info, time, target, targetColor, tagHtml: tags,
-    avatar, userLink,
-    admin, adminColor, adminAvatar, adminLink,
-    changes, extraChange,
+    time: formatTime(log.created_at),
+    admin,
+    adminColor: getUserColor(admin),
+    target,
+    targetColor: getUserColor(target),
+    badges,
+    extra,
     reason: log.reason || '（无）',
   }
 }
@@ -300,7 +200,7 @@ function buildRenderedLog(log: JudgementLog): RenderedLog {
 const renderedLogs = ref<RenderedLog[]>([])
 
 // ================================================================
-// 6. 加载日志（与参考项目 loadLogs 逻辑一致）
+// 6. 加载日志
 // ================================================================
 async function loadLogs(append = false) {
   if (loading.value || !hasMore.value) return
@@ -329,7 +229,6 @@ async function loadLogs(append = false) {
 
     page.value++
     hasMore.value = !!data.has_more
-
   } catch (err: any) {
     console.error('加载失败:', err)
     loadError.value = err.response?.data?.detail || err.message || ''
@@ -343,7 +242,7 @@ async function loadLogs(append = false) {
 // ================================================================
 async function deleteLog(id: number) {
   if (!canManageLogs.value || !id) return
-  if (!confirm('永久删除这条陶片？此操作不可恢复。')) return
+  if (!confirm('永久删除这条管理日志？此操作不可恢复。')) return
   try {
     await apiClient.delete(`/api/judgement/logs/${id}`)
     logs.value = logs.value.filter(l => l.id !== id)
@@ -354,7 +253,7 @@ async function deleteLog(id: number) {
 }
 
 // ================================================================
-// 8. 回到顶部按钮（与参考项目一致）
+// 8. 回到顶部
 // ================================================================
 const showBackToTop = ref(false)
 
@@ -381,246 +280,179 @@ onUnmounted(() => {
 
 <template>
   <div class="judgement-log-list">
-    <!-- ===== 日志列表 ===== -->
-    <div class="log-list">
-        <!-- 空状态 / 错误 -->
-        <div v-if="!loading && logs.length === 0 && !hasMore" class="empty-state">
-          <p>没有更多陶片了</p>
-        </div>
-        <div v-else-if="loadError && logs.length === 0" class="empty-state">
-          <div class="icon">⚠️</div>
-          <p>加载失败，请刷新重试</p>
-          <p class="err-detail">{{ loadError }}</p>
-        </div>
-
-        <!-- 日志卡片（深色头部） -->
-        <div v-for="log in renderedLogs" :key="log.id" class="log-card">
-          <!-- 头部：深色背景 -->
-          <div class="log-author">
-            <div class="left">
-              <b :style="{ color: log.info.color }">
-                <svg class="log-icon" viewBox="0 0 640 512" fill="currentColor">
-                  <path :d="log.info.iconPath" />
-                </svg>
-                {{ log.info.label }}
-              </b>
-            </div>
-            <div class="time">
-              {{ log.time }}<button
-                v-if="canManageLogs"
-                class="log-delete-btn"
-                title="删除这条陶片"
-                @click="deleteLog(log.id)"
-              >删除</button>
-            </div>
-          </div>
-
-          <!-- 用户信息 -->
-          <div class="log-users">
-            <template v-if="props.showAdmin">
-              <span class="log-role-label">操作管理：</span>
-              <router-link :to="log.adminLink" class="log-user">
-                <img
-                  :src="log.adminAvatar"
-                  :alt="log.admin.username"
-                  @error="(e) => (e.target as HTMLImageElement).src = letterAvatar(log.admin.username)"
-                >
-                <span class="uname" :style="{ color: log.adminColor }">{{ log.admin.username }}</span>
-              </router-link>
-              <span class="log-arrow">→</span>
-              <span class="log-role-label">目标用户：</span>
-            </template>
-            <router-link :to="log.userLink" class="log-user">
-              <img
-                :src="log.avatar"
-                :alt="log.target.username"
-                @error="(e) => (e.target as HTMLImageElement).src = letterAvatar(log.target.username)"
-              >
-              <span class="uname" :style="{ color: log.targetColor }">{{ log.target.username }}</span>
-              <span
-                v-for="(tag, i) in log.tagHtml"
-                :key="i"
-                class="user-tag-display"
-                :style="{ backgroundColor: tag.color }"
-              >{{ tag.text }}</span>
-            </router-link>
-          </div>
-
-          <!-- 内容 -->
-          <div class="log-content">
-            <ul v-if="log.changes.length > 0 || log.extraChange">
-              <li v-for="(change, i) in log.changes" :key="i">
-                <span class="permission-change">
-                  <span :class="change.cls">{{ change.word }}</span>
-                  <span class="perm-name">{{ change.name }}</span>
-                  权限
-                </span>
-              </li>
-              <li v-if="log.extraChange">
-                <span class="permission-change">{{ log.extraChange }}</span>
-              </li>
-            </ul>
-            <p>{{ log.reason }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== 加载更多 ===== -->
-      <div class="load-more-wrap">
-        <button
-          id="load-more"
-          :disabled="loading"
-          :class="{ loading: loading }"
-          :style="{ display: hasMore ? 'inline-flex' : 'none' }"
-          @click="loadLogs(true)"
-        >
-          <span class="spinner"></span>
-          <span class="text">加载更多</span>
-        </button>
-      </div>
-
-      <!-- ===== 回到顶部按钮 ===== -->
-      <button id="back-to-top" title="回到顶部" :style="{ display: showBackToTop ? 'block' : 'none' }" @click="backToTop">↑</button>
+    <!-- 空状态 / 错误 -->
+    <div v-if="!loading && renderedLogs.length === 0 && !hasMore" class="empty-state">
+      <p>暂无管理日志</p>
     </div>
+    <div v-else-if="loadError && renderedLogs.length === 0" class="empty-state">
+      <div class="icon">⚠️</div>
+      <p>加载失败，请刷新重试</p>
+      <p class="err-detail">{{ loadError }}</p>
+    </div>
+
+    <!-- ===== 日志行列表（截图样式） ===== -->
+    <div class="log-rows">
+      <div v-for="log in renderedLogs" :key="log.id" class="log-row">
+        <!-- 时间 -->
+        <span class="log-time">{{ log.time }}</span>
+
+        <!-- 操作人（仅管理日志页显示） -->
+        <template v-if="props.showAdmin">
+          <router-link
+            :to="log.admin.user_number ? `/user/${log.admin.user_number}` : '#'"
+            class="log-user"
+            :style="{ color: log.adminColor }"
+          >{{ log.admin.username }}</router-link>
+          <span
+            v-if="log.admin.user_tag"
+            class="user-tag-display"
+            :style="{ backgroundColor: log.adminColor }"
+          >{{ log.admin.user_tag }}</span>
+          <span class="log-arrow">→</span>
+        </template>
+
+        <!-- 目标用户 -->
+        <router-link
+          :to="log.target.user_number ? `/user/${log.target.user_number}` : '#'"
+          class="log-user"
+          :style="{ color: log.targetColor }"
+        >{{ log.target.username }}</router-link>
+        <span
+          v-if="log.target.user_tag"
+          class="user-tag-display"
+          :style="{ backgroundColor: log.targetColor }"
+        >{{ log.target.user_tag }}</span>
+
+        <!-- 操作徽章 -->
+        <span
+          v-for="(badge, i) in log.badges"
+          :key="'b' + i"
+          class="log-badge"
+          :style="{ backgroundColor: badge.color }"
+        >{{ badge.text }}</span>
+        <span v-if="log.extra" class="log-badge" :style="{ backgroundColor: BADGE_BROWN }">{{ log.extra }}</span>
+
+        <!-- 原因 -->
+        <span class="log-reason">{{ log.reason }}</span>
+
+        <!-- 删除（仅秩序管理权限） -->
+        <button
+          v-if="canManageLogs"
+          class="log-delete-btn"
+          title="删除这条日志"
+          @click="deleteLog(log.id)"
+        >删除</button>
+      </div>
+    </div>
+
+    <!-- ===== 加载更多 ===== -->
+    <div class="load-more-wrap">
+      <button
+        id="load-more"
+        :disabled="loading"
+        :class="{ loading: loading }"
+        :style="{ display: hasMore ? 'inline-flex' : 'none' }"
+        @click="loadLogs(true)"
+      >
+        <span class="spinner"></span>
+        <span class="text">加载更多</span>
+      </button>
+    </div>
+
+    <!-- ===== 回到顶部 ===== -->
+    <button id="back-to-top" title="回到顶部" :style="{ display: showBackToTop ? 'block' : 'none' }" @click="backToTop">↑</button>
+  </div>
 </template>
 
 <style scoped>
-/* ================================================================
-   ★★★ 日志卡片样式（深色头部） ★★★
-   ================================================================ */
-.log-list {
+/* ===== 日志行列表 ===== */
+.log-rows {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
-.log-card {
-  background: #fafbfc;
-  border-radius: 12px;
-  padding: 16px 20px;
-  border: 1px solid #edf2f7;
-  transition: none;
-}
-
-.log-card:hover {
-  background: #fafbfc;
-  transform: none;
-}
-
-/* ---- 头部：深色背景 ---- */
-.log-author {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #F0F2F5;
-  /* 深色背景 */
-  border-radius: 8px 8px 0 0;
-  margin: -16px -20px 12px -20px;
-  /* 延伸到卡片边缘 */
-}
-
-.log-author .left {
+.log-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.log-author .left b {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
-
-.log-author .left .log-icon {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.log-author .time {
-  font-size: 0.78rem;
-  color: #7D7D7D;
-  /* 浅灰色 */
-  white-space: nowrap;
-}
-
-.lcolor--red-3 {
-  color: #e74c3c;
-}
-
-.lcolor--green-3 {
-  color: #38a169;
-}
-
-.lcolor--purple-3 {
-  color: #9d3dcf;
-}
-
-.lcolor--orange-3 {
-  color: #e67e22;
-}
-
-/* ---- 用户信息区 ---- */
-.log-users {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
-  margin: 6px 0 10px 0;
+  gap: 8px;
+  padding: 14px 8px;
+  border-bottom: 1px solid #f0f2f5;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.log-role-label {
-  font-size: 0.78rem;
-  color: #718096;
-  flex-shrink: 0;
+.log-row:last-child {
+  border-bottom: none;
 }
 
-.log-arrow {
-  color: #a0aec0;
-  font-weight: bold;
+.log-row:hover {
+  background: #fafbfc;
+}
+
+.log-time {
+  color: #8a9aa8;
+  font-size: 13px;
   flex-shrink: 0;
+  min-width: 130px;
 }
 
 .log-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: #2c3e50;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .log-user:hover {
-  color: #e74c3c;
+  text-decoration: underline;
 }
 
-.log-user img {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e2e8f0;
+.log-arrow {
+  color: #c0c8d0;
   flex-shrink: 0;
-  background: #e74c3c;
 }
 
-.log-user .uname {
-  font-weight: bold;
-  font-size: 1em;
+/* 操作徽章 */
+.log-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.log-reason {
+  color: #2c3e50;
+  flex: 1;
+  min-width: 160px;
+  word-break: break-word;
+}
+
+.log-delete-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #c0c8d0;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.log-delete-btn:hover {
+  color: #e74c3c;
 }
 
 .user-tag-display {
   display: inline-block;
   border-radius: 2px;
-  padding: 2px 9px;
+  padding: 2px 8px;
   color: #fff;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
-  margin: 0;
   cursor: default;
   transition: filter 0.15s;
 }
@@ -629,69 +461,7 @@ onUnmounted(() => {
   filter: brightness(0.9);
 }
 
-/* ---- 内容区（权限变更 + 原因） ---- */
-.log-content {
-  padding-left: 0;
-}
-
-.log-content ul {
-  list-style: disc;
-  padding-left: 1.5em;
-  margin: 0 0 4px 0;
-}
-
-.log-content ul li {
-  padding: 0;
-  margin: 0;
-}
-
-.log-content .permission-change {
-  font-size: 0.9rem;
-  color: #2d3748;
-}
-
-.log-content .permission-change .lcolor--red-3 {
-  color: #E74C3C;
-}
-
-.log-content .permission-change .lcolor--green-3 {
-  color: #52C41A;
-}
-
-.log-content .permission-change .perm-name {
-  display: inline-block;
-  background: #E8E8E8;
-  padding: 0 8px;
-  border-radius: 4px;
-  color: #575757;
-  border: 1px solid #BFBFBF;
-  /* 浅灰色边框 */
-  margin: 0 4px;
-}
-
-.log-content p {
-  margin: 4px 0 0 0;
-  font-size: 0.88rem;
-  color: #4a5568;
-  padding-top: 8px;
-}
-
-.log-content p strong {
-  color: #2d3748;
-}
-
-/* ---- 删除按钮 ---- */
-.log-delete-btn {
-  margin-left: 8px;
-  background: none;
-  border: none;
-  color: #e74c3c;
-  font-size: 12px;
-  cursor: pointer;
-  padding: 0;
-}
-
-/* ---- 空状态 & 加载更多 ---- */
+/* ===== 空状态 & 加载更多 ===== */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -767,7 +537,7 @@ onUnmounted(() => {
   }
 }
 
-/* ========== 回到顶部 ========== */
+/* ===== 回到顶部 ===== */
 #back-to-top {
   position: fixed;
   bottom: 30px;
@@ -791,6 +561,14 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
+  .log-time {
+    min-width: 0;
+  }
+
+  .log-reason {
+    min-width: 100%;
+  }
+
   #back-to-top {
     bottom: 20px;
     right: 20px;

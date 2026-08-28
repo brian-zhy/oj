@@ -72,7 +72,7 @@ const routes = [
     path: '/admin/logs',
     name: 'AdminLogs',
     component: () => import('@/views/AdminLogs.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresUserManage: true }
   },
   {
     path: '/test-admin',
@@ -142,6 +142,15 @@ router.beforeEach(async (to) => {
 
     if (!user || (!user.is_super_admin && !user.is_admin && !user.can_manage_users)) {
       console.log('用户没有管理员权限，重定向到主页')
+      return { name: 'Home' }
+    }
+  }
+
+  // 检查是否需要用户管理权限（如管理日志页）
+  if (to.meta.requiresUserManage) {
+    const user = authStore.currentUser
+    if (!user || !user.can_manage_users) {
+      console.log('用户没有用户管理权限，重定向到主页')
       return { name: 'Home' }
     }
   }

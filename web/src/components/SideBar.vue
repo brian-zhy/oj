@@ -275,7 +275,7 @@ const navigateTo = (path: string) => {
             <span class="nav-text">陶片放逐</span>
           </a>
         </li>
-        <li v-if="authStore.currentUser && (authStore.currentUser.is_super_admin || authStore.currentUser.is_admin || authStore.currentUser.can_manage_users)">
+        <li v-if="authStore.currentUser && authStore.currentUser.can_manage_users">
           <a
             class="nav-item"
             :class="{ 'active': isActive('/admin/logs') }"
