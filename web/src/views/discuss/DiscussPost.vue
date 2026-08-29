@@ -137,7 +137,7 @@ onMounted(() => loadPost())
                 class="user-tag-display"
                 :style="{ backgroundColor: userColor(c.author) }"
               >{{ c.author.user_tag }}</span>
-              <span class="comment-floor">#{{ i + 1 }}</span>
+              <span class="comment-floor">#{{ Number(i) + 1 }}</span>
               <span class="comment-time">{{ fmtTime(c.created_at) }}</span>
             </div>
             <div class="comment-content" v-html="renderContent(c.content)"></div>
