@@ -63,6 +63,24 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/discuss',
+    name: 'Discuss',
+    component: () => import('@/views/discuss/Discuss.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/discuss/new',
+    name: 'DiscussNew',
+    component: () => import('@/views/discuss/DiscussNew.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/discuss/:id',
+    name: 'DiscussPost',
+    component: () => import('@/views/discuss/DiscussPost.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/tickets',
     name: 'Tickets',
     component: () => import('@/views/tickets/Tickets.vue'),

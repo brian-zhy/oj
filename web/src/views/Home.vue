@@ -324,7 +324,30 @@ const meColor = computed(() => getUserDisplayColor(currentUser.value))
 const meTag = computed(() => getUserTagDisplay(currentUser.value))
 
 // ==================== 近期讨论 ====================
-// （讨论区暂未开放，先展示空状态）
+const recentPosts = ref<any[]>([])
+const recentLoading = ref(false)
+
+const relTime = (iso: string) => {
+  if (!iso) return ''
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前`
+  if (diff < 172800000) return `${Math.floor(diff / 86400)} 天前`
+  return new Date(iso).toLocaleDateString('zh-CN')
+}
+
+const loadRecentPosts = async () => {
+  recentLoading.value = true
+  try {
+    const data: any = await apiClient.get('/api/forum/recent?limit=10')
+    recentPosts.value = Array.isArray(data) ? data : []
+  } catch {
+    recentPosts.value = []
+  } finally {
+    recentLoading.value = false
+  }
+}
 
 // ==================== 犇犇模块 ====================
 
@@ -540,6 +563,7 @@ onMounted(async () => {
   clockTimer = window.setInterval(() => {
     now.value = new Date()
   }, 60000)
+  loadRecentPosts()
 
   if (isLoggedIn.value) {
     await loadBenbenList(true)
@@ -680,7 +704,46 @@ onUnmounted(() => {
       <div class="card recent-posts-card">
         <div class="card-header">近期讨论</div>
         <div class="recent-posts-list">
-          <div class="empty-state">没有更多讨论了</div>
+          <div v-if="recentLoading" class="empty-state">加载中...</div>
+          <div v-else-if="recentPosts.length === 0" class="empty-state">没有更多讨论了</div>
+          <section
+            v-for="p in recentPosts"
+            v-else
+            :key="p.id"
+            class="post-card"
+            @click="$router.push(`/discuss/${p.id}`)"
+          >
+            <div class="post-card-body">
+              <div class="post-avatar">
+                <img :src="getUserAvatar(p.author)" :alt="p.author?.username"
+                  @error="($event.target as HTMLImageElement).src = letterAvatar(p.author?.username)">
+              </div>
+              <div class="post-info">
+                <span class="post-title-link">{{ p.title }}</span>
+                <div class="post-meta-line">
+                  <div class="post-meta-row1">
+                    <span class="post-author-forum">
+                      <router-link
+                        :to="p.author?.user_number ? `/user/${p.author.user_number}` : '#'"
+                        class="benben-username"
+                        :style="{ color: getUserDisplayColor(p.author) }"
+                        @click.stop
+                      >{{ p.author?.username }}</router-link>
+                      <span
+                        v-if="getUserTagDisplay(p.author)"
+                        class="user-tag-display"
+                        :style="{ backgroundColor: getUserDisplayColor(p.author) }"
+                      >{{ getUserTagDisplay(p.author) }}</span>
+                      In <span class="post-forum-name">{{ p.forum_name }}</span>
+                    </span>
+                  </div>
+                  <div class="post-meta-row2">
+                    <span class="post-time-reply">{{ relTime(p.created_at) }} {{ p.reply_count }}回复</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -1025,6 +1088,69 @@ onUnmounted(() => {
   color: #999;
   font-size: 14px;
   grid-column: 1 / -1;
+}
+
+.recent-posts-card .post-card {
+  background: #fff;
+  border: 1px solid #e8ecf1;
+  border-radius: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.recent-posts-card .post-card:hover {
+  border-color: #f0a08a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.post-card-body {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  align-items: center;
+}
+
+.post-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: #f0f2f5;
+}
+
+.post-avatar {
+  flex-shrink: 0;
+}
+
+.post-title-link {
+  color: #e74c3c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.post-card:hover .post-title-link {
+  text-decoration: underline;
+}
+
+.post-meta-line {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #8a9aa8;
+  display: flex;
+  flex-direction: column;
+  gap: 2px 0;
+}
+
+.post-forum-name {
+  color: #e74c3c;
+}
+
+.post-time-reply strong {
+  color: #2c3e50;
 }
 
 /* ========== 犇犇模块 ========== */
