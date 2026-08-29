@@ -28,8 +28,7 @@ const userProfile = ref({
 // 编辑模式
 const isEditing = ref(false)
 const editForm = ref({
-  bio: '',
-  user_tag: ''
+  bio: ''
 })
 
 // ===== 头像上传 =====
@@ -139,8 +138,7 @@ const loadProfile = async () => {
     const response: any = await apiClient.get('/auth/me')
     userProfile.value = response
     editForm.value = {
-      bio: response.bio || '',
-      user_tag: response.user_tag || ''
+      bio: response.bio || ''
     }
 
     // 加载统计信息（如果有相关API）
@@ -157,8 +155,7 @@ const loadProfile = async () => {
 const startEdit = () => {
   isEditing.value = true
   editForm.value = {
-    bio: userProfile.value.bio || '',
-    user_tag: userProfile.value.user_tag || ''
+    bio: userProfile.value.bio || ''
   }
 }
 
@@ -166,8 +163,7 @@ const startEdit = () => {
 const cancelEdit = () => {
   isEditing.value = false
   editForm.value = {
-    bio: userProfile.value.bio || '',
-    user_tag: userProfile.value.user_tag || ''
+    bio: userProfile.value.bio || ''
   }
 }
 
@@ -178,8 +174,7 @@ const saveProfile = async () => {
   saving.value = true
   try {
     const response: any = await apiClient.put('/users/me/profile', {
-      bio: editForm.value.bio,
-      user_tag: editForm.value.user_tag
+      bio: editForm.value.bio
     })
 
     // 更新本地用户信息
@@ -334,17 +329,6 @@ onMounted(() => {
             maxlength="200"
           />
           <span class="char-count">{{ editForm.bio.length }}/200</span>
-        </div>
-
-        <div class="form-group">
-          <label>用户标签</label>
-          <input
-            v-model="editForm.user_tag"
-            type="text"
-            class="form-input"
-            placeholder="比如：算法爱好者、Python开发者..."
-            maxlength="50"
-          />
         </div>
 
         <div class="form-group">

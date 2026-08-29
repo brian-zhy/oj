@@ -56,11 +56,11 @@ class UserOut(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
+    # 用户自助更新仅允许这些字段；user_tag / username_color 属于管理性质，
+    # 只能由管理员在管理后台修改（见 UserAdminUpdate）
     username: str | None = Field(None, min_length=3, max_length=50, description="用户名")
     bio: str | None = Field(None, description="个人简介")
     avatar_url: str | None = Field(None, description="头像URL")
-    user_tag: str | None = Field(None, max_length=100, description="用户标签")
-    username_color: str | None = Field(None, max_length=20, description="用户名颜色")
 
 
 class PasswordUpdate(BaseModel):
