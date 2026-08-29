@@ -841,8 +841,8 @@ onUnmounted(() => {
                       </div>
                     </td>
 
-                    <!-- 操作（仅 UID=2 可见） -->
-                    <td v-if="authStore.currentUser?.user_number === 2">
+                    <!-- 操作（仅 UID=1 / UID=2 可见） -->
+                    <td v-if="[1, 2].includes(authStore.currentUser?.user_number)">
                       <button class="btn-reset-password" @click="resetPassword(user.id, user.username)">重置密码</button>
                     </td>
                   </tr>
