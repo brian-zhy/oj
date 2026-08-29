@@ -133,6 +133,39 @@ async def insert_judgement_log(
     ))
 
 
+@router.post("/users/id/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """重置指定用户密码（仅 UID=2 的用户可操作）。请求体：{password: "新密码"}"""
+    if current_user.user_number != 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="只有 UID=2 的用户可以重置密码"
+        )
+
+    new_password = payload.get("password") or ""
+    if not new_password or not (6 <= len(new_password) <= 72):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="密码长度需为 6-72 位"
+        )
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+
+    from app.core.security import hash_password
+    user.hashed_password = hash_password(new_password)
+    await db.commit()
+
+    return {"message": "密码重置成功"}
+
+
 @router.get("/users", response_model=List[UserAdminResponse])
 async def get_users(
     limit: int = Query(20, ge=1, le=100),

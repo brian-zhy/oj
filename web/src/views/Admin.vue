@@ -543,6 +543,48 @@ async function batchAction(actionName: string, updateObj: any) {
   }
 }
 
+// ===== 重置密码（SweetAlert2，仅 UID=2 可用） =====
+async function resetPassword(userId: number, username: string) {
+  const result = await Swal.fire({
+    title: `重置 ${username} 的密码`,
+    input: 'password',
+    inputAttributes: { autocomplete: 'new-password' },
+    showCancelButton: true,
+    confirmButtonText: '确认重置',
+    cancelButtonText: '取消',
+    preConfirm: (value) => {
+      if (!value) {
+        Swal.showValidationMessage('请填写完整')
+        return false
+      }
+      if (value.length < 6) {
+        Swal.showValidationMessage('密码长度过短或过长')
+        return false
+      }
+      return value
+    }
+  })
+
+  if (result.isConfirmed) {
+    const newPassword = result.value
+    try {
+      await apiClient.post(`/api/admin/users/id/${userId}/reset-password`, { password: newPassword })
+      await Swal.fire({
+        icon: 'success',
+        title: '重置成功',
+        text: `用户 ${username} 的密码已重置`,
+        timer: 1500
+      })
+    } catch (err: any) {
+      Swal.fire({
+        icon: 'error',
+        title: '重置失败',
+        text: err.response?.data?.detail || err.message || '未知错误'
+      })
+    }
+  }
+}
+
 // ===== 心跳上报（与目标项目 updateLastSeen 一致） =====
 let heartbeatTimer: number | undefined
 
@@ -797,6 +839,11 @@ onUnmounted(() => {
                           @click="applyUserChanges(user.user_number)"
                         >确认修改</button>
                       </div>
+                    </td>
+
+                    <!-- 操作（仅 UID=2 可见） -->
+                    <td v-if="authStore.currentUser?.user_number === 2">
+                      <button class="btn-reset-password" @click="resetPassword(user.id, user.username)">重置密码</button>
                     </td>
                   </tr>
                 </tbody>
@@ -1197,6 +1244,33 @@ td.check-col input {
 
 .btn-sm.confirm:disabled:hover {
   background: #e74c3c;
+}
+
+.btn-reset-password {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: filter 0.2s, transform 0.1s;
+  white-space: nowrap;
+  font-family: inherit;
+  line-height: 1.4;
+  color: #fff;
+  background: #E74C3C;
+}
+
+.btn-reset-password:hover {
+  filter: brightness(1.1);
+}
+
+.btn-reset-password:active {
+  transform: scale(0.96);
 }
 
 /* ========== 批量操作栏（与目标项目完全一致） ========== */
