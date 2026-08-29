@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import JudgementLogList from '@/components/JudgementLogList.vue'
+import JudgementLogTable from '@/components/JudgementLogTable.vue'
 </script>
 
 <template>
   <div class="admin-logs-page">
     <div class="card">
       <div class="card-header">管理日志</div>
-      <JudgementLogList show-admin />
+      <JudgementLogTable show-admin />
     </div>
   </div>
 </template>
