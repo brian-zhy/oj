@@ -195,15 +195,27 @@ const onDrop = (e: DragEvent) => {
   }
 }
 
-// 封面存储暂无后端支持
-const uploadCover = () => {
+const uploadCover = async () => {
   if (!selectedFile.value) return
   uploading.value = true
-  setTimeout(() => {
+  try {
+    const fd = new FormData()
+    fd.append('file', selectedFile.value)
+    // 加时间戳参数绕开浏览器缓存的跳转劫持
+    const res: any = await apiClient.post(`/users/me/cover?_t=${Date.now()}`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    coverUrl.value = res.cover_url
+    uploadFeedback.value = '✅ 封面更新成功！'
+    uploadFeedbackColor.value = '#27ae60'
+    setTimeout(closeCoverUpload, 1200)
+  } catch (err: any) {
     uploading.value = false
-    uploadFeedback.value = '❌ 上传失败: 封面上传功能暂未开放'
+    uploadFeedback.value = '❌ ' + (err.response?.data?.detail || '上传失败，请稍后重试')
     uploadFeedbackColor.value = '#e74c3c'
-  }, 300)
+    return
+  }
+  uploading.value = false
 }
 
 // ==================== 加载用户信息 ====================
@@ -215,6 +227,7 @@ const loadUserProfile = async () => {
     // 与原站语义一致：URL 中的数字为用户编号（user_number）
     const data: any = await apiClient.get(`/users/number/${route.params.id}`)
     profile.value = data
+    coverUrl.value = data.cover_url || ''
     document.title = `${data.username} 的个人主页 - Jason227`
   } catch (err: any) {
     console.error('加载用户信息失败:', err)

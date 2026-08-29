@@ -84,6 +84,40 @@ async def update_user_password(
         )
 
 
+@router.post("/me/cover", summary="上传个人主页封面")
+async def upload_cover(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    """上传当前用户的个人主页封面图（multipart/form-data，字段名 file）。"""
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_AVATAR_EXT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="仅支持 jpg/jpeg/png/gif/webp 图片",
+        )
+
+    content = await file.read()
+    if len(content) > 8 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片不能超过 8MB",
+        )
+
+    upload_dir = Path(__file__).resolve().parent.parent.parent / "static" / "uploads" / "covers"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{current_user.user_number}_cover_{int(time.time() * 1000)}{ext}"
+    (upload_dir / filename).write_bytes(content)
+
+    cover_url = f"/static/uploads/covers/{filename}"
+    current_user.cover_url = cover_url
+    await db.commit()
+
+    return {"success": True, "cover_url": cover_url}
+
+
 @router.post("/me/avatar", summary="上传用户头像")
 async def upload_avatar(
     file: UploadFile = File(...),

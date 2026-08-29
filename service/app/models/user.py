@@ -82,6 +82,10 @@ class User(Base, TimestampMixin):
     remark: Mapped[str | None] = mapped_column(
         String(100), nullable=True
     )
+    # 个人主页封面图
+    cover_url: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )
     # 最后在线时间（60秒内视为在线）
     last_seen: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
