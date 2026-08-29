@@ -39,7 +39,10 @@ services:
     container_name: oj-web
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8888:80"
+    volumes:
+      # HTTPS 证书（服务器上放置 fullchain.pem / privkey.pem）
+      - ./web/certs:/etc/nginx/certs:ro
     depends_on:
       - oj-service
     networks:

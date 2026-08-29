@@ -26,3 +26,6 @@ dist-ssr
 # Environment variables
 .env
 .env.production
+
+# HTTPS 自备证书（不入库）
+certs/
