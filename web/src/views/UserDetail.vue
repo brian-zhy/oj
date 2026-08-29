@@ -198,6 +198,9 @@ const onDrop = (e: DragEvent) => {
 const uploadCover = async () => {
   if (!selectedFile.value) return
   uploading.value = true
+  const previousCover = coverUrl.value || ''
+  let success = false
+
   try {
     const fd = new FormData()
     fd.append('file', selectedFile.value)
@@ -206,16 +209,30 @@ const uploadCover = async () => {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     coverUrl.value = res.cover_url
-    uploadFeedback.value = '✅ 封面更新成功！'
-    uploadFeedbackColor.value = '#27ae60'
-    setTimeout(closeCoverUpload, 1200)
+    success = true
   } catch (err: any) {
-    uploading.value = false
-    uploadFeedback.value = '❌ ' + (err.response?.data?.detail || '上传失败，请稍后重试')
-    uploadFeedbackColor.value = '#e74c3c'
-    return
+    // 请求报错时向服务端核实真实结果——请求可能被代理/插件改写，但实际已成功
+    try {
+      const me: any = await apiClient.get(`/users/number/${route.params.id}?_t=${Date.now()}`)
+      if (me?.cover_url && me.cover_url !== previousCover) {
+        coverUrl.value = me.cover_url
+        success = true
+      }
+    } catch {
+      /* 核实也失败则维持失败判定 */
+    }
+    if (!success) {
+      uploading.value = false
+      uploadFeedback.value = '❌ ' + (err.response?.data?.detail || '上传失败，请稍后重试')
+      uploadFeedbackColor.value = '#e74c3c'
+      return
+    }
   }
+
   uploading.value = false
+  uploadFeedback.value = '✅ 封面更新成功！'
+  uploadFeedbackColor.value = '#27ae60'
+  setTimeout(closeCoverUpload, 1200)
 }
 
 // ==================== 加载用户信息 ====================
