@@ -29,10 +29,18 @@ const isActive = (path: string) => {
 const navigateTo = (path: string) => {
   router.push(path)
 }
+
+// 鼠标移出侧边栏时自动滚回顶部（与原站一致，仅桌面端宽侧交互）
+const sidebarRef = ref<HTMLElement | null>(null)
+const onSidebarLeave = () => {
+  if (window.innerWidth > 900 && sidebarRef.value) {
+    sidebarRef.value.scrollTop = 0
+  }
+}
 </script>
 
 <template>
-  <div class="nav-sidebar">
+  <div ref="sidebarRef" class="nav-sidebar" @mouseleave="onSidebarLeave">
     <!-- 主菜单 第一部分（主页 ~ 评测记录） -->
     <div class="nav-group">
       <ul>
