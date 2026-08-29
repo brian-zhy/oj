@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, or_
+from sqlalchemy import select, delete, desc, or_
 
 from app.core.database import get_db
 from app.deps import get_current_user, get_current_user_optional
@@ -161,9 +161,14 @@ async def reset_user_password(
 
     from app.core.security import hash_password
     user.hashed_password = hash_password(new_password)
+
+    # 清除该用户全部刷新令牌：现有登录态到期（≤30分钟）后无法续期，强制下线
+    from app.models.refresh_token import RefreshToken
+    await db.execute(delete(RefreshToken).where(RefreshToken.user_id == user.id))
+
     await db.commit()
 
-    return {"message": "密码重置成功"}
+    return {"message": "密码重置成功，该用户的登录状态已失效"}
 
 
 @router.get("/users", response_model=List[UserAdminResponse])
