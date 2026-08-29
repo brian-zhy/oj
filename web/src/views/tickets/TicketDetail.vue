@@ -27,6 +27,11 @@ const STATUS: Record<string, { text: string; color: string; bg: string }> = {
 
 const OPEN_STATUSES = ['pending', 'replied', 'processing', 'suspended']
 
+// 管理员可手动设置的状态（「待补充」仅由回复自动产生，不提供手动设置）
+const MANAGEABLE_STATUS = Object.fromEntries(
+  Object.entries(STATUS).filter(([key]) => key !== 'replied')
+)
+
 const ticket = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
@@ -297,7 +302,11 @@ onMounted(() => loadTicket())
           <template v-if="isStaff">
             <span class="staff-label">处理操作：</span>
             <select v-model="newStatus" class="status-select">
-              <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
+              <option
+                v-for="(s, key) in MANAGEABLE_STATUS"
+                :key="key"
+                :value="key"
+              >{{ s.text }}</option>
             </select>
             <button
               class="btn-status"
@@ -375,7 +384,7 @@ onMounted(() => loadTicket())
         <!-- 回复框 -->
         <div v-if="canReply" class="reply-box card">
           <div class="reply-box-head">
-            {{ isStaff ? '以管理员身份回复（回复后状态将变为「待补充」）' : '补充信息 / 追问' }}
+            {{ isStaff ? '以管理员身份回复（仅「待处理」工单会自动变为「待补充」，其他状态保持不变）' : '补充信息 / 追问' }}
           </div>
           <textarea
             v-model="replyContent"

@@ -242,8 +242,14 @@ class TicketService:
         db.add(reply)
         ticket.last_reply_at = reply.created_at
         ticket.last_reply_by = "staff" if is_staff else "user"
-        if ticket.status in OPEN_STATUSES or is_staff:
-            ticket.status = "replied" if is_staff else "pending"
+        # 状态流转规则：
+        # - 管理员回复：仅当工单处于「待处理」时流转为「待补充」，其他状态保持不变
+        # - 用户回复：开放状态下流转回「待处理」
+        if is_staff:
+            if ticket.status == "pending":
+                ticket.status = "replied"
+        elif is_creator and ticket.status in OPEN_STATUSES:
+            ticket.status = "pending"
 
         await db.commit()
         await db.refresh(reply)
