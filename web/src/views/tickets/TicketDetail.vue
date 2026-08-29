@@ -121,6 +121,12 @@ const relTime = (iso: string) => {
 // 用户名颜色（管理员紫 / 普通红）
 const userColor = (u: any) => (u?.is_admin ? '#9C3DCF' : '#e74c3c')
 
+// 状态中文名 → 配色（时间线记录用）
+const statusColorByText = (text: string) => {
+  const key = Object.keys(STATUS).find(k => STATUS[k].text === text)
+  return key ? STATUS[key].color : '#52C41A'
+}
+
 const loadTicket = async () => {
   loading.value = true
   error.value = ''
@@ -340,7 +346,7 @@ onMounted(() => loadTicket())
                   >{{ r.action_target.user_tag }}</span>
                 </span>
                 <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>
-                <span v-else class="action-text">将工单状态设置为 <b class="action-status">{{ r.action_text }}</b></span>
+                <span v-else class="action-text">将工单状态设置为 <b class="action-status" :style="{ color: statusColorByText(r.action_text) }">{{ r.action_text }}</b></span>
               </div>
               <div class="action-time-line">{{ relTime(r.created_at) }}</div>
             </div>
@@ -686,7 +692,6 @@ onMounted(() => loadTicket())
 }
 
 .action-status {
-  color: #52C41A;
   font-weight: 700;
 }
 
