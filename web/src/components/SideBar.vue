@@ -207,17 +207,6 @@ const navigateTo = (path: string) => {
             <span class="nav-text">排行榜</span>
           </a>
         </li>
-        <li>
-          <a
-            class="nav-item"
-            :class="{ 'active': isActive('/feedback') }"
-            href="/feedback"
-            @click.prevent="navigateTo('/feedback')"
-          >
-            <span class="nav-icon">📝</span>
-            <span class="nav-text">工单/反馈</span>
-          </a>
-        </li>
       </ul>
     </div>
 
