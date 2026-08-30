@@ -319,7 +319,7 @@ async def register_user(
     user_email = payload.email
     if is_phone_register and not user_email:
         # 为手机注册用户生成虚拟邮箱
-        user_email = f"phone+{payload.phone}@temp.local"
+        user_email = f"phone+{payload.phone}@phone.jason227.cn"
 
     # 创建用户
     user = await create_user_with_number(

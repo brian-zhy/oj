@@ -36,7 +36,7 @@ class UserOut(BaseModel):
 
     id: int = Field(description="用户 ID")
     username: str = Field(description="用户名")
-    email: EmailStr = Field(description="邮箱")
+    email: str = Field(description="邮箱（展示用，不做严格格式校验，避免个别历史数据导致接口失败）")
     user_number: int = Field(description="用户编号")
     phone: str | None = Field(None, description="手机号")
     is_active: bool = Field(description="是否启用")
@@ -96,7 +96,7 @@ class UserAdminResponse(BaseModel):
 
     id: int = Field(description="用户 ID")
     username: str = Field(description="用户名")
-    email: EmailStr = Field(description="邮箱")
+    email: str = Field(description="邮箱（展示用，不做严格格式校验，避免个别历史数据导致接口失败）")
     user_number: int = Field(description="用户编号")
     phone: str | None = Field(None, description="手机号")
     is_active: bool = Field(description="是否启用")
