@@ -277,21 +277,7 @@ async def register_user(
         # 删除已使用的验证码
         delete_verification_code(payload.email_token)
 
-    # 验证手机注册（目前为模拟验证，生产环境需要接入真实短信服务）
-    if is_phone_register:
-        if not payload.phone_token or not payload.phone_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="请提供手机验证码"
-            )
-
-        # TODO: 实现手机验证码验证逻辑
-        # 目前简化处理：假设验证码都是"123456"
-        if payload.phone_code != "123456":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="手机验证码错误"
-            )
+    # 手机注册无需验证码（直接凭手机号注册）
 
     # 检查用户名是否已存在
     from sqlalchemy import select

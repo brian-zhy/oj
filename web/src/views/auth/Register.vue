@@ -21,7 +21,6 @@ const formData = ref({
 const confirmPassword = ref('')
 const verificationCode = ref('')
 const emailToken = ref('')
-const phoneToken = ref('')
 
 const error = ref('')
 const loading = ref(false)
@@ -133,55 +132,6 @@ const sendEmailVerification = async () => {
   }
 }
 
-// 发送手机验证码
-const sendPhoneVerification = async () => {
-  if (!formData.value.phone) {
-    error.value = '请输入手机号码'
-    return
-  }
-
-  if (!validatePhone(formData.value.phone)) {
-    error.value = '请输入有效的手机号码'
-    return
-  }
-
-  sendingCode.value = true
-  error.value = ''
-
-  try {
-    // TODO: 实现手机验证码发送API
-    // const response = await fetch('http://localhost:8000/auth/send-phone-verification', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ phone: formData.value.phone })
-    // })
-
-    // 模拟响应 - 使用固定验证码便于测试
-    const mockCode = '123456'
-    console.log('手机验证码 (测试用):', mockCode)
-
-    phoneToken.value = 'mock_token_' + Date.now()
-    codeSent.value = true
-    error.value = ''
-
-    // 开始倒计时
-    countdown.value = 60
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
-      }
-    }, 1000)
-
-    showMessage('验证码已发送到您的手机', 'success')
-  } catch (err: any) {
-    error.value = '发送验证码失败，请稍后重试'
-    console.error('发送验证码失败:', err)
-  } finally {
-    sendingCode.value = false
-  }
-}
-
 const validateForm = (): boolean => {
   if (formData.value.username.length < 3) {
     error.value = '用户名至少需要3个字符'
@@ -225,14 +175,6 @@ const validateForm = (): boolean => {
       return false
     }
 
-    if (!codeSent.value) {
-      error.value = '请先获取手机验证码'
-      return false
-    }
-
-    if (!verificationCode.value || verificationCode.value.length !== 6) {
-      error.value = '请输入6位手机验证码'
-      return false }
   }
 
   if (formData.value.password.length < 8) {
@@ -278,10 +220,8 @@ const handleRegister = async () => {
       registerData.email_token = emailToken.value
       registerData.email_code = verificationCode.value
     } else {
-      // 手机注册
+      // 手机注册（无需验证码）
       registerData.phone = formData.value.phone
-      registerData.phone_token = phoneToken.value
-      registerData.phone_code = verificationCode.value
     }
 
     const success = await authStore.register(registerData)
@@ -408,43 +348,11 @@ const switchRegisterType = (type: 'email' | 'phone') => {
         <div v-else>
           <!-- 手机号 -->
           <div class="form-group">
-            <div class="input-row">
-              <input
-                v-model="formData.phone"
-                type="tel"
-                class="form-input flex-input"
-                placeholder="手机号码"
-                required
-              />
-              <button
-                v-if="!codeSent"
-                type="button"
-                @click="sendVerificationCode"
-                :disabled="sendingCode"
-                class="send-code-btn"
-              >
-                {{ sendingCode ? '发送中...' : '获取验证码' }}
-              </button>
-              <button
-                v-else
-                type="button"
-                @click="sendVerificationCode"
-                :disabled="countdown > 0"
-                class="send-code-btn"
-              >
-                {{ countdown > 0 ? `${countdown}秒后重发` : '重新发送' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 手机验证码 -->
-          <div class="form-group" v-if="codeSent">
             <input
-              v-model="verificationCode"
-              type="text"
+              v-model="formData.phone"
+              type="tel"
               class="form-input"
-              placeholder="请输入6位手机验证码"
-              maxlength="6"
+              placeholder="手机号码"
               required
             />
           </div>
