@@ -76,13 +76,9 @@ const validatePhone = (phone: string) => {
   return phoneRegex.test(phone)
 }
 
-// 发送验证码
+// 发送验证码（仅邮箱注册使用）
 const sendVerificationCode = async () => {
-  if (registerType.value === 'email') {
-    await sendEmailVerification()
-  } else {
-    await sendPhoneVerification()
-  }
+  await sendEmailVerification()
 }
 
 // 发送邮箱验证码
@@ -254,7 +250,6 @@ const switchRegisterType = (type: 'email' | 'phone') => {
   countdown.value = 0
   verificationCode.value = ''
   emailToken.value = ''
-  phoneToken.value = ''
   error.value = ''
 }
 </script>
