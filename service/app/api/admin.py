@@ -141,10 +141,10 @@ async def reset_user_password(
     current_user: User = Depends(get_current_user)
 ):
     """重置指定用户密码（仅 UID=2 的用户可操作）。请求体：{password: "新密码"}"""
-    if current_user.user_number not in (1, 2):
+    if current_user.user_number not in (1, 2, 11):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="只有 UID=1 或 UID=2 的用户可以重置密码"
+            detail="只有 UID=1、2、11 的用户可以重置密码"
         )
 
     new_password = payload.get("password") or ""
