@@ -41,7 +41,7 @@ class EmailService:
         self._smtp_port = int(os.getenv("SMTP_PORT", "587"))
         self._smtp_email = os.getenv("SMTP_EMAIL", "")
         self._smtp_password = os.getenv("SMTP_PASSWORD", "")
-        self._from_name = os.getenv("SMTP_FROM_NAME", "Jason227")
+        self._from_name = os.getenv("SMTP_FROM_NAME", "NLNOJ")
         self._is_configured = bool(self._smtp_email and self._smtp_password)
         self._config_loaded = True  # 标记配置已加载
 
@@ -134,19 +134,19 @@ class EmailService:
             message = EmailMessage()
             message["From"] = formataddr((self.from_name, self.smtp_email))
             message["To"] = email
-            message["Subject"] = "【Jason227】邮箱验证码"
+            message["Subject"] = "【NLNOJ】邮箱验证码"
 
             # HTML邮件内容
             html_content = f"""
             <html>
             <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ Jason227 邮箱验证</h2>
+                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ NLNOJ 邮箱验证</h2>
 
                     <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">您好！</p>
 
                     <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">
-                        您正在注册 Jason227 账户，验证码如下：
+                        您正在注册 NLNOJ 账户，验证码如下：
                     </p>
 
                     <div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 24px; text-align: center; font-size: 32px; font-weight: bold; margin: 24px 0; border-radius: 8px; color: white; letter-spacing: 4px;">
@@ -285,14 +285,14 @@ class EmailService:
             message = EmailMessage()
             message["From"] = formataddr((self.from_name, self.smtp_email))
             message["To"] = email
-            message["Subject"] = "【Jason227】密码重置请求"
+            message["Subject"] = "【NLNOJ】密码重置请求"
 
             # HTML邮件内容
             html_content = f"""
             <html>
             <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px;">
                 <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ Jason227 密码重置</h2>
+                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ NLNOJ 密码重置</h2>
 
                     <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">您好！</p>
 

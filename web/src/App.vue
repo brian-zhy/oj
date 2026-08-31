@@ -58,7 +58,7 @@ const handleLogout = async () => {
     <!-- 页脚 -->
     <footer v-if="showNav" class="page-footer">
       <div class="footer-content">
-        <p class="footer-text">© 2025 Jason227 - 基于原项目重构</p>
+        <p class="footer-text">© 2025 NLNOJ - 基于原项目重构</p>
         <p class="footer-text">基于 FastAPI + Vue 3 + Tailwind CSS 构建</p>
       </div>
     </footer>

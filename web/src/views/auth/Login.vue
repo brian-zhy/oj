@@ -210,7 +210,7 @@ watch(currentCaptcha, () => {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1 class="login-title">✨ Jason227</h1>
+      <h1 class="login-title">✨ NLNOJ</h1>
       <div class="login-subtitle">登录账号</div>
 
       <!-- 登录表单 -->

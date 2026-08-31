@@ -158,7 +158,7 @@ onUnmounted(() => {
 <template>
   <div class="topbar">
     <!-- Logo -->
-    <a href="/" class="logo">✨ Jason227</a>
+    <a href="/" class="logo">✨ NLNOJ</a>
 
     <!-- 认证按钮区域 -->
     <div class="auth-buttons" v-if="!authStore.isAuthenticated">

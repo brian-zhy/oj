@@ -245,7 +245,7 @@ const loadUserProfile = async () => {
     const data: any = await apiClient.get(`/users/number/${route.params.id}`)
     profile.value = data
     coverUrl.value = data.cover_url || ''
-    document.title = `${data.username} 的个人主页 - Jason227`
+    document.title = `${data.username} 的个人主页 - NLNOJ`
   } catch (err: any) {
     console.error('加载用户信息失败:', err)
     error.value = err.response?.status === 404 ? '用户不存在' : '加载失败: ' + (err.message || '未知错误')

@@ -96,7 +96,7 @@ function splitmix32(seed: number) {
 function getDailySeed(userId: string) {
   const today = getTodayDateStr()
   const base = String(userId || 'anonymous')
-  const salt = '✨Jason227🏮'
+  const salt = '✨NLNOJ🏮'
   const combined = base + today + salt
   let hash = 5381
   for (let i = 0; i < combined.length; i++) {
@@ -693,7 +693,7 @@ onUnmounted(() => {
               </div>
 
               <div class="lg-small fortune-days">
-                你已经在 <span class="brand-highlight">✨ Jason227</span> 连续打卡了 <strong>{{ streakDays }}</strong> 天
+                你已经在 <span class="brand-highlight">✨ NLNOJ</span> 连续打卡了 <strong>{{ streakDays }}</strong> 天
               </div>
             </template>
           </div>
