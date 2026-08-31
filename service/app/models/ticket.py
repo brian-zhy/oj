@@ -28,6 +28,9 @@ class Ticket(Base, TimestampMixin):
     creator_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), index=True, nullable=False
     )
+    # 创建时的身份快照（用户改名后历史工单仍显示当时身份）
+    creator_username: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    creator_tag: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # 责任人（处理该工单的管理员，可空）
     assignee_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True
@@ -64,6 +67,9 @@ class TicketReply(Base, TimestampMixin):
         Integer, ForeignKey("users.id"), index=True, nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    # 回复时的身份快照
+    user_username: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    user_tag: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # 是否为管理员（处理者）回复
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 状态变更动作记录（非空 = 系统动作横幅，如「将工单状态设置为 已完成」）

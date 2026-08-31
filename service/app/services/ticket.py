@@ -54,6 +54,8 @@ class TicketService:
             status="pending",
             creator_id=creator.id,
             is_public=is_public,
+            creator_username=creator.username,
+            creator_tag=creator.user_tag or '',
         )
         db.add(ticket)
         await db.flush()
@@ -63,6 +65,8 @@ class TicketService:
             user_id=creator.id,
             content=content.strip(),
             is_staff=False,
+            user_username=creator.username,
+            user_tag=creator.user_tag or '',
         )
         db.add(reply)
         ticket.last_reply_at = reply.created_at
@@ -95,6 +99,15 @@ class TicketService:
         }
 
     @staticmethod
+    def _identity(brief: dict[str, Any], username_snap: Optional[str], tag_snap: Optional[str]) -> dict[str, Any]:
+        """展示身份：有快照用快照（历史记录不随改名漂移），否则用当前身份。"""
+        if username_snap:
+            brief = dict(brief)
+            brief['username'] = username_snap
+            brief['user_tag'] = tag_snap or ''
+        return brief
+
+    @staticmethod
     def _ticket_dict(ticket: Ticket) -> dict[str, Any]:
         return {
             "id": ticket.id,
@@ -108,7 +121,9 @@ class TicketService:
             "last_reply_by": ticket.last_reply_by,
             "created_at": ticket.created_at.isoformat() if ticket.created_at else None,
             "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else None,
-            "creator": TicketService._user_brief(ticket.creator),
+            "creator": TicketService._identity(
+                TicketService._user_brief(ticket.creator), ticket.creator_username, ticket.creator_tag
+            ),
             "assignee": TicketService._user_brief(ticket.assignee) if ticket.assignee_id else None,
         }
 
@@ -238,6 +253,8 @@ class TicketService:
             user_id=user.id,
             content=content.strip(),
             is_staff=is_staff,
+            user_username=user.username,
+            user_tag=user.user_tag or '',
         )
         db.add(reply)
         ticket.last_reply_at = reply.created_at

@@ -34,7 +34,9 @@ def _reply_dict(reply: TicketReply) -> dict:
         "action_text": reply.action_text or "",
         "action_target": TicketService._user_brief(reply.action_target) if reply.action_target_user_id else None,
         "created_at": reply.created_at.isoformat() if reply.created_at else None,
-        "user": TicketService._user_brief(user),
+        "user": TicketService._identity(
+            TicketService._user_brief(user), reply.user_username, reply.user_tag
+        ),
     }
 
 
