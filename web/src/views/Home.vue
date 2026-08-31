@@ -375,17 +375,20 @@ const cannotSpeak = computed(() => currentUser.value?.can_speak === false)
 
 // 更新加载指示文案
 const updateSentinel = () => {
+  // 列表为空时：空状态由 benben-empty 呈现，sentinel 仅在出错时显示错误信息
+  if (benbenList.value.length === 0) {
+    sentinelVisible.value = sentinelText.value === '加载出错，请刷新'
+    return
+  }
   if (!hasMore.value) {
     sentinelText.value = '没有更多动态了'
     sentinelVisible.value = true
   } else if (isLoading.value) {
     sentinelText.value = '加载中...'
     sentinelVisible.value = true
-  } else if (benbenList.value.length > 0) {
+  } else {
     sentinelText.value = '滚动加载更多...'
     sentinelVisible.value = true
-  } else {
-    sentinelVisible.value = false
   }
 }
 
@@ -775,7 +778,9 @@ onUnmounted(() => {
         </div>
 
         <div class="benben-list">
-          <div v-if="benbenList.length === 0 && !isLoading" class="benben-empty">没有更多动态了</div>
+          <div v-if="benbenList.length === 0 && !isLoading" class="benben-empty">
+            {{ sentinelText === '加载出错，请刷新' ? sentinelText : '没有更多动态了' }}
+          </div>
 
           <div v-for="item in benbenList" :key="item.id" class="benben-item" :data-id="item.id">
             <div class="benben-avatar">
