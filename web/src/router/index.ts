@@ -39,12 +39,6 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/submissions',
-    name: 'SubmissionList',
-    component: () => import('@/views/SubmissionList.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/UserProfile.vue'),
@@ -123,6 +117,43 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
+
+// ===== 未开放页面：统一指向「本功能暂未开放」 =====
+import ComingSoon from '@/views/ComingSoon.vue'
+
+const comingSoonPaths = [
+  '/problems',      // 题库
+  '/courses',       // 网校
+  '/training',      // 训练题单
+  '/contests',      // 比赛
+  '/submissions',   // 评测记录
+  '/articles',      // 文章广场
+  '/ranking',       // 排行榜
+  '/image',         // 图片上传
+  '/clipboard',     // 云剪贴板
+  '/themes',        // 主题商店
+  '/help',          // 帮助中心
+  '/contact',       // 联系我们
+  '/rules',         // 社区规则
+  '/user/notification', // 消息通知
+]
+
+comingSoonPaths.forEach((p) => {
+  routes.push({
+    path: p,
+    name: 'ComingSoon_' + p.replace(/\//g, '_'),
+    component: ComingSoon,
+    meta: { requiresAuth: false }
+  })
+})
+
+// 兜底：未知路径同样显示「本功能暂未开放」
+routes.push({
+  path: '/:pathMatch(.*)*',
+  name: 'ComingSoon_CatchAll',
+  component: ComingSoon,
+  meta: { requiresAuth: false }
+})
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
