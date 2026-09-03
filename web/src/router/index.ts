@@ -142,7 +142,7 @@ comingSoonPaths.forEach((p) => {
   routes.push({
     path: p,
     name: 'ComingSoon_' + p.replace(/\//g, '_'),
-    component: ComingSoon,
+    component: () => import('@/views/ComingSoon.vue'),
     meta: { requiresAuth: false }
   })
 })
@@ -151,7 +151,7 @@ comingSoonPaths.forEach((p) => {
 routes.push({
   path: '/:pathMatch(.*)*',
   name: 'ComingSoon_CatchAll',
-  component: ComingSoon,
+  component: () => import('@/views/ComingSoon.vue'),
   meta: { requiresAuth: false }
 })
 
