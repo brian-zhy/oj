@@ -31,6 +31,14 @@ const isStaff = computed(() => {
 
 const scope = ref<'my' | 'all'>('my')
 const statusFilter = ref('')
+const categoryFilter = ref('')
+
+// 普通用户看不到「账号申诉」筛选（申诉类工单私密，仅管理员可见）
+const visibleCategories = computed(() => {
+  const entries = { ...CATEGORIES }
+  if (!isStaff.value) delete entries.appeal
+  return entries
+})
 const tickets = ref<any[]>([])
 const page = ref(0)
 const loading = ref(false)
@@ -44,6 +52,7 @@ const loadTickets = async (append = false) => {
   try {
     let url = `/api/tickets?scope=${scope.value}&page=${page.value}&page_size=20`
     if (statusFilter.value) url += `&status=${statusFilter.value}`
+    if (categoryFilter.value) url += `&category=${categoryFilter.value}`
     const data: any = await apiClient.get(url)
     // 响应校验：防止被劫持/改写的请求返回非预期内容
     const list = Array.isArray(data?.tickets) ? data.tickets : []
@@ -98,12 +107,18 @@ onMounted(() => loadTickets(false))
       <div class="filter-bar">
         <div class="tabs">
           <button class="tab" :class="{ active: scope === 'my' }" @click="switchScope('my')">我的工单</button>
-          <button v-if="isStaff" class="tab" :class="{ active: scope === 'all' }" @click="switchScope('all')">全部工单</button>
+          <button class="tab" :class="{ active: scope === 'all' }" @click="switchScope('all')">全部工单</button>
         </div>
-        <select v-model="statusFilter" class="status-select" @change="changeFilter">
-          <option value="">全部状态</option>
-          <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
-        </select>
+        <div class="filter-selects">
+          <select v-model="categoryFilter" class="status-select" @change="changeFilter">
+            <option value="">全部类别</option>
+            <option v-for="(name, key) in visibleCategories" :key="key" :value="key">{{ name }}</option>
+          </select>
+          <select v-model="statusFilter" class="status-select" @change="changeFilter">
+            <option value="">全部状态</option>
+            <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
+          </select>
+        </div>
       </div>
 
       <!-- 列表 -->
@@ -115,6 +130,7 @@ onMounted(() => loadTickets(false))
           <thead>
             <tr>
               <th>编号</th>
+              <th v-if="scope === 'all'">发起人</th>
               <th>标题</th>
               <th>类别</th>
               <th>状态</th>
@@ -124,6 +140,9 @@ onMounted(() => loadTickets(false))
           <tbody>
             <tr v-for="t in tickets" :key="t.id" @click="router.push(`/tickets/${t.id}`)">
               <td class="col-no">{{ t.ticket_no }}</td>
+              <td v-if="scope === 'all'" class="col-user" :style="{ color: t.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }">
+                {{ t.creator?.username }}
+              </td>
               <td class="col-title">{{ t.title }}</td>
               <td>{{ CATEGORIES[t.category] || t.category }}</td>
               <td>
@@ -224,6 +243,11 @@ onMounted(() => loadTickets(false))
   color: #fff;
 }
 
+.filter-selects {
+  display: flex;
+  gap: 8px;
+}
+
 .status-select {
   padding: 7px 12px;
   border: 1px solid #e2e8f0;
@@ -231,6 +255,11 @@ onMounted(() => loadTickets(false))
   font-size: 13px;
   color: #4a5568;
   background: #fff;
+}
+
+.col-user {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .ticket-table-wrap {

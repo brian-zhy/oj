@@ -76,9 +76,12 @@ async def list_tickets(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    """我的工单（scope=my）或全部工单（scope=all，需用户管理权限）。"""
-    if scope == "all":
-        _require_staff(current_user)
+    """工单列表。
+
+    scope=my  → 我的工单
+    scope=all → 全部工单（所有登录用户可见公开类；管理员额外可见账号申诉等私密工单）
+    """
+    include_private = TicketService.is_staff_user(current_user)
     return await TicketService.list_tickets(
         db,
         scope=scope,
@@ -87,6 +90,7 @@ async def list_tickets(
         category=category,
         page=page,
         page_size=page_size,
+        include_private=include_private,
     )
 
 

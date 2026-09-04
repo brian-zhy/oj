@@ -137,11 +137,13 @@ class TicketService:
         category: Optional[str] = None,
         page: int = 0,
         page_size: int = 20,
+        include_private: bool = True,
     ) -> dict[str, Any]:
         """工单列表。
 
         scope=my   → 只看自己的
-        scope=all  → 全部（删除态不可见，需管理员权限，由 API 层校验）
+        scope=all  → 全部公开工单（删除态不可见）；
+                     include_private=True（管理员）时额外可见账号申诉等私密工单
         """
         query = select(Ticket).options(selectinload(Ticket.creator))
 
@@ -149,6 +151,8 @@ class TicketService:
             query = query.where(Ticket.creator_id == creator_id)
         else:
             query = query.where(Ticket.status != "deleted")
+            if not include_private:
+                query = query.where(Ticket.is_public.is_(True))
 
         if status:
             query = query.where(Ticket.status == status)
