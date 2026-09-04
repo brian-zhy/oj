@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const isMuted = computed(() => authStore.currentUser?.can_speak === false)
 
 const FORUMS = [
   { key: 'siteaffairs', name: '站务版', desc: '站点事务与公告讨论' },
@@ -20,6 +23,10 @@ const error = ref('')
 
 const submit = async () => {
   error.value = ''
+  if (isMuted.value) {
+    error.value = '你已被禁言，无法发布帖子'
+    return
+  }
   if (!forum.value) {
     error.value = '请选择版块'
     return
@@ -53,6 +60,7 @@ const submit = async () => {
   <div class="post-new-page">
     <div class="new-container">
       <h2 class="page-title">发布帖子</h2>
+      <div v-if="isMuted" class="mute-tip">⛔ 你已被禁言，无法发布帖子，如有疑问请通过工单联系我们。</div>
 
       <div class="section-label">选择版块 <span class="required">*</span></div>
       <div class="forum-grid">
@@ -88,7 +96,7 @@ const submit = async () => {
       <div v-if="error" class="error-tip">❌ {{ error }}</div>
 
       <div class="submit-bar">
-        <button class="btn-submit" :disabled="submitting" @click="submit">
+        <button class="btn-submit" :disabled="submitting || isMuted" @click="submit">
           {{ submitting ? '发布中...' : '发布帖子' }}
         </button>
         <button class="btn-cancel" :disabled="submitting" @click="router.back()">取消</button>
@@ -199,6 +207,16 @@ const submit = async () => {
   margin-top: 14px;
   color: #e74c3c;
   font-size: 13px;
+}
+
+.mute-tip {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 16px;
 }
 
 .submit-bar {

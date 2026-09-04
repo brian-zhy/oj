@@ -16,6 +16,7 @@ const replyContent = ref('')
 const replySubmitting = ref(false)
 
 const isLoggedIn = computed(() => authStore.isAuthenticated)
+const isMuted = computed(() => authStore.currentUser?.can_speak === false)
 
 const letterAvatar = (name: string) => {
   const ch = (name || 'U').trim().charAt(0).toUpperCase() || 'U'
@@ -142,7 +143,8 @@ onMounted(() => loadPost())
         </div>
 
         <!-- 回复框 -->
-        <div v-if="isLoggedIn" class="reply-box card">
+        <div v-if="isLoggedIn && isMuted" class="state-box">⛔ 你已被禁言，无法回复</div>
+        <div v-else-if="isLoggedIn" class="reply-box card">
           <div class="reply-box-head">发表回复</div>
           <textarea
             v-model="replyContent"

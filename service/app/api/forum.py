@@ -70,6 +70,8 @@ async def create_post(
 ) -> dict:
     if current_user.is_banned:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被封禁，无法发帖")
+    if not current_user.can_speak:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被禁言，无法发帖")
     post = await ForumService.create_post(
         db, current_user, payload.title, payload.content, payload.forum
     )
@@ -88,6 +90,8 @@ async def add_comment(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")
     if current_user.is_banned:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被封禁，无法回复")
+    if not current_user.can_speak:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被禁言，无法回复")
     comment = await ForumService.add_comment(db, post, current_user, payload.content)
     return ForumService._comment_dict(comment)
 
