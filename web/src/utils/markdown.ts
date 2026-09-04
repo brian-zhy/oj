@@ -18,10 +18,6 @@ function katexHtml(tex: string, displayMode: boolean): string {
   }
 }
 
-// 内部占位符（控制字符包裹下标，正文中不可能自然出现）
-const CODE_MARK = ''
-const MATH_MARK = ''
-
 /**
  * 富文本渲染：完整 Markdown（marked + DOMPurify）+ KaTeX 数学公式
  * - 行内公式：$E = mc^2$
@@ -30,6 +26,11 @@ const MATH_MARK = ''
  */
 export function renderRichText(content: string): string {
   if (!content) return ''
+
+  // 每次渲染生成随机标记（正文不可能自然出现，杜绝占位符与内容冲突）
+  const uid = Math.random().toString(36).slice(2, 10)
+  const CODE_MARK = 'K' + uid + 'c'
+  const MATH_MARK = 'K' + uid + 'm'
 
   const codeBlocks: string[] = []
   const displayMath: string[] = []
@@ -61,7 +62,7 @@ export function renderRichText(content: string): string {
   // 3. marked 解析标准 Markdown
   let html = marked.parse(content) as string
 
-  // 4. DOMPurify 消毒（占位控制字符会原样保留）
+  // 4. DOMPurify 消毒（随机标记原样保留）
   html = DOMPurify.sanitize(html)
 
   // 5. 还原公式占位（KaTeX 输出自身安全）
