@@ -24,7 +24,12 @@ const letterAvatar = (name: string) => {
 
 const userColor = (u: any) => (u?.is_banned ? '#95a5a6' : u?.is_admin ? '#9C3DCF' : '#e74c3c')
 
-const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '')
+const fmtTime = (iso: string) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 // 富文本渲染（Markdown + LaTeX 公式）
 import { renderRichText } from '@/utils/markdown'
