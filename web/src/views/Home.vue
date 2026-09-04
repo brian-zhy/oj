@@ -42,30 +42,8 @@ const getUserAvatar = (item: any) => {
   return item.avatar_url || letterAvatar(item.username)
 }
 
-// 简单的Markdown渲染
-const renderMarkdown = (content: string) => {
-  if (!content) return ''
-
-  // 处理代码块
-  content = content.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-
-  // 处理粗体
-  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-
-  // 处理斜体
-  content = content.replace(/\*(.*?)\*/g, '<em>$1</em>')
-
-  // 处理链接
-  content = content.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
-
-  // 处理@提及
-  content = content.replace(/@([一-龥a-zA-Z0-9_.-]+)/g, '<span style="color:#e74c3c;font-weight:bold;">@$1</span>')
-
-  // 处理换行
-  content = content.replace(/\n/g, '<br>')
-
-  return content
-}
+// 富文本渲染（Markdown + LaTeX 公式）
+import { renderRichText as renderMarkdown } from '@/utils/markdown'
 
 // ==================== 打卡（纯前端，localStorage 存储） ====================
 

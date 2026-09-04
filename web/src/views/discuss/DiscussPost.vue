@@ -26,17 +26,9 @@ const userColor = (u: any) => (u?.is_banned ? '#95a5a6' : u?.is_admin ? '#9C3DCF
 
 const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '')
 
-// 简易 Markdown 渲染（与犇犇一致）
-const renderContent = (content: string) => {
-  if (!content) return ''
-  content = content.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  content = content.replace(/\*(.*?)\*/g, '<em>$1</em>')
-  content = content.replace(/https?:\/\/[^\s]+/g, '<a href="$&" target="_blank">$&</a>')
-  content = content.replace(/@([一-龥a-zA-Z0-9_.-]+)/g, '<span style="color:#e74c3c;font-weight:bold;">@$1</span>')
-  content = content.replace(/\n/g, '<br>')
-  return content
-}
+// 富文本渲染（Markdown + LaTeX 公式）
+import { renderRichText } from '@/utils/markdown'
+const renderContent = (content: string) => renderRichText(content)
 
 const loadPost = async () => {
   loading.value = true
