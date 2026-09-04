@@ -481,7 +481,8 @@ async function loadUsers() {
 
   loading.value = true
   try {
-    const data = await apiClient.get('/api/admin/users')
+    // 显式拉取 100 条（后端默认 limit=20，会截掉新注册的用户）
+    const data = await apiClient.get('/api/admin/users?limit=100')
     users.value = (data as any) || []
     currentUser.value = authStore.currentUser
     currentProfile.value = authStore.currentUser
