@@ -105,7 +105,7 @@ onMounted(() => loadPost())
               @click="removePost"
             >删除</button>
           </div>
-          <div class="post-content" v-html="renderContent(post.content)"></div>
+          <div class="post-content prose" v-html="renderContent(post.content)"></div>
         </div>
 
         <!-- 回复列表 -->
@@ -132,7 +132,7 @@ onMounted(() => loadPost())
               <span class="comment-floor">#{{ Number(i) + 1 }}</span>
               <span class="comment-time">{{ fmtTime(c.created_at) }}</span>
             </div>
-            <div class="comment-content" v-html="renderContent(c.content)"></div>
+            <div class="comment-content prose" v-html="renderContent(c.content)"></div>
           </div>
         </div>
 

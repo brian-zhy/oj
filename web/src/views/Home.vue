@@ -799,7 +799,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <div class="benben-text" v-html="renderMarkdown(item.content)"></div>
+              <div class="benben-text prose" v-html="renderMarkdown(item.content)"></div>
 
               <div v-if="item.reply_to_username" class="benben-reply-hint">
                 ↩️ 回复了 @{{ item.reply_to_username }}
