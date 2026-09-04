@@ -1,5 +1,10 @@
 import katex from 'katex'
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
 import 'katex/dist/katex.min.css'
+
+// 换行即换行（与聊天/犇犇的书写习惯一致），启用 GFM（表格/删除线/任务列表）
+marked.setOptions({ breaks: true, gfm: true })
 
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -14,14 +19,14 @@ function katexHtml(tex: string, displayMode: boolean): string {
 }
 
 // 内部占位符（控制字符包裹下标，正文中不可能自然出现）
-const CODE_MARK = ''
-const MATH_MARK = ''
+const CODE_MARK = ''
+const MATH_MARK = ''
 
 /**
- * 富文本渲染：简易 Markdown + KaTeX 数学公式
+ * 富文本渲染：完整 Markdown（marked + DOMPurify）+ KaTeX 数学公式
  * - 行内公式：$E = mc^2$
  * - 块级公式：$$\int_0^1 x\,dx$$
- * - 粗体 / 斜体 / 代码块 / 链接 / @提及 / 换行
+ * - 标题 / 列表 / 表格 / 引用 / 代码块 / 行内代码 / 链接 / 图片 / 删除线 / @提及
  */
 export function renderRichText(content: string): string {
   if (!content) return ''
@@ -29,37 +34,41 @@ export function renderRichText(content: string): string {
   const codeBlocks: string[] = []
   const displayMath: string[] = []
 
-  // 1. 代码块先占位（内部不做任何 Markdown/LaTeX 处理）
+  // 1. 代码块与行内代码先占位（保护内部的 $ 与 Markdown 符号）
   content = content.replace(/```([\s\S]*?)```/g, (_, code: string) => {
     const idx = codeBlocks.length
     codeBlocks.push('<pre><code>' + escapeHtml(code) + '</code></pre>')
     return CODE_MARK + idx + CODE_MARK
   })
+  content = content.replace(/`([^`\n]+)`/g, (_, code: string) => {
+    const idx = codeBlocks.length
+    codeBlocks.push('<code>' + escapeHtml(code) + '</code>')
+    return CODE_MARK + idx + CODE_MARK
+  })
 
-  // 2. 块级公式 $$...$$ 占位
+  // 2. LaTeX 公式占位（块级 $$...$$ 与行内 $...$）
   content = content.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex: string) => {
     const idx = displayMath.length
     displayMath.push(katexHtml(tex, true))
     return MATH_MARK + idx + MATH_MARK
   })
-
-  // 3. 行内公式 $...$ 占位
   content = content.replace(/\$([^$\n]+?)\$/g, (_, tex: string) => {
     const idx = displayMath.length
     displayMath.push(katexHtml(tex, false))
     return MATH_MARK + idx + MATH_MARK
   })
 
-  // 4. 其余 Markdown 规则
-  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  content = content.replace(/\*(.*?)\*/g, '<em>$1</em>')
-  content = content.replace(/https?:\/\/[^\s<]+/g, '<a href="$&" target="_blank" rel="noopener noreferrer">$&</a>')
-  content = content.replace(/@([一-龥a-zA-Z0-9_.-]+)/g, '<span style="color:#e74c3c;font-weight:bold;">@$1</span>')
-  content = content.replace(/\n/g, '<br>')
+  // 3. marked 解析标准 Markdown
+  let html = marked.parse(content) as string
 
-  // 5. 还原占位（占位下标与数组下标严格一致）
-  content = content.replace(new RegExp(MATH_MARK + '(\\d+)' + MATH_MARK, 'g'), (_, i: string) => displayMath[+i])
-  content = content.replace(new RegExp(CODE_MARK + '(\\d+)' + CODE_MARK, 'g'), (_, i: string) => codeBlocks[+i])
+  // 4. DOMPurify 消毒（占位控制字符会原样保留）
+  html = DOMPurify.sanitize(html)
 
-  return content
+  // 5. 还原公式占位（KaTeX 输出自身安全）
+  html = html.replace(new RegExp(MATH_MARK + '(\\d+)' + MATH_MARK, 'g'), (_, i: string) => displayMath[+i] ?? '')
+
+  // 6. 还原代码占位
+  html = html.replace(new RegExp(CODE_MARK + '(\\d+)' + CODE_MARK, 'g'), (_, i: string) => codeBlocks[+i] ?? '')
+
+  return html
 }

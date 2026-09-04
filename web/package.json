@@ -11,6 +11,7 @@
   "dependencies": {
     "@monaco-editor/loader": "^1.7.0",
     "axios": "^1.18.1",
+    "dompurify": "^3.4.14",
     "katex": "^0.18.5",
     "marked": "^18.0.7",
     "monaco-editor": "^0.56.0",
