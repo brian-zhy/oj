@@ -72,6 +72,14 @@ async def create_post(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被封禁，无法发帖")
     if not current_user.can_speak:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被禁言，无法发帖")
+    # 站务版为公告性质版块：仅秩序管理（或管理员）可发帖，普通用户只读
+    if payload.forum == "siteaffairs" and not (
+        current_user.can_manage_posts or current_user.is_admin or current_user.is_super_admin
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="站务版仅秩序管理可发帖",
+        )
     post = await ForumService.create_post(
         db, current_user, payload.title, payload.content, payload.forum
     )
