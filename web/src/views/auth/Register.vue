@@ -7,14 +7,13 @@ import { authApi } from '@/api/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 
-// 注册方式选择
+// 注册方式（当前仅开放邮箱注册）
 const registerType = ref<'email' | 'phone'>('email')
 
 // 表单数据
 const formData = ref({
   username: '',
   email: '',
-  phone: '',
   password: ''
 })
 
@@ -71,10 +70,6 @@ const validateEmail = (email: string) => {
 }
 
 // 验证手机号格式
-const validatePhone = (phone: string) => {
-  const phoneRegex = /^1[3-9]\d{9}$/
-  return phoneRegex.test(phone)
-}
 
 // 发送验证码（仅邮箱注册使用）
 const sendVerificationCode = async () => {
@@ -160,17 +155,6 @@ const validateForm = (): boolean => {
       error.value = '请输入6位邮箱验证码'
       return false
     }
-  } else {
-    if (!formData.value.phone) {
-      error.value = '请输入手机号码'
-      return false
-    }
-
-    if (!validatePhone(formData.value.phone)) {
-      error.value = '请输入有效的手机号码'
-      return false
-    }
-
   }
 
   if (formData.value.password.length < 8) {
@@ -210,15 +194,10 @@ const handleRegister = async () => {
       password: formData.value.password
     }
 
-    if (registerType.value === 'email') {
-      // 邮箱注册
-      registerData.email = formData.value.email
-      registerData.email_token = emailToken.value
-      registerData.email_code = verificationCode.value
-    } else {
-      // 手机注册（无需验证码）
-      registerData.phone = formData.value.phone
-    }
+    // 邮箱注册
+    registerData.email = formData.value.email
+    registerData.email_token = emailToken.value
+    registerData.email_code = verificationCode.value
 
     const success = await authStore.register(registerData)
     if (success) {
@@ -243,15 +222,6 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   }
 }
 
-// 切换注册方式时重置状态
-const switchRegisterType = (type: 'email' | 'phone') => {
-  registerType.value = type
-  codeSent.value = false
-  countdown.value = 0
-  verificationCode.value = ''
-  emailToken.value = ''
-  error.value = ''
-}
 </script>
 
 <template>
@@ -259,22 +229,6 @@ const switchRegisterType = (type: 'email' | 'phone') => {
     <div class="register-card">
       <h1 class="register-title">✨ NLNOJ</h1>
       <div class="register-subtitle">注册新账户</div>
-
-      <!-- 注册方式选择 -->
-      <div class="register-type-selector">
-        <button
-          @click="switchRegisterType('email')"
-          :class="['type-btn', { 'active': registerType === 'email' }]"
-        >
-          📧 邮箱注册
-        </button>
-        <button
-          @click="switchRegisterType('phone')"
-          :class="['type-btn', { 'active': registerType === 'phone' }]"
-        >
-          📱 手机注册
-        </button>
-      </div>
 
       <!-- 注册表单 -->
       <form @submit.prevent="handleRegister" class="register-form">
@@ -337,20 +291,6 @@ const switchRegisterType = (type: 'email' | 'phone') => {
             />
           </div>
 
-        </div>
-
-        <!-- 手机注册方式 -->
-        <div v-else>
-          <!-- 手机号 -->
-          <div class="form-group">
-            <input
-              v-model="formData.phone"
-              type="tel"
-              class="form-input"
-              placeholder="手机号码"
-              required
-            />
-          </div>
         </div>
 
         <!-- 密码 -->
