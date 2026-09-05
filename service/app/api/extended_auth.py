@@ -277,6 +277,14 @@ async def register_user(
         # 删除已使用的验证码
         delete_verification_code(payload.email_token)
 
+    # 手机注册无需验证码（直接凭手机号注册），但格式必须合法
+    import re as _re
+    if is_phone_register and not _re.match(r"^1[3-9]\d{9}$", payload.phone or ""):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="手机号格式不正确（须为中国大陆 11 位手机号）"
+        )
+
     # 手机注册无需验证码（直接凭手机号注册）
 
     # 检查用户名是否已存在

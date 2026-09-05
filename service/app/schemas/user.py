@@ -15,7 +15,13 @@ class UserCreate(BaseModel):
         description="用户名，3-50 位字母、数字或下划线",
     )
     email: EmailStr | None = Field(None, description="邮箱地址（邮箱注册时必填）")
-    phone: str | None = Field(None, description="手机号（手机注册时必填）")
+    phone: str | None = Field(
+        None,
+        min_length=11,
+        max_length=11,
+        pattern=r"^1[3-9]\d{9}$",
+        description="手机号（中国大陆 11 位，手机注册时必填）",
+    )
     # 72 字符上限用于规避 bcrypt 72 字节的静默截断（ASCII 场景）。
     password: str = Field(min_length=8, max_length=72, description="密码，8-72 位")
     email_token: str | None = Field(None, description="邮箱验证令牌（邮箱注册时必填）")
@@ -38,7 +44,13 @@ class UserOut(BaseModel):
     username: str = Field(description="用户名")
     email: str = Field(description="邮箱（展示用，不做严格格式校验，避免个别历史数据导致接口失败）")
     user_number: int = Field(description="用户编号")
-    phone: str | None = Field(None, description="手机号")
+    phone: str | None = Field(
+        None,
+        min_length=11,
+        max_length=11,
+        pattern=r"^1[3-9]\d{9}$",
+        description="手机号（中国大陆 11 位）",
+    )
     is_active: bool = Field(description="是否启用")
     is_banned: bool = Field(description="是否被封禁")
     is_admin: bool = Field(description="是否管理员")
@@ -98,7 +110,13 @@ class UserAdminResponse(BaseModel):
     username: str = Field(description="用户名")
     email: str = Field(description="邮箱（展示用，不做严格格式校验，避免个别历史数据导致接口失败）")
     user_number: int = Field(description="用户编号")
-    phone: str | None = Field(None, description="手机号")
+    phone: str | None = Field(
+        None,
+        min_length=11,
+        max_length=11,
+        pattern=r"^1[3-9]\d{9}$",
+        description="手机号（中国大陆 11 位）",
+    )
     is_active: bool = Field(description="是否启用")
     is_banned: bool = Field(description="是否被封禁")
     is_cheater: bool = Field(description="是否作弊者")
