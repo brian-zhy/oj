@@ -383,7 +383,9 @@ const switchTab = (mode: 'all' | 'my') => {
   loadBenbenList(true)
 }
 
-// 发布犇犇
+// 发布犇犇（乐观更新：点击后立即上屏，失败回滚）
+const posting = ref(false)
+
 const postBenben = async () => {
   const content = benbenContent.value.trim()
   if (!content) {
@@ -403,11 +405,13 @@ const postBenben = async () => {
 
   // 校验回复前缀，决定 reply_to
   let finalReplyToId: number | null = null
+  let replyToName: string | null = null
   if (currentReplyingId.value && currentReplyUsername.value) {
     const trimmed = content.trimStart()
     const prefix = `|| @${currentReplyUsername.value} :`
     if (trimmed.startsWith(prefix)) {
       finalReplyToId = currentReplyingId.value
+      replyToName = currentReplyUsername.value
     } else {
       currentReplyingId.value = null
       currentReplyUsername.value = null
@@ -416,20 +420,46 @@ const postBenben = async () => {
 
   const finalContent = currentUser.value.is_admin ? content : content.substring(0, MAX_LENGTH)
 
+  posting.value = true
+
+  // 乐观插入的临时对象（服务器返回后替换为正式数据）
+  const u = currentUser.value
+  const optimisticId = -Date.now()
+  const optimistic = {
+    id: optimisticId,
+    user_number: u.user_number,
+    username: u.username,
+    avatar_url: u.avatar_url,
+    is_admin: u.is_admin,
+    is_cheater: u.is_cheater,
+    user_tag: u.user_tag,
+    content: finalContent,
+    reply_to: finalReplyToId,
+    reply_to_username: replyToName,
+    created_at: new Date().toISOString(),
+  }
+  benbenList.value = [optimistic, ...benbenList.value]
+  benbenContent.value = ''
+  currentReplyingId.value = null
+  currentReplyUsername.value = null
+
   try {
-    await apiClient.post('/benben', {
+    const res: any = await apiClient.post('/benben', {
       content: finalContent,
       ...(finalReplyToId ? { reply_to: finalReplyToId } : {})
     })
-
-    benbenContent.value = ''
-    currentReplyingId.value = null
-    currentReplyUsername.value = null
-    await loadBenbenList(true)
+    // 用服务器返回的正式数据替换乐观项
+    const idx = benbenList.value.findIndex(x => x.id === optimisticId)
+    if (idx !== -1 && res?.id) benbenList.value.splice(idx, 1, res)
   } catch (error: any) {
     console.error('发布失败:', error)
+    // 回滚乐观项
+    const idx = benbenList.value.findIndex(x => x.id === optimisticId)
+    if (idx !== -1) benbenList.value.splice(idx, 1)
     const errorMessage = error.response?.data?.detail || error.message || '未知错误'
     alert('发布失败：' + errorMessage)
+  } finally {
+    posting.value = false
   }
 }
 
@@ -742,10 +772,10 @@ onUnmounted(() => {
           <div class="benben-submit-btn">
             <button
               class="auth-btn"
-              :disabled="cannotSpeak"
+              :disabled="cannotSpeak || posting"
               @click="postBenben"
             >
-              发射犇犇！
+              {{ posting ? '🚀 发射中...' : '发射犇犇！' }}
             </button>
           </div>
         </div>
