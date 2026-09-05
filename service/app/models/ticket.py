@@ -39,7 +39,7 @@ class Ticket(Base, TimestampMixin):
     is_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     last_reply_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=True), nullable=True, index=True
     )
     # 最后回复方：user 用户 / staff 管理
     last_reply_by: Mapped[str | None] = mapped_column(String(10), nullable=True)

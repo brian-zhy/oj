@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, Integer, Text, String
+from sqlalchemy import ForeignKey, Index, Integer, Text, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -25,6 +25,10 @@ class ForumPost(Base, TimestampMixin):
     )
     comments: Mapped[list["ForumComment"]] = relationship(
         back_populates="post", cascade="all, delete-orphan", order_by="ForumComment.id"
+    )
+
+    __table_args__ = (
+        Index("ix_forum_posts_created_at", "created_at"),
     )
 
 

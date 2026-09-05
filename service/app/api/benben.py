@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from typing import Optional
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user, get_current_user_optional
+from app.utils.ratelimit import check
 from app.models.benben import Benben
 from app.models.user import User
 from app.schemas.benben import BenbenCreate, BenbenResponse
@@ -23,6 +24,14 @@ async def create_benben(
     current_user: User = Depends(get_current_user)
 ) -> BenbenResponse:
     """发布新的犇犇动态"""
+    # 频率限制：每用户 10 秒内只能发一条，防止刷屏
+    ok, wait = check(f"benben:{current_user.user_number}", 1, 10)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"发布太频繁，请 {wait} 秒后再试",
+        )
+
     try:
         benben = await benben_service.create_benben(
             db=db,

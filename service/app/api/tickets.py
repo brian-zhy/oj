@@ -15,6 +15,7 @@ from app.models.ticket import TicketReply
 from app.models.user import User
 from app.schemas.ticket import TicketCreate, TicketReplyCreate, TicketStatusUpdate
 from app.services.ticket import TicketService
+from app.utils.ratelimit import check
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
@@ -47,6 +48,13 @@ async def create_ticket(
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """创建工单（一事一单）。封禁用户仅可提交账号申诉。"""
+    ok, wait = check(f"ticket:{current_user.user_number}", 3, 3600)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"创建太频繁，请 {wait} 秒后再试",
+        )
+
     try:
         ticket = await TicketService.create_ticket(
             db, current_user, payload.title, payload.category, payload.content

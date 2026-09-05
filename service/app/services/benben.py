@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Optional
-from sqlalchemy import select, desc
+from sqlalchemy import select, delete, desc, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -52,6 +52,23 @@ class BenbenService:
             )
             if not original.scalar_one_or_none():
                 raise ValueError("回复的犇犇不存在")
+
+        # 单用户总量上限 200 条：超出时自动清理该用户最旧的犇犇，防止数据无限膨胀
+        from sqlalchemy import delete
+        count_result = await db.execute(
+            select(sa_func.count()).select_from(Benben).where(Benben.user_number == user_number)
+        )
+        if (count_result.scalar() or 0) >= 200:
+            await db.execute(
+                delete(Benben).where(
+                    Benben.user_number == user_number,
+                    Benben.id.in_(
+                        select(Benben.id).where(Benben.user_number == user_number)
+                        .order_by(Benben.created_at.asc(), Benben.id.asc())
+                        .limit(1)
+                    ),
+                )
+            )
 
         # 创建犇犇
         benben = Benben(

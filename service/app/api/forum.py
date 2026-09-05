@@ -13,6 +13,7 @@ from app.deps import get_current_user, get_current_user_optional
 from app.models.forum import ForumPost
 from app.models.user import User
 from app.services.forum import ForumService
+from app.utils.ratelimit import check
 
 router = APIRouter(prefix="/forum", tags=["forum"])
 
@@ -80,6 +81,12 @@ async def create_post(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="站务版仅秩序管理可发帖",
         )
+    ok, wait = check(f"post:{current_user.user_number}", 1, 60)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"发布太频繁，请 {wait} 秒后再试",
+        )
     post = await ForumService.create_post(
         db, current_user, payload.title, payload.content, payload.forum
     )
@@ -100,6 +107,12 @@ async def add_comment(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被封禁，无法回复")
     if not current_user.can_speak:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被禁言，无法回复")
+    ok, wait = check(f"comment:{current_user.user_number}", 1, 5)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"回复太频繁，请 {wait} 秒后再试",
+        )
     comment = await ForumService.add_comment(db, post, current_user, payload.content)
     return ForumService._comment_dict(comment)
 

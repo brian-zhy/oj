@@ -46,6 +46,16 @@ class TicketService:
         if not creator.is_banned and category == "appeal":
             raise PermissionError("账号申诉工单仅封禁用户可提交")
 
+        # 每人同时最多 10 张未完结工单，防止刷工单
+        open_count_result = await db.execute(
+            select(sa_func.count()).select_from(Ticket).where(
+                Ticket.creator_id == creator.id,
+                Ticket.status.in_(OPEN_STATUSES),
+            )
+        )
+        if (open_count_result.scalar() or 0) >= 10:
+            raise PermissionError("你有 10 张未完结的工单，请等待处理完成后再提交")
+
         is_public = category != "appeal"
 
         ticket = Ticket(
