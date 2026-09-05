@@ -7,6 +7,13 @@ import apiClient from '@/api/client'
 const router = useRouter()
 const authStore = useAuthStore()
 const isMuted = computed(() => authStore.currentUser?.can_speak === false)
+const canManagePosts = computed(() => {
+  const u = authStore.currentUser
+  return !!u && (u.can_manage_posts || u.is_admin || u.is_super_admin)
+})
+
+// 站务版仅秩序管理可发帖
+const isForumDisabled = (key: string) => key === 'siteaffairs' && !canManagePosts.value
 
 const FORUMS = [
   { key: 'siteaffairs', name: '站务版', desc: '站点事务与公告讨论' },
@@ -25,6 +32,10 @@ const submit = async () => {
   error.value = ''
   if (isMuted.value) {
     error.value = '你已被禁言，无法发布帖子'
+    return
+  }
+  if (isForumDisabled(forum.value)) {
+    error.value = '站务版仅秩序管理可发帖'
     return
   }
   if (!forum.value) {
@@ -68,11 +79,12 @@ const submit = async () => {
           v-for="f in FORUMS"
           :key="f.key"
           class="forum-card"
-          :class="{ selected: forum === f.key }"
-          @click="forum = f.key"
+          :class="{ selected: forum === f.key, disabled: isForumDisabled(f.key) }"
+          @click="!isForumDisabled(f.key) && (forum = f.key)"
         >
           <div class="forum-name">{{ f.name }}</div>
           <div class="forum-desc">{{ f.desc }}</div>
+          <div v-if="isForumDisabled(f.key)" class="forum-lock">🔒 仅秩序管理</div>
         </div>
       </div>
 
@@ -148,6 +160,17 @@ const submit = async () => {
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.forum-card.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.forum-lock {
+  font-size: 11px;
+  color: #b91c1c;
+  margin-top: 2px;
 }
 
 .forum-card:hover {
