@@ -209,8 +209,26 @@ onMounted(() => loadPost())
             </div>
           </div>
 
-          <!-- 正文卡片 -->
-          <div class="content-card prose" v-html="renderContent(post.content)"></div>
+          <!-- 编辑模式（仅秩序管理）：标题与正文表单 -->
+          <template v-if="editingPost">
+            <div class="edit-card">
+              <div class="edit-title-row">
+                <span class="edit-label">标题</span>
+                <input v-model="editTitle" class="edit-title-input" maxlength="100" />
+              </div>
+              <span class="edit-label">正文</span>
+              <textarea v-model="editContent" rows="12" class="edit-content-input" maxlength="20000"></textarea>
+              <div class="edit-actions">
+                <button class="btn-submit" :disabled="editSaving" @click="saveEditPost">
+                  {{ editSaving ? '保存中...' : '保存' }}
+                </button>
+                <button class="btn-cancel-2" :disabled="editSaving" @click="editingPost = false">取消</button>
+              </div>
+            </div>
+          </template>
+
+          <!-- 正文卡片（非编辑模式） -->
+          <div v-else class="content-card prose" v-html="renderContent(post.content)"></div>
 
           <!-- 回复列表 -->
           <div class="comments-head">回复（{{ post.comments.length }}）</div>
@@ -466,6 +484,76 @@ onMounted(() => loadPost())
   color: #2d3748;
   font-size: 15px;
   word-break: break-word;
+}
+
+.edit-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 20px 24px;
+}
+
+.edit-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.edit-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #47536b;
+  flex-shrink: 0;
+}
+
+.edit-title-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.edit-title-input:focus {
+  border-color: #e74c3c;
+}
+
+.edit-content-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  margin-top: 8px;
+  transition: border-color 0.2s;
+}
+
+.edit-content-input:focus {
+  border-color: #e74c3c;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.btn-cancel-2 {
+  padding: 8px 24px;
+  background: #f3f4f6;
+  color: #4a5568;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .content-card :deep(pre) {
