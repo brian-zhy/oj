@@ -57,6 +57,11 @@ export type ProblemDifficulty =
   | '省选/NOI-'
   | 'NOI/NOI+/CTSC'
 
+export interface ProblemSample {
+  input: string
+  output: string
+}
+
 export interface Problem {
   id: number
   problem_number: string
@@ -65,6 +70,11 @@ export interface Problem {
   source: string | null
   tags: string[]
   description: string
+  background: string
+  input_format: string
+  output_format: string
+  hint: string
+  samples: ProblemSample[]
   time_limit: number
   memory_limit: number
   submit_count: number

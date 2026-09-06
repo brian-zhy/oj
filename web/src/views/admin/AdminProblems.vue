@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
-import { renderRichText } from '@/utils/markdown'
-import { DIFFICULTY_LIST, difficultyColor } from '@/utils/difficulty'
-import type { Problem, ProblemDifficulty, ProblemListItem } from '@/types'
+import { difficultyColor } from '@/utils/difficulty'
+import type { ProblemListItem } from '@/types'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const canManage = computed(() => {
@@ -56,91 +57,7 @@ const goPage = (p: number) => {
 
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
-// ===== 新建 / 编辑表单 =====
-const showForm = ref(false)
-const saving = ref(false)
-const editingId = ref<number | null>(null)
-
-const emptyForm = () => ({
-  title: '',
-  difficulty: '暂无评定' as ProblemDifficulty,
-  source: '',
-  tagsInput: '',
-  time_limit: 1000,
-  memory_limit: 128,
-  is_public: true,
-  description: '',
-})
-
-const form = ref(emptyForm())
-
-const previewHtml = computed(() => renderRichText(form.value.description))
-
-const openCreate = () => {
-  editingId.value = null
-  form.value = emptyForm()
-  showForm.value = true
-}
-
-const openEdit = (p: ProblemListItem | Problem) => {
-  // 列表项无 description，需拉详情
-  problemsApi
-    .get(p.id)
-    .then((full) => {
-      editingId.value = p.id
-      form.value = {
-        title: full.title,
-        difficulty: full.difficulty,
-        source: full.source || '',
-        tagsInput: (full.tags || []).join(','),
-        time_limit: full.time_limit,
-        memory_limit: full.memory_limit,
-        is_public: full.is_public,
-        description: full.description || '',
-      }
-      showForm.value = true
-    })
-    .catch((err: any) => {
-      Swal.fire('加载失败', err.response?.data?.detail || '请重试', 'error')
-    })
-}
-
-const saveForm = async () => {
-  if (!form.value.title.trim()) {
-    Swal.fire('请填写题目名称', '', 'warning')
-    return
-  }
-  const payload = {
-    title: form.value.title.trim(),
-    difficulty: form.value.difficulty,
-    source: form.value.source.trim() || null,
-    tags: form.value.tagsInput
-      .split(/[,，]/)
-      .map((t) => t.trim())
-      .filter(Boolean),
-    time_limit: Number(form.value.time_limit),
-    memory_limit: Number(form.value.memory_limit),
-    is_public: form.value.is_public,
-    description: form.value.description,
-  }
-  saving.value = true
-  try {
-    if (editingId.value === null) {
-      await problemsApi.create(payload)
-      Swal.fire({ icon: 'success', title: '创建成功', timer: 1200, showConfirmButton: false })
-    } else {
-      await problemsApi.update(editingId.value, payload)
-      Swal.fire({ icon: 'success', title: '保存成功', timer: 1200, showConfirmButton: false })
-    }
-    showForm.value = false
-    loadList()
-  } catch (err: any) {
-    Swal.fire('保存失败', err.response?.data?.detail || '请重试', 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
+// ===== 编辑 / 删除 =====
 const doDelete = (p: ProblemListItem) => {
   Swal.fire({
     title: '删除题目',
@@ -172,7 +89,7 @@ onMounted(loadList)
 
       <!-- 工具栏 -->
       <div class="toolbar">
-        <button class="btn-new" @click="openCreate">＋ 新建题目</button>
+        <button class="btn-new" @click="router.push('/problems/new')">＋ 新建题目</button>
         <div class="search-wrap">
           <input
             v-model="keyword"
@@ -223,7 +140,7 @@ onMounted(loadList)
                 </span>
               </td>
               <td class="col-ops">
-                <span class="action-link" @click="openEdit(p)">编辑</span>
+                <span class="action-link" @click="router.push(`/problems/${p.id}/edit`)">编辑</span>
                 <span class="action-sep">|</span>
                 <span class="action-link red" @click="doDelete(p)">删除</span>
               </td>
@@ -235,66 +152,6 @@ onMounted(loadList)
           <button class="page-btn" :disabled="page === 0" @click="goPage(page - 1)">&laquo;</button>
           <span class="page-info">第 {{ page + 1 }} / {{ pageCount }} 页</span>
           <button class="page-btn" :disabled="page >= pageCount - 1" @click="goPage(page + 1)">&raquo;</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 新建 / 编辑弹层 -->
-    <div v-if="showForm" class="modal-mask" @click.self="showForm = false">
-      <div class="modal">
-        <div class="modal-header">{{ editingId === null ? '新建题目' : '编辑题目' }}</div>
-
-        <div class="form-grid">
-          <label class="form-item">
-            <span class="form-label">题目名称 *</span>
-            <input v-model="form.title" class="form-input" placeholder="例如：A+B Problem" />
-          </label>
-          <label class="form-item">
-            <span class="form-label">难度</span>
-            <select v-model="form.difficulty" class="form-input">
-              <option v-for="d in DIFFICULTY_LIST" :key="d" :value="d">{{ d }}</option>
-            </select>
-          </label>
-          <label class="form-item">
-            <span class="form-label">来源</span>
-            <input v-model="form.source" class="form-input" placeholder="例如：NOIP / 洛谷 / 自拟" />
-          </label>
-          <label class="form-item">
-            <span class="form-label">算法标签（逗号分隔，最多 10 个）</span>
-            <input v-model="form.tagsInput" class="form-input" placeholder="例如：模拟, 前缀和, 动态规划" />
-          </label>
-          <label class="form-item">
-            <span class="form-label">时间限制 (ms)</span>
-            <input v-model.number="form.time_limit" type="number" class="form-input" min="100" max="60000" />
-          </label>
-          <label class="form-item">
-            <span class="form-label">内存限制 (MB)</span>
-            <input v-model.number="form.memory_limit" type="number" class="form-input" min="16" max="1024" />
-          </label>
-        </div>
-
-        <label class="form-item">
-          <span class="form-label">题面（Markdown，支持 $公式$ 与样例代码块）</span>
-          <textarea v-model="form.description" class="form-textarea" rows="10"
-            placeholder="## 题目描述&#10;...&#10;## 输入格式&#10;...&#10;## 样例&#10;```input1&#10;1 2&#10;```&#10;```output1&#10;3&#10;```"
-          ></textarea>
-        </label>
-
-        <div v-if="form.description" class="preview-box">
-          <div class="preview-title">预览</div>
-          <div class="prose preview-body" v-html="previewHtml"></div>
-        </div>
-
-        <label class="checkbox-line">
-          <input v-model="form.is_public" type="checkbox" />
-          公开（取消勾选则为草稿，仅题目管理可见）
-        </label>
-
-        <div class="modal-footer">
-          <button class="btn-cancel" @click="showForm = false">取消</button>
-          <button class="btn-save" :disabled="saving" @click="saveForm">
-            {{ saving ? '保存中...' : '保存' }}
-          </button>
         </div>
       </div>
     </div>
@@ -513,158 +370,5 @@ onMounted(loadList)
   text-align: center;
   padding: 50px 20px;
   color: #999;
-}
-
-/* ===== 弹层 ===== */
-.modal-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 40px 16px;
-  overflow-y: auto;
-  z-index: 300;
-}
-
-.modal {
-  background: #fff;
-  border-radius: 16px;
-  width: 860px;
-  max-width: 100%;
-  padding: 24px 28px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
-}
-
-.modal-header {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #2c3e50;
-  border-left: 4px solid #e74c3c;
-  padding-left: 10px;
-  margin-bottom: 18px;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px 16px;
-  margin-bottom: 12px;
-}
-
-.form-item {
-  display: block;
-  margin-bottom: 12px;
-}
-
-.form-label {
-  display: block;
-  font-size: 13px;
-  color: #5b6e8c;
-  margin-bottom: 4px;
-}
-
-.form-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #2c3e50;
-  outline: none;
-}
-
-.form-input:focus {
-  border-color: #e74c3c;
-}
-
-.form-textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 13px;
-  font-family: ui-monospace, Consolas, monospace;
-  color: #2c3e50;
-  outline: none;
-  resize: vertical;
-}
-
-.form-textarea:focus {
-  border-color: #e74c3c;
-}
-
-.preview-box {
-  border: 1px solid #edf2f7;
-  border-radius: 10px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-
-.preview-title {
-  background: #f7fafc;
-  color: #8a9aa8;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-bottom: 1px solid #edf2f7;
-}
-
-.preview-body {
-  padding: 12px 16px;
-  max-height: 320px;
-  overflow-y: auto;
-}
-
-.checkbox-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #4a5568;
-  margin-bottom: 16px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-cancel {
-  padding: 9px 22px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  border-radius: 22px;
-  font-size: 13px;
-  color: #4a5568;
-  cursor: pointer;
-}
-
-.btn-save {
-  padding: 9px 28px;
-  background: #e74c3c;
-  color: #fff;
-  border: none;
-  border-radius: 22px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-save:hover:not(:disabled) {
-  background: #c0392b;
-}
-
-.btn-save:disabled {
-  opacity: 0.6;
-}
-
-@media (max-width: 700px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

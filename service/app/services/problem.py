@@ -38,6 +38,15 @@ class ProblemService:
         }
         if with_description:
             d["description"] = p.description
+            d["background"] = p.background
+            d["input_format"] = p.input_format
+            d["output_format"] = p.output_format
+            d["hint"] = p.hint
+            d["samples"] = [
+                {"input": s.get("input", ""), "output": s.get("output", "")}
+                for s in (p.samples or [])
+                if isinstance(s, dict)
+            ]
         return d
 
     @staticmethod

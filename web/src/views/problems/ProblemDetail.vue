@@ -18,6 +18,25 @@ const problemId = computed(() => parseInt(route.params.id as string, 10))
 const descriptionHtml = computed(() =>
   problem.value ? renderRichText(problem.value.description) : ''
 )
+const backgroundHtml = computed(() =>
+  problem.value ? renderRichText(problem.value.background || '') : ''
+)
+const inputFormatHtml = computed(() =>
+  problem.value ? renderRichText(problem.value.input_format || '') : ''
+)
+const outputFormatHtml = computed(() =>
+  problem.value ? renderRichText(problem.value.output_format || '') : ''
+)
+const hintHtml = computed(() =>
+  problem.value ? renderRichText(problem.value.hint || '') : ''
+)
+
+// 有任一扩展分节时，描述也加上「题目描述」小节标题（洛谷习惯）
+const hasSections = computed(() => {
+  const p = problem.value
+  if (!p) return false
+  return !!(p.background || p.input_format || p.output_format || p.hint || (p.samples && p.samples.length))
+})
 
 const loadProblem = async () => {
   if (!Number.isFinite(problemId.value)) return
@@ -83,7 +102,45 @@ onMounted(loadProblem)
 
         <!-- 题面 -->
         <div class="card">
-          <div class="prose p-body" v-html="descriptionHtml"></div>
+          <template v-if="hasSections">
+            <template v-if="problem.background">
+              <div class="section-head">题目背景</div>
+              <div class="prose p-body" v-html="backgroundHtml"></div>
+            </template>
+            <template v-if="problem.description">
+              <div class="section-head">题目描述</div>
+              <div class="prose p-body" v-html="descriptionHtml"></div>
+            </template>
+            <template v-if="problem.input_format">
+              <div class="section-head">输入格式</div>
+              <div class="prose p-body" v-html="inputFormatHtml"></div>
+            </template>
+            <template v-if="problem.output_format">
+              <div class="section-head">输出格式</div>
+              <div class="prose p-body" v-html="outputFormatHtml"></div>
+            </template>
+            <template v-if="problem.samples && problem.samples.length">
+              <div class="section-head">样例</div>
+              <div v-for="(s, i) in problem.samples" :key="i" class="sample-block">
+                <div class="sample-title">样例 #{{ i + 1 }}</div>
+                <div class="sample-io">
+                  <div class="io-box">
+                    <div class="io-label">输入</div>
+                    <pre>{{ s.input }}</pre>
+                  </div>
+                  <div class="io-box">
+                    <div class="io-label">输出</div>
+                    <pre>{{ s.output }}</pre>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-if="problem.hint">
+              <div class="section-head">提示说明</div>
+              <div class="prose p-body" v-html="hintHtml"></div>
+            </template>
+          </template>
+          <div v-else class="prose p-body" v-html="descriptionHtml"></div>
         </div>
 
         <div class="back-row">
@@ -189,6 +246,62 @@ onMounted(loadProblem)
 
 .p-body {
   color: #2c3e50;
+}
+
+.section-head {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2c3e50;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.sample-block {
+  margin-bottom: 16px;
+}
+
+.sample-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b6e8c;
+  margin-bottom: 6px;
+}
+
+.sample-io {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.io-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.io-label {
+  background: #f7fafc;
+  color: #8a9aa8;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.io-box pre {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: #2c3e50;
+  min-height: 42px;
+}
+
+@media (max-width: 600px) {
+  .sample-io {
+    grid-template-columns: 1fr;
+  }
 }
 
 .back-row {

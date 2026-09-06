@@ -139,6 +139,18 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/problems/new',
+    name: 'ProblemCreate',
+    component: () => import('@/views/problems/ProblemEdit.vue'),
+    meta: { requiresAuth: true, requiresProblemManage: true }
+  },
+  {
+    path: '/problems/:id(\\d+)/edit',
+    name: 'ProblemEdit',
+    component: () => import('@/views/problems/ProblemEdit.vue'),
+    meta: { requiresAuth: true, requiresProblemManage: true }
+  },
+  {
     path: '/problems/:id(\\d+)',
     name: 'ProblemDetail',
     component: () => import('@/views/problems/ProblemDetail.vue'),

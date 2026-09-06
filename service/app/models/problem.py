@@ -24,8 +24,22 @@ class Problem(Base, TimestampMixin):
     source: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     # 算法标签数组（plain JSON 跨 SQLite/Postgres 通用）
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    # 题面（Markdown），样例 I/O 以代码块形式写在题面里
+    # 题面（Markdown），按洛谷习惯分节存储；样例 I/O 以代码块形式写在题面里
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    background: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=text("''")
+    )
+    input_format: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=text("''")
+    )
+    output_format: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=text("''")
+    )
+    hint: Mapped[str] = mapped_column(
+        Text, nullable=False, default="", server_default=text("''")
+    )
+    # 样例组：[{"input": "...", "output": "..."}]
+    samples: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
     # 限制：时间 ms / 内存 MB
     time_limit: Mapped[int] = mapped_column(
