@@ -236,9 +236,10 @@ class TicketService:
         content: str,
         ticket_id: int,
         actor_id: int,
+        force: bool = False,
     ) -> None:
-        """写入站内通知（操作者本人不通知自己）。"""
-        if user_id == actor_id:
+        """写入站内通知（默认操作者本人不通知；force=True 时强制通知，如指派给自己）。"""
+        if user_id == actor_id and not force:
             return
         db.add(Notification(
             user_id=user_id,
@@ -351,7 +352,7 @@ class TicketService:
             action_text=action,
             action_target_user_id=assignee.id if assignee else None,
         ))
-        # 通知工单创建者与被指派人
+        # 通知工单创建者与被指派人（指派给自己时也强制通知留痕）
         await TicketService.notify(
             db,
             ticket.creator_id,
@@ -359,6 +360,7 @@ class TicketService:
             f"你的「{ticket.title}」工单{action}，快来看看吧",
             ticket.id,
             operator.id,
+            force=True,
         )
         if assignee:
             await TicketService.notify(
@@ -368,6 +370,7 @@ class TicketService:
                 f"你被 {operator.username} 指派为「{ticket.title}」工单的责任人，快来看看吧",
                 ticket.id,
                 operator.id,
+                force=True,
             )
         await db.commit()
         await db.refresh(ticket)
