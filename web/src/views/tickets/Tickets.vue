@@ -32,15 +32,37 @@ const isStaff = computed(() => {
 
 // scope 由 URL 决定：/tickets = 我的工单，/tickets/all = 全部工单（刷新后保持当前页签）
 const scope = computed<'my' | 'all'>(() => (route.path === '/tickets/all' ? 'all' : 'my'))
-const statusFilter = ref('')
-const categoryFilter = ref('')
 
-// 普通用户看不到「账号申诉」筛选（申诉类工单私密，仅管理员可见）
+// 筛选条件放入 URL query（刷新后保持）
+const statusFilter = computed({
+  get: () => (route.query.status as string) || '',
+  set: (v: string) => updateQuery({ status: v || undefined }),
+})
+const categoryFilter = computed({
+  get: () => {
+    // 普通用户不提供「账号申诉」筛选（申诉类工单私密）
+    const v = (route.query.category as string) || ''
+    return !isStaff.value && v === 'appeal' ? '' : v
+  },
+  set: (v: string) => updateQuery({ category: v || undefined }),
+})
+
+// 普通用户的类别下拉不含「账号申诉」
 const visibleCategories = computed(() => {
   const entries = { ...CATEGORIES }
   if (!isStaff.value) delete entries.appeal
   return entries
 })
+
+// 统一更新 URL query（空值移除，避免脏参数）
+const updateQuery = (patch: Record<string, string | undefined>) => {
+  const merged: Record<string, string> = {}
+  for (const [k, v] of Object.entries({ ...route.query, ...patch })) {
+    if (v) merged[k] = String(v)
+  }
+  router.replace({ query: merged })
+}
+
 const tickets = ref<any[]>([])
 const page = ref(0)
 const loading = ref(false)
@@ -68,31 +90,20 @@ const loadTickets = async (append = false) => {
   }
 }
 
-// 切换页签 = 切换路径（URL 变化触发 watch 重新加载）
+// 切换页签 = 切换路径（保留筛选条件）
 const switchScope = (s: 'my' | 'all') => {
-  router.push(s === 'all' ? '/tickets/all' : '/tickets')
+  router.push({ path: s === 'all' ? '/tickets/all' : '/tickets', query: route.query })
 }
 
-watch(scope, () => {
+// 路径或筛选变化 → 重新加载
+watch(() => route.fullPath, () => {
   page.value = 0
   hasMore.value = true
   tickets.value = []
   loadTickets(false)
 })
 
-const changeFilter = () => {
-  page.value = 0
-  hasMore.value = true
-  tickets.value = []
-  loadTickets(false)
-}
-
-const fmtTime = (iso: string) => {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
+const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '—')
 
 onMounted(() => loadTickets(false))
 </script>
@@ -116,11 +127,11 @@ onMounted(() => loadTickets(false))
           <button class="tab" :class="{ active: scope === 'all' }" @click="switchScope('all')">全部工单</button>
         </div>
         <div class="filter-selects">
-          <select v-model="categoryFilter" class="status-select" @change="changeFilter">
+          <select v-model="categoryFilter" class="status-select">
             <option value="">全部类别</option>
             <option v-for="(name, key) in visibleCategories" :key="key" :value="key">{{ name }}</option>
           </select>
-          <select v-model="statusFilter" class="status-select" @change="changeFilter">
+          <select v-model="statusFilter" class="status-select">
             <option value="">全部状态</option>
             <option v-for="(s, key) in STATUS" :key="key" :value="key">{{ s.text }}</option>
           </select>
@@ -263,11 +274,6 @@ onMounted(() => loadTickets(false))
   background: #fff;
 }
 
-.col-user {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .ticket-table-wrap {
   background: #fff;
   border-radius: 12px;
@@ -312,6 +318,11 @@ onMounted(() => loadTickets(false))
 .col-title {
   font-weight: 600;
   color: #2c3e50;
+}
+
+.col-user {
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .col-time {
