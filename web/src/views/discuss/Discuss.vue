@@ -91,6 +91,25 @@ const removePost = async (id: number) => {
 const canDelete = (p: any) =>
   isStaff.value || (authStore.currentUser && p.author?.user_id === authStore.currentUser.id)
 
+// 置顶/锁定（仅秩序管理）
+const togglePin = async (p: any) => {
+  try {
+    await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_pinned: !p.is_pinned })
+    p.is_pinned = !p.is_pinned
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '操作失败')
+  }
+}
+
+const toggleLock = async (p: any) => {
+  try {
+    await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_locked: !p.is_locked })
+    p.is_locked = !p.is_locked
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '操作失败')
+  }
+}
+
 onMounted(() => loadPosts(false))
 </script>
 
@@ -122,7 +141,7 @@ onMounted(() => loadPosts(false))
       <div v-else-if="!loading && posts.length === 0" class="empty">暂无帖子，来发第一贴吧</div>
 
       <div v-else class="post-list">
-        <div v-for="p in posts" :key="p.id" class="post-card" @click="router.push(`/discuss/${p.id}`)">
+        <div v-for="p in posts" :key="p.id" class="post-card" :class="{ pinned: p.is_pinned }" @click="router.push(`/discuss/${p.id}`)">
           <div class="post-avatar">
             <img
               :src="p.author?.avatar_url || letterAvatar(p.author?.username)"
@@ -131,7 +150,11 @@ onMounted(() => loadPosts(false))
             >
           </div>
           <div class="post-main">
-            <div class="post-title">{{ p.title }}</div>
+            <div class="post-title">
+              <span v-if="p.is_pinned" class="pin-badge">置顶</span>
+              <span v-if="p.is_locked" class="lock-badge">🔒</span>
+              {{ p.title }}
+            </div>
             <div class="post-meta">
               <router-link
                 :to="p.author?.user_number ? `/user/${p.author.user_number}` : '#'"
@@ -147,6 +170,10 @@ onMounted(() => loadPosts(false))
               <span class="post-forum">{{ p.forum_name }}</span>
               <span class="post-time">{{ relTime(p.created_at) }}</span>
               <span class="post-replies">{{ p.reply_count }} 回复</span>
+              <template v-if="isStaff">
+                <button class="post-mod-btn" @click.stop="togglePin(p)">{{ p.is_pinned ? '取消置顶' : '置顶' }}</button>
+                <button class="post-mod-btn" @click.stop="toggleLock(p)">{{ p.is_locked ? '解锁' : '锁定' }}</button>
+              </template>
               <button
                 v-if="canDelete(p)"
                 class="post-delete"
@@ -257,6 +284,42 @@ onMounted(() => loadPosts(false))
 
 .post-card:hover {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.post-card.pinned {
+  background: #fffdf5;
+  border: 1px solid #f5deb3;
+}
+
+.pin-badge {
+  display: inline-block;
+  background: #E74C3C;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.lock-badge {
+  margin-right: 6px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.post-mod-btn {
+  background: none;
+  border: none;
+  color: #3498db;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.post-mod-btn:hover {
+  text-decoration: underline;
 }
 
 .post-avatar img {

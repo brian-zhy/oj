@@ -51,6 +51,8 @@ class ForumService:
             "content": post.content,
             "forum": post.forum,
             "forum_name": FORUM_NAMES.get(post.forum, post.forum),
+            "is_pinned": bool(post.is_pinned),
+            "is_locked": bool(post.is_locked),
             "created_at": post.created_at.isoformat() if post.created_at else None,
             "author": ForumService._user_brief(post.author),
             "reply_count": reply_count,
@@ -83,7 +85,11 @@ class ForumService:
         total = (await db.execute(count_q)).scalar() or 0
 
         result = await db.execute(
-            query.order_by(ForumPost.created_at.desc(), ForumPost.id.desc())
+            query.order_by(
+                ForumPost.is_pinned.desc(),
+                ForumPost.created_at.desc(),
+                ForumPost.id.desc(),
+            )
             .offset(page * page_size)
             .limit(page_size)
         )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, Index, Integer, Text, String
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, Text, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -19,6 +19,9 @@ class ForumPost(Base, TimestampMixin):
     author_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id"), index=True, nullable=False
     )
+    # 置顶（列表最前）与锁定（禁止回复）——仅秩序管理可设置
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_locked: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     author: Mapped["User"] = relationship(  # noqa: F821
         "User", foreign_keys=[author_id], lazy="joined"
@@ -29,6 +32,7 @@ class ForumPost(Base, TimestampMixin):
 
     __table_args__ = (
         Index("ix_forum_posts_created_at", "created_at"),
+        Index("ix_forum_posts_is_pinned", "is_pinned"),
     )
 
 

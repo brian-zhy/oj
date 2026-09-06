@@ -15,6 +15,25 @@ const error = ref('')
 const replyContent = ref('')
 const replySubmitting = ref(false)
 
+// 置顶/锁定（仅秩序管理）
+const togglePinPost = async () => {
+  try {
+    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_pinned: !post.value.is_pinned })
+    post.value.is_pinned = res.is_pinned
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '操作失败')
+  }
+}
+
+const toggleLockPost = async () => {
+  try {
+    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_locked: !post.value.is_locked })
+    post.value.is_locked = res.is_locked
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '操作失败')
+  }
+}
+
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 const isMuted = computed(() => authStore.currentUser?.can_speak === false)
 
@@ -142,8 +161,21 @@ onMounted(() => loadPost())
           </div>
         </div>
 
+        <!-- 管理操作（仅秩序管理） -->
+        <div v-if="post.can_manage" class="moderate-bar card">
+          <span class="moderate-label">管理操作：</span>
+          <button class="moderate-btn" @click="togglePinPost">
+            {{ post.is_pinned ? '📌 取消置顶' : '📌 置顶' }}
+          </button>
+          <button class="moderate-btn" @click="toggleLockPost">
+            {{ post.is_locked ? '🔓 解锁' : '🔒 锁定' }}
+          </button>
+          <span v-if="post.is_locked" class="locked-hint">已锁定，无法回复</span>
+        </div>
+
         <!-- 回复框 -->
         <div v-if="isLoggedIn && isMuted" class="state-box">⛔ 你已被禁言，无法回复</div>
+        <div v-else-if="isLoggedIn && post.is_locked" class="state-box">🔒 该帖子已锁定，无法回复</div>
         <div v-else-if="isLoggedIn" class="reply-box card">
           <div class="reply-box-head">发表回复</div>
           <textarea
@@ -208,6 +240,40 @@ onMounted(() => loadPost())
 
 .post-main {
   margin-bottom: 16px;
+}
+
+.moderate-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.moderate-label {
+  font-size: 13px;
+  color: #8a9aa8;
+}
+
+.moderate-btn {
+  padding: 6px 16px;
+  background: #fff;
+  border: 1px solid #3498db;
+  color: #3498db;
+  border-radius: 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moderate-btn:hover {
+  background: #3498db;
+  color: #fff;
+}
+
+.locked-hint {
+  font-size: 13px;
+  color: #e67e22;
 }
 
 .post-title {

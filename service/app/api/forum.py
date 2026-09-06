@@ -28,6 +28,11 @@ class CommentCreate(BaseModel):
     content: str = Field(min_length=1, max_length=10000)
 
 
+class PostModeratePayload(BaseModel):
+    is_pinned: Optional[bool] = None
+    is_locked: Optional[bool] = None
+
+
 @router.get("/recent", summary="近期讨论（主页）")
 async def recent_posts(
     limit: int = Query(10, ge=1, le=30),
@@ -61,6 +66,29 @@ async def get_post(
     data["can_manage"] = await ForumService.can_manage(current_user)
     data["is_author"] = bool(current_user and post.author_id == current_user.id)
     return data
+
+
+@router.put("/posts/{post_id}/moderate", summary="置顶/锁定帖子（仅秩序管理）")
+async def moderate_post(
+    post_id: int,
+    payload: PostModeratePayload,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """设置帖子的置顶/锁定状态（字段可选，传什么改什么）。"""
+    post = await ForumService.get_post(db, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")
+    if not await ForumService.can_manage(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要秩序管理权限")
+
+    if payload.is_pinned is not None:
+        post.is_pinned = payload.is_pinned
+    if payload.is_locked is not None:
+        post.is_locked = payload.is_locked
+    await db.commit()
+    await db.refresh(post)
+    return {"success": True, "is_pinned": post.is_pinned, "is_locked": post.is_locked}
 
 
 @router.post("/posts", summary="发布帖子", status_code=status.HTTP_201_CREATED)
@@ -107,6 +135,8 @@ async def add_comment(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被封禁，无法回复")
     if not current_user.can_speak:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="你已被禁言，无法回复")
+    if post.is_locked:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="帖子已锁定，无法回复")
     ok, wait = check(f"comment:{current_user.user_number}", 1, 5)
     if not ok:
         raise HTTPException(
