@@ -48,7 +48,8 @@ async def create_ticket(
     current_user: User = Depends(get_current_user),
 ) -> dict:
     """创建工单（一事一单）。封禁用户仅可提交账号申诉。"""
-    ok, wait = check(f"ticket:{current_user.user_number}", 3, 3600)
+    # 10 分钟内最多 3 张
+    ok, wait = check(f"ticket:{current_user.user_number}", 3, 600)
     if not ok:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
