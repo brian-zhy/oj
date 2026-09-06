@@ -15,6 +15,47 @@ const error = ref('')
 const replyContent = ref('')
 const replySubmitting = ref(false)
 
+// 编辑已发布帖子（仅秩序管理）
+const editingPost = ref(false)
+const editTitle = ref('')
+const editContent = ref('')
+const editSaving = ref(false)
+
+const startEditPost = () => {
+  editTitle.value = post.value.title
+  editContent.value = post.value.content
+  editingPost.value = true
+}
+
+const cancelEditPost = () => {
+  editingPost.value = false
+}
+
+const saveEditPost = async () => {
+  if (!editTitle.value.trim() || editTitle.value.trim().length < 3) {
+    alert('标题至少 3 个字符')
+    return
+  }
+  if (!editContent.value.trim()) {
+    alert('正文不能为空')
+    return
+  }
+  editSaving.value = true
+  try {
+    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}`, {
+      title: editTitle.value.trim(),
+      content: editContent.value.trim()
+    })
+    post.value.title = res.title
+    post.value.content = res.content
+    editingPost.value = false
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '保存失败')
+  } finally {
+    editSaving.value = false
+  }
+}
+
 // 置顶/锁定（仅秩序管理）——乐观更新：点击立即生效，请求失败回滚
 const togglePinPost = async () => {
   const target = !post.value.is_pinned
