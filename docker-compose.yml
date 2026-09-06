@@ -17,6 +17,11 @@ services:
       - ENV=prod
       - HOST=0.0.0.0
       - PORT=8000
+      # go-judge 评测沙箱地址（宿主机 systemd 服务，经 docker 网桥访问）
+      - GO_JUDGE_URL=http://host.docker.internal:5050
+    extra_hosts:
+      # 让容器内 host.docker.internal 指向宿主机
+      - "host.docker.internal:host-gateway"
     volumes:
       # 挂载日志目录
       - ./service/logs:/app/logs
@@ -48,25 +53,6 @@ services:
     networks:
       - oj-network
 
-  # ===== go-judge 评测沙箱（任意代码执行服务，严禁对公网暴露） =====
-  go-judge:
-    image: criyle/executor
-    container_name: go-judge
-    restart: unless-stopped
-    privileged: true
-    # 仅加入内网，不映射任何公网端口——只有 oj-service 能访问
-    networks:
-      - oj-network
-    environment:
-      # 限制沙箱整体资源，防止单机被评测任务压垮
-      - HTTP_BIND_ADDR=0.0.0.0:5050
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:5050/config"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
 networks:
   oj-network:
     driver: bridge
@@ -77,3 +63,8 @@ networks:
 # 3. 查看日志: docker compose logs -f
 # 4. 停止服务: docker compose down
 # 5. 访问: http://服务器IP/（nginx 80 端口，API 同域反代）
+#
+# 评测沙箱说明:
+# go-judge 以二进制方式部署在宿主机（systemd 服务 go-judge，监听 5050），
+# 容器通过 host.docker.internal:5050 访问。5050 端口未对公网放行，仅容器
+# 经 docker 网桥（172.17.0.1）可达，确保评测服务不被公网滥用。
