@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const route = useRoute()
@@ -59,29 +60,46 @@ const saveEditPost = async () => {
 // 置顶/锁定（仅秩序管理）——乐观更新，失败回滚
 const togglePinPost = async () => {
   const target = !post.value.is_pinned
-  if (target && !confirm('确定要置顶这个帖子吗？')) return
-  if (!target && !confirm('确定要取消置顶吗？')) return
+  const result = await Swal.fire({
+    title: target ? '确定要置顶这个帖子吗？' : '确定要取消置顶吗？',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: target ? '确认置顶' : '确认取消',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#e74c3c',
+    cancelButtonColor: '#909399'
+  })
+  if (!result.isConfirmed) return
   post.value.is_pinned = target
   try {
     const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_pinned: target })
     post.value.is_pinned = res.is_pinned
   } catch (err: any) {
     post.value.is_pinned = !target
-    alert(err.response?.data?.detail || err.message || '操作失败')
+    Swal.fire({ icon: 'error', title: '操作失败', text: err.response?.data?.detail || err.message || '未知错误' })
   }
 }
 
 const toggleLockPost = async () => {
   const target = !post.value.is_locked
-  if (target && !confirm('确定要锁定这个帖子吗？锁定后所有人将无法回复。')) return
-  if (!target && !confirm('确定要解除锁定吗？')) return
+  const result = await Swal.fire({
+    title: target ? '确定要锁定这个帖子吗？' : '确定要解除锁定吗？',
+    text: target ? '锁定后所有人将无法回复' : '',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: target ? '确认锁定' : '确认解锁',
+    cancelButtonText: '取消',
+    confirmButtonColor: '#e74c3c',
+    cancelButtonColor: '#909399'
+  })
+  if (!result.isConfirmed) return
   post.value.is_locked = target
   try {
     const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_locked: target })
     post.value.is_locked = res.is_locked
   } catch (err: any) {
     post.value.is_locked = !target
-    alert(err.response?.data?.detail || err.message || '操作失败')
+    Swal.fire({ icon: 'error', title: '操作失败', text: err.response?.data?.detail || err.message || '未知错误' })
   }
 }
 
