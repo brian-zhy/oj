@@ -33,6 +33,11 @@ class PostModeratePayload(BaseModel):
     is_locked: Optional[bool] = None
 
 
+class PostUpdatePayload(BaseModel):
+    title: str = Field(min_length=3, max_length=100)
+    content: str = Field(min_length=1, max_length=20000)
+
+
 @router.get("/recent", summary="近期讨论（主页）")
 async def recent_posts(
     limit: int = Query(10, ge=1, le=30),
@@ -119,6 +124,23 @@ async def create_post(
         db, current_user, payload.title, payload.content, payload.forum
     )
     return ForumService._post_dict(post, 0)
+
+
+@router.put("/posts/{post_id}", summary="编辑已发布帖子（仅秩序管理）")
+async def update_post(
+    post_id: int,
+    payload: PostUpdatePayload,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    post = await ForumService.get_post(db, post_id)
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="帖子不存在")
+    if not await ForumService.can_manage(current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要秩序管理权限")
+
+    post = await ForumService.update_post(db, post, payload.title, payload.content)
+    return ForumService._post_dict(post, reply_count=len(post.comments))
 
 
 @router.post("/posts/{post_id}/comments", summary="回复帖子", status_code=status.HTTP_201_CREATED)

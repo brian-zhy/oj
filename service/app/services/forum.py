@@ -144,6 +144,15 @@ class ForumService:
         return post
 
     @staticmethod
+    async def update_post(db: AsyncSession, post: ForumPost, title: str, content: str) -> ForumPost:
+        """编辑已发布帖子的标题与正文（仅秩序管理，由 API 层校验）。"""
+        post.title = title.strip()
+        post.content = content.strip()
+        await db.commit()
+        await db.refresh(post)
+        return post
+
+    @staticmethod
     async def add_comment(db: AsyncSession, post: ForumPost, author: User, content: str) -> ForumComment:
         comment = ForumComment(
             post_id=post.id,
