@@ -151,6 +151,14 @@ comingSoonPaths.forEach((p) => {
   })
 })
 
+// 无权访问提示页
+routes.push({
+  path: '/no-access',
+  name: 'NoAccess',
+  component: () => import('@/views/NoAccess.vue'),
+  meta: { requiresAuth: false }
+})
+
 // 兜底：未知路径同样显示「本功能暂未开放」
 routes.push({
   path: '/:pathMatch(.*)*',
@@ -212,8 +220,8 @@ router.beforeEach(async (to) => {
     })
 
     if (!user || (!user.is_super_admin && !user.is_admin && !user.can_manage_users)) {
-      console.log('用户没有管理员权限，重定向到主页')
-      return { name: 'Home' }
+      console.log('用户没有管理员权限，跳转无权访问页')
+      return { path: '/no-access', query: { from: to.fullPath } }
     }
   }
 
@@ -221,8 +229,8 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresUserManage) {
     const user = authStore.currentUser
     if (!user || !user.can_manage_users) {
-      console.log('用户没有用户管理权限，重定向到主页')
-      return { name: 'Home' }
+      console.log('用户没有用户管理权限，跳转无权访问页')
+      return { path: '/no-access', query: { from: to.fullPath } }
     }
   }
 
