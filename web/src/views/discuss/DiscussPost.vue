@@ -307,6 +307,9 @@ onMounted(() => loadPost())
             <template v-if="post.can_manage">
               <div class="side-divider"></div>
               <div class="side-label manage-title">管理操作</div>
+              <button class="side-action-btn" @click="startEditPost">
+                ✏️ 编辑帖子
+              </button>
               <button class="side-action-btn" @click="togglePinPost">
                 {{ post.is_pinned ? '📌 取消置顶' : '📌 置顶' }}
               </button>
