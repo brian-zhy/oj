@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const CATEGORIES: Record<string, string> = {
@@ -29,7 +30,8 @@ const isStaff = computed(() => {
   return !!u && (u.can_manage_users || u.is_admin || u.is_super_admin)
 })
 
-const scope = ref<'my' | 'all'>('my')
+// scope 由 URL 决定：/tickets = 我的工单，/tickets/all = 全部工单（刷新后保持当前页签）
+const scope = computed<'my' | 'all'>(() => (route.path === '/tickets/all' ? 'all' : 'my'))
 const statusFilter = ref('')
 const categoryFilter = ref('')
 
@@ -66,13 +68,17 @@ const loadTickets = async (append = false) => {
   }
 }
 
+// 切换页签 = 切换路径（URL 变化触发 watch 重新加载）
 const switchScope = (s: 'my' | 'all') => {
-  scope.value = s
+  router.push(s === 'all' ? '/tickets/all' : '/tickets')
+}
+
+watch(scope, () => {
   page.value = 0
   hasMore.value = true
   tickets.value = []
   loadTickets(false)
-}
+})
 
 const changeFilter = () => {
   page.value = 0
