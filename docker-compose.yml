@@ -48,6 +48,25 @@ services:
     networks:
       - oj-network
 
+  # ===== go-judge 评测沙箱（任意代码执行服务，严禁对公网暴露） =====
+  go-judge:
+    image: criyle/executor
+    container_name: go-judge
+    restart: unless-stopped
+    privileged: true
+    # 仅加入内网，不映射任何公网端口——只有 oj-service 能访问
+    networks:
+      - oj-network
+    environment:
+      # 限制沙箱整体资源，防止单机被评测任务压垮
+      - HTTP_BIND_ADDR=0.0.0.0:5050
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:5050/config"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 networks:
   oj-network:
     driver: bridge
