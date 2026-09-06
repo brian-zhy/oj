@@ -122,6 +122,15 @@ onMounted(() => loadPost())
               class="user-tag-display"
               :style="{ backgroundColor: userColor(post.author) }"
             >{{ post.author.user_tag }}</span>
+            <template v-if="post.can_manage">
+              <button class="moderate-btn" @click="togglePinPost">
+                {{ post.is_pinned ? '取消置顶' : '置顶' }}
+              </button>
+              <button class="moderate-btn" @click="toggleLockPost">
+                {{ post.is_locked ? '解锁' : '锁定' }}
+              </button>
+            </template>
+            <span v-if="post.is_locked" class="lock-mark">🔒 已锁定</span>
             <span class="post-forum">{{ post.forum_name }}</span>
             <span class="post-time">{{ fmtTime(post.created_at) }}</span>
             <button
@@ -161,17 +170,6 @@ onMounted(() => loadPost())
           </div>
         </div>
 
-        <!-- 管理操作（仅秩序管理） -->
-        <div v-if="post.can_manage" class="moderate-bar card">
-          <span class="moderate-label">管理操作：</span>
-          <button class="moderate-btn" @click="togglePinPost">
-            {{ post.is_pinned ? '📌 取消置顶' : '📌 置顶' }}
-          </button>
-          <button class="moderate-btn" @click="toggleLockPost">
-            {{ post.is_locked ? '🔓 解锁' : '🔒 锁定' }}
-          </button>
-          <span v-if="post.is_locked" class="locked-hint">已锁定，无法回复</span>
-        </div>
 
         <!-- 回复框 -->
         <div v-if="isLoggedIn && isMuted" class="state-box">⛔ 你已被禁言，无法回复</div>
@@ -242,26 +240,13 @@ onMounted(() => loadPost())
   margin-bottom: 16px;
 }
 
-.moderate-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.moderate-label {
-  font-size: 13px;
-  color: #8a9aa8;
-}
-
 .moderate-btn {
-  padding: 6px 16px;
+  padding: 2px 10px;
   background: #fff;
   border: 1px solid #3498db;
   color: #3498db;
-  border-radius: 18px;
-  font-size: 13px;
+  border-radius: 14px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -271,8 +256,8 @@ onMounted(() => loadPost())
   color: #fff;
 }
 
-.locked-hint {
-  font-size: 13px;
+.lock-mark {
+  font-size: 12px;
   color: #e67e22;
 }
 
