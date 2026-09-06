@@ -111,7 +111,28 @@ onMounted(() => loadPost())
       <template v-else-if="post">
         <!-- 帖子主体 -->
         <div class="post-main card">
-          <div class="post-title">{{ post.title }}</div>
+          <!-- 编辑模式（仅秩序管理） -->
+          <template v-if="editingPost">
+            <div class="edit-title-row">
+              <span class="edit-label">标题</span>
+              <input v-model="editTitle" class="edit-title-input" maxlength="100" />
+            </div>
+            <textarea v-model="editContent" rows="10" class="edit-content-input" maxlength="20000"></textarea>
+            <div class="edit-actions">
+              <button class="btn-submit" :disabled="editSaving" @click="saveEditPost">
+                {{ editSaving ? '保存中...' : '保存' }}
+              </button>
+              <button class="btn-back" :disabled="editSaving" @click="editingPost = false">取消</button>
+            </div>
+          </template>
+
+          <!-- 展示模式 -->
+          <template v-else>
+            <div class="post-title-row">
+              <div class="post-title">{{ post.title }}</div>
+              <button v-if="post.can_manage" class="btn-edit-post" @click="startEditPost">✏️ 编辑</button>
+            </div>
+          </template>
           <div class="post-meta">
             <img
               :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
@@ -145,7 +166,7 @@ onMounted(() => loadPost())
               @click="removePost"
             >删除</button>
           </div>
-          <div class="post-content prose" v-html="renderContent(post.content)"></div>
+          <div v-if="!editingPost" class="post-content prose" v-html="renderContent(post.content)"></div>
         </div>
 
         <!-- 回复列表 -->
