@@ -155,7 +155,8 @@ async def update_user(
     updatable_fields = [
         'username', 'email', 'bio', 'avatar_url', 'user_tag', 'username_color',
         'is_active', 'is_banned', 'is_cheater',
-        'is_admin', 'can_speak', 'can_manage_users', 'can_manage_posts'
+        'is_admin', 'can_speak', 'can_manage_users', 'can_manage_posts',
+        'can_manage_problems'
     ]
 
     for field, value in updates.items():
@@ -203,7 +204,7 @@ async def update_user_permissions(
     # 更新权限字段
     permission_fields = [
         'is_super_admin', 'is_admin', 'can_speak',
-        'can_manage_users', 'can_manage_posts'
+        'can_manage_users', 'can_manage_posts', 'can_manage_problems'
     ]
 
     for field, value in permission_updates.items():
@@ -280,7 +281,7 @@ async def batch_update_users(
     field = list(updates.keys())[0] if updates else ''
     new_value = updates.get(field)
     normal_perms = ['can_speak']
-    admin_perms = ['is_super_admin', 'is_admin', 'can_manage_users', 'can_manage_posts']
+    admin_perms = ['is_super_admin', 'is_admin', 'can_manage_users', 'can_manage_posts', 'can_manage_problems']
 
     if field == 'is_banned':
         action_type = 'unban' if new_value is False else 'ban'

@@ -13,6 +13,7 @@ export interface User {
   can_speak: boolean
   can_manage_users: boolean
   can_manage_posts: boolean
+  can_manage_problems: boolean
   can_assign_admin: boolean
   avatar_url?: string | null
   user_tag?: string | null
@@ -44,29 +45,43 @@ export interface TokenResponse {
   token_type: string
 }
 
-// 题目相关类型
+// 题目相关类型（洛谷 8 级难度）
+export type ProblemDifficulty =
+  | '暂无评定'
+  | '入门'
+  | '普及-'
+  | '普及'
+  | '普及/提高-'
+  | '普及+/提高'
+  | '提高+/省选-'
+  | '省选/NOI-'
+  | 'NOI/NOI+/CTSC'
+
 export interface Problem {
   id: number
+  problem_number: string
   title: string
+  difficulty: ProblemDifficulty
+  source: string | null
+  tags: string[]
   description: string
-  difficulty: 'easy' | 'medium' | 'hard'
-  time_limit?: number
-  memory_limit?: number
-  examples?: Array<{
-    input: string
-    output: string
-    explanation?: string
-  }>
+  time_limit: number
+  memory_limit: number
+  submit_count: number
+  solved_count: number
+  pass_rate: number | null
+  is_public: boolean
   created_at: string
   updated_at: string
 }
 
-export interface ProblemListItem {
-  id: number
-  title: string
-  difficulty: 'easy' | 'medium' | 'hard'
-  acceptance_rate?: number
-  solved_count?: number
+export type ProblemListItem = Omit<Problem, 'description'>
+
+export interface ProblemListResponse {
+  total: number
+  page: number
+  page_size: number
+  items: ProblemListItem[]
 }
 
 // 提交相关类型

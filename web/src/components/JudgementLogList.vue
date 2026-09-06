@@ -122,6 +122,7 @@ function getPermName(perm: string): string {
     'is_admin': '进入后台',
     'can_manage_users': '用户管理',
     'can_manage_posts': '秩序管理',
+    'can_manage_problems': '题目管理',
     'can_speak': '自由发言',
     'is_banned': '进入主站',
     'is_cheater': '学术不端',

@@ -64,6 +64,9 @@ class User(Base, TimestampMixin):
     can_assign_admin: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
+    can_manage_problems: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
 
     # 用户个性化信息
     avatar_url: Mapped[str | None] = mapped_column(

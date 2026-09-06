@@ -1,30 +1,50 @@
 import apiClient from './client'
-import type { Problem, ProblemListItem, CreateSubmissionData, Submission } from '@/types'
+import type {
+  Problem,
+  ProblemListItem,
+  ProblemListResponse,
+} from '@/types'
+
+export interface ProblemFilterParams {
+  page?: number
+  page_size?: number
+  difficulty?: string
+  source?: string
+  tag?: string
+  keyword?: string
+  all?: boolean
+}
 
 export const problemsApi = {
-  // 获取题目列表
-  async getProblemList(): Promise<ProblemListItem[]> {
-    return apiClient.get('/problems')
+  // 题目列表（支持难度 / 来源 / 标签 / 关键词筛选）
+  async list(
+    params: ProblemFilterParams = {}
+  ): Promise<ProblemListResponse> {
+    return apiClient.get('/api/problems', { params })
   },
 
-  // 获取题目详情
-  async getProblemById(id: number): Promise<Problem> {
-    return apiClient.get(`/problems/${id}`)
+  // 题目详情（含题面）
+  async get(id: number): Promise<Problem> {
+    return apiClient.get(`/api/problems/${id}`)
   },
 
-  // 提交代码
-  async submitCode(data: CreateSubmissionData): Promise<Submission> {
-    return apiClient.post('/submissions', data)
+  // 去重后的来源列表（筛选下拉用）
+  async sources(): Promise<string[]> {
+    return apiClient.get('/api/problems/sources')
   },
 
-  // 获取提交记录
-  async getSubmissions(problemId?: number): Promise<Submission[]> {
-    const params = problemId ? { problem_id: problemId } : {}
-    return apiClient.get('/submissions', { params })
+  // 以下需题目管理权限
+  async create(data: Partial<Problem>): Promise<Problem> {
+    return apiClient.post('/api/problems', data)
   },
 
-  // 获取提交详情
-  async getSubmissionById(id: number): Promise<Submission> {
-    return apiClient.get(`/submissions/${id}`)
-  }
+  async update(id: number, data: Partial<Problem>): Promise<Problem> {
+    return apiClient.put(`/api/problems/${id}`, data)
+  },
+
+  async remove(id: number): Promise<{ success: boolean }> {
+    return apiClient.delete(`/api/problems/${id}`)
+  },
 }
+
+export type { Problem, ProblemListItem }

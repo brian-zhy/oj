@@ -57,6 +57,7 @@ async def create_super_admin():
             existing_user.is_active = True
             existing_user.can_manage_users = True
             existing_user.can_manage_posts = True
+            existing_user.can_manage_problems = True
             existing_user.can_assign_admin = True
             existing_user.can_speak = True
 
@@ -93,6 +94,7 @@ async def create_super_admin():
                 can_speak=True,      # 可以发言
                 can_manage_users=True,  # 可以管理用户
                 can_manage_posts=True,  # 可以管理帖子
+                can_manage_problems=True,  # 可以管理题目
                 can_assign_admin=True,  # 可以指定管理员
 
                 # 个性化信息

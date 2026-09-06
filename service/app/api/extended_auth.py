@@ -382,6 +382,7 @@ async def get_current_user_info(
         "can_speak": current_user.can_speak,
         "can_manage_users": current_user.can_manage_users,
         "can_manage_posts": current_user.can_manage_posts,
+        "can_manage_problems": current_user.can_manage_problems,
         "can_assign_admin": current_user.can_assign_admin,
         "avatar_url": current_user.avatar_url,
         "user_tag": current_user.user_tag,

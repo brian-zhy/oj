@@ -107,6 +107,17 @@ const onSidebarLeave = () => {
         <li>
           <a
             class="nav-item"
+            :class="{ 'active': isActive('/problems') }"
+            href="/problems"
+            @click.prevent="navigateTo('/problems')"
+          >
+            <span class="nav-icon">💻</span>
+            <span class="nav-text">题库</span>
+          </a>
+        </li>
+        <li>
+          <a
+            class="nav-item"
             :class="{ 'active': isActive('/submissions') }"
             href="/submissions"
             @click.prevent="navigateTo('/submissions')"
@@ -303,6 +314,17 @@ const onSidebarLeave = () => {
           >
             <span class="nav-icon">👥</span>
             <span class="nav-text">用户管理</span>
+          </a>
+        </li>
+        <li v-if="authStore.currentUser && (authStore.currentUser.can_manage_problems || authStore.currentUser.is_super_admin || authStore.currentUser.is_admin)">
+          <a
+            class="nav-item"
+            :class="{ 'active': isActive('/admin/problems') }"
+            href="/admin/problems"
+            @click.prevent="navigateTo('/admin/problems')"
+          >
+            <span class="nav-icon">📝</span>
+            <span class="nav-text">题目管理</span>
           </a>
         </li>
         <li>

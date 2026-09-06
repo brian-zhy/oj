@@ -7,6 +7,7 @@ both.
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import event
@@ -20,7 +21,18 @@ from app.core.config import settings
 
 _IS_SQLITE = settings.DATABASE_URL.startswith("sqlite")
 
-_engine_kwargs: dict = {"echo": False, "pool_pre_ping": True}
+
+def _json_serializer(value) -> str:
+    # ensure_ascii=False：JSON 列里的中文按原文存储（而非 \uXXXX 转义），
+    # 这样题库标签的 cast-to-text LIKE 筛选才能命中。
+    return json.dumps(value, ensure_ascii=False)
+
+
+_engine_kwargs: dict = {
+    "echo": False,
+    "pool_pre_ping": True,
+    "json_serializer": _json_serializer,
+}
 if _IS_SQLITE:
     # SQLite connections are file-locked and cheap; allow async access from any
     # worker thread.

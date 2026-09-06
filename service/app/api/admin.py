@@ -19,7 +19,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 # 权限变更分类（与参考项目 analyzePermissionChanges 逻辑一致）
 # ================================================================
 NORMAL_PERMS = ["can_speak"]
-ADMIN_PERMS = ["is_super_admin", "is_admin", "can_manage_users", "can_manage_posts"]
+ADMIN_PERMS = ["is_super_admin", "is_admin", "can_manage_users", "can_manage_posts", "can_manage_problems"]
 
 
 def analyze_permission_changes(changes: dict) -> dict:
@@ -323,7 +323,8 @@ async def update_user_permissions(
     # 更新权限
     allowed_permissions = [
         'is_admin', 'is_super_admin', 'can_manage_users',
-        'can_manage_posts', 'can_speak', 'is_banned', 'is_cheater'
+        'can_manage_posts', 'can_manage_problems', 'can_speak',
+        'is_banned', 'is_cheater'
     ]
 
     for perm, value in apply_changes.items():

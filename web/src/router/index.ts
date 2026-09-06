@@ -131,6 +131,24 @@ const routes = [
     name: 'AdminTest',
     component: () => import('@/views/AdminTest.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/problems',
+    name: 'ProblemList',
+    component: () => import('@/views/problems/ProblemList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/problems/:id(\\d+)',
+    name: 'ProblemDetail',
+    component: () => import('@/views/problems/ProblemDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/problems',
+    name: 'AdminProblems',
+    component: () => import('@/views/admin/AdminProblems.vue'),
+    meta: { requiresAuth: true, requiresProblemManage: true }
   }
 ]
 
@@ -138,7 +156,6 @@ const routes = [
 import ComingSoon from '@/views/ComingSoon.vue'
 
 const comingSoonPaths = [
-  '/problems',      // 题库
   '/courses',       // 网校
   '/training',      // 训练题单
   '/contests',      // 比赛
@@ -241,6 +258,15 @@ router.beforeEach(async (to) => {
     const user = authStore.currentUser
     if (!user || !user.can_manage_users) {
       console.log('用户没有用户管理权限，跳转无权访问页')
+      return { path: '/no-access', query: { from: to.fullPath } }
+    }
+  }
+
+  // 检查是否需要题目管理权限（题库管理页）
+  if (to.meta.requiresProblemManage) {
+    const user = authStore.currentUser
+    if (!user || !(user.can_manage_problems || user.is_admin || user.is_super_admin)) {
+      console.log('用户没有题目管理权限，跳转无权访问页')
       return { path: '/no-access', query: { from: to.fullPath } }
     }
   }
