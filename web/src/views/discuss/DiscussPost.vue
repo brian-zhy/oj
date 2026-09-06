@@ -95,7 +95,7 @@ const fmtTime = (iso: string) => {
   if (!iso) return ''
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 // 富文本渲染（Markdown + LaTeX 公式）
@@ -173,40 +173,57 @@ onMounted(() => loadPost())
               <div class="post-title">{{ post.title }}</div>
               <button v-if="post.can_manage" class="btn-edit-post" @click="startEditPost">✏️ 编辑</button>
             </div>
+
+            <!-- 字段信息面板 -->
+            <div class="post-info-panel">
+              <div class="info-row">
+                <span class="info-label">创建者</span>
+                <span class="info-value creator-cell">
+                  <img
+                    :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
+                    class="creator-avatar"
+                    :alt="post.author?.username"
+                  >
+                  <router-link
+                    :to="post.author?.user_number ? `/user/${post.author.user_number}` : '#'"
+                    class="post-author"
+                    :style="{ color: userColor(post.author) }"
+                  >{{ post.author?.username }}</router-link>
+                  <span
+                    v-if="post.author?.user_tag"
+                    class="user-tag-display"
+                    :style="{ backgroundColor: userColor(post.author) }"
+                  >{{ post.author.user_tag }}</span>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">发帖时间</span>
+                <span class="info-value">{{ fmtTime(post.created_at) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">所属板块</span>
+                <span class="info-value forum-text">{{ post.forum_name }}</span>
+              </div>
+              <div v-if="post.is_locked" class="info-row">
+                <span class="info-value locked-line">该帖已被锁定，无法回复。</span>
+              </div>
+              <div v-if="post.can_manage || post.is_author" class="moderate-row">
+                <template v-if="post.can_manage">
+                  <button class="moderate-btn" @click="togglePinPost">
+                    {{ post.is_pinned ? '取消置顶' : '置顶' }}
+                  </button>
+                  <button class="moderate-btn" @click="toggleLockPost">
+                    {{ post.is_locked ? '解锁' : '锁定' }}
+                  </button>
+                </template>
+                <button
+                  v-if="post.is_author"
+                  class="post-delete"
+                  @click="removePost"
+                >删除</button>
+              </div>
+            </div>
           </template>
-          <div class="post-meta">
-            <img
-              :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
-              class="meta-avatar"
-              :alt="post.author?.username"
-            >
-            <router-link
-              :to="post.author?.user_number ? `/user/${post.author.user_number}` : '#'"
-              class="post-author"
-              :style="{ color: userColor(post.author) }"
-            >{{ post.author?.username }}</router-link>
-            <span
-              v-if="post.author?.user_tag"
-              class="user-tag-display"
-              :style="{ backgroundColor: userColor(post.author) }"
-            >{{ post.author.user_tag }}</span>
-            <template v-if="post.can_manage">
-              <button class="moderate-btn" @click="togglePinPost">
-                {{ post.is_pinned ? '取消置顶' : '置顶' }}
-              </button>
-              <button class="moderate-btn" @click="toggleLockPost">
-                {{ post.is_locked ? '解锁' : '锁定' }}
-              </button>
-            </template>
-            <span v-if="post.is_locked" class="lock-mark">🔒 已锁定</span>
-            <span class="post-forum">{{ post.forum_name }}</span>
-            <span class="post-time">{{ fmtTime(post.created_at) }}</span>
-            <button
-              v-if="post.can_manage || post.is_author"
-              class="post-delete"
-              @click="removePost"
-            >删除</button>
-          </div>
           <div v-if="!editingPost" class="post-content prose" v-html="renderContent(post.content)"></div>
         </div>
 
@@ -337,21 +354,46 @@ onMounted(() => loadPost())
   word-break: break-word;
 }
 
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  color: #8a9aa8;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0f2f5;
-  margin-bottom: 12px;
+.post-info-panel {
+  background: #f8f9fc;
+  border-radius: 10px;
+  padding: 4px 16px;
+  margin-bottom: 14px;
 }
 
-.meta-avatar {
-  width: 26px;
-  height: 26px;
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #47536b;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-value.forum-text {
+  color: #3498db;
+}
+
+.creator-avatar {
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: cover;
   background: #f0f2f5;
@@ -371,12 +413,31 @@ onMounted(() => loadPost())
   font-weight: 600;
 }
 
-.post-forum {
-  background: #f0f2f5;
-  padding: 1px 10px;
-  border-radius: 12px;
+.locked-line {
+  color: #e67e22;
+}
+
+.moderate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+.moderate-btn {
+  padding: 4px 14px;
+  background: #fff;
+  border: 1px solid #3498db;
+  color: #3498db;
+  border-radius: 16px;
   font-size: 12px;
-  color: #575757;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.moderate-btn:hover {
+  background: #3498db;
+  color: #fff;
 }
 
 .post-delete {
