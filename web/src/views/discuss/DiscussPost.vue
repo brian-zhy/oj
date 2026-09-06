@@ -59,6 +59,8 @@ const saveEditPost = async () => {
 // 置顶/锁定（仅秩序管理）——乐观更新，失败回滚
 const togglePinPost = async () => {
   const target = !post.value.is_pinned
+  if (target && !confirm('确定要置顶这个帖子吗？')) return
+  if (!target && !confirm('确定要取消置顶吗？')) return
   post.value.is_pinned = target
   try {
     const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_pinned: target })
@@ -71,6 +73,8 @@ const togglePinPost = async () => {
 
 const toggleLockPost = async () => {
   const target = !post.value.is_locked
+  if (target && !confirm('确定要锁定这个帖子吗？锁定后所有人将无法回复。')) return
+  if (!target && !confirm('确定要解除锁定吗？')) return
   post.value.is_locked = target
   try {
     const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_locked: target })
