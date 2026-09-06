@@ -11,5 +11,6 @@ from app.models.benben import Benben
 from app.models.judgement import JudgementLog
 from app.models.ticket import Ticket, TicketReply
 from app.models.forum import ForumPost, ForumComment
+from app.models.notification import Notification
 
-__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog", "Ticket", "TicketReply", "ForumPost", "ForumComment"]
+__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog", "Ticket", "TicketReply", "ForumPost", "ForumComment", "Notification"]

@@ -75,6 +75,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/user/notification',
+    name: 'Notifications',
+    component: () => import('@/views/Notifications.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/tickets',
     name: 'Tickets',
     component: () => import('@/views/tickets/Tickets.vue'),
@@ -145,7 +151,6 @@ const comingSoonPaths = [
   '/help',          // 帮助中心
   '/contact',       // 联系我们
   '/rules',         // 社区规则
-  '/user/notification', // 消息通知
 ]
 
 comingSoonPaths.forEach((p) => {

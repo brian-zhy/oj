@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import apiClient from '@/api/client'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -88,17 +89,18 @@ const showAdminMenu = ref(false)
 // 未读通知数
 const unreadCount = ref(0)
 
-// 获取未读通知
+// 获取未读通知数量
 const fetchUnreadCount = async () => {
-  // TODO: 实现通知API
-  // try {
-  //   const response = await fetch('http://localhost:8000/notifications/unread')
-  //   const data = await response.json()
-  //   unreadCount.value = data.count
-  // } catch (error) {
-  //   console.error('获取通知失败:', error)
-  // }
+  try {
+    const data: any = await apiClient.get('/api/notifications/unread-count')
+    unreadCount.value = data?.count || 0
+  } catch {
+    /* 静默失败（如网络抖动），下次轮询重试 */
+  }
 }
+
+// 供其他组件在产生新通知后手动刷新红点
+defineExpose({ fetchUnreadCount })
 
 // 轮询通知
 let notificationTimer: number | null = null

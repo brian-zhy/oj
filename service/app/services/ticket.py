@@ -15,6 +15,7 @@ from sqlalchemy import select, func as sa_func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.notification import Notification
 from app.models.ticket import Ticket, TicketReply
 from app.models.user import User
 from app.schemas.ticket import TICKET_STATUSES
@@ -228,6 +229,26 @@ class TicketService:
         return bool(user.can_manage_users or user.is_admin or user.is_super_admin)
 
     @staticmethod
+    async def notify(
+        db: AsyncSession,
+        user_id: int,
+        ntype: str,
+        content: str,
+        ticket_id: int,
+        actor_id: int,
+    ) -> None:
+        """写入站内通知（操作者本人不通知自己）。"""
+        if user_id == actor_id:
+            return
+        db.add(Notification(
+            user_id=user_id,
+            type=ntype,
+            content=content,
+            ticket_id=ticket_id,
+            actor_id=actor_id,
+        ))
+
+    @staticmethod
     async def add_reply(
         db: AsyncSession,
         ticket: Ticket,
@@ -256,6 +277,17 @@ class TicketService:
         db.add(reply)
         ticket.last_reply_at = reply.created_at
         ticket.last_reply_by = "staff" if is_staff else "user"
+
+        # 管理员回复 → 通知工单创建者
+        if is_staff:
+            await TicketService.notify(
+                db,
+                ticket.creator_id,
+                "reply",
+                f"你的「{ticket.title}」工单被 {user.username} 回复了，快来看看吧",
+                ticket.id,
+                user.id,
+            )
         # 状态流转规则：
         # - 管理员回复：仅当工单处于「待处理」时流转为「待补充」，其他状态保持不变
         # - 用户回复：开放状态下流转回「待处理」
@@ -319,6 +351,24 @@ class TicketService:
             action_text=action,
             action_target_user_id=assignee.id if assignee else None,
         ))
+        # 通知工单创建者与被指派人
+        await TicketService.notify(
+            db,
+            ticket.creator_id,
+            "assign",
+            f"你的「{ticket.title}」工单{action}，快来看看吧",
+            ticket.id,
+            operator.id,
+        )
+        if assignee:
+            await TicketService.notify(
+                db,
+                assignee.id,
+                "assign",
+                f"你被 {operator.username} 指派为「{ticket.title}」工单的责任人，快来看看吧",
+                ticket.id,
+                operator.id,
+            )
         await db.commit()
         await db.refresh(ticket)
 
@@ -365,6 +415,15 @@ class TicketService:
             is_staff=True,
             action_text=action,
         ))
+        # 通知工单创建者（操作者本人除外）
+        await TicketService.notify(
+            db,
+            ticket.creator_id,
+            "status",
+            f"你的「{ticket.title}」工单被 {user.username} 设置成「{action}」状态，快来看看吧",
+            ticket.id,
+            user.id,
+        )
 
         await db.commit()
         await db.refresh(ticket)
