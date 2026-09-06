@@ -750,6 +750,7 @@ onUnmounted(() => {
                   </div>
                   <div class="post-meta-row2">
                     <span class="post-time-reply">{{ relTime(p.created_at) }} {{ p.reply_count }}回复</span>
+                    <span v-if="p.is_pinned" class="pin-badge">置顶</span>
                   </div>
                 </div>
               </div>
@@ -1164,6 +1165,18 @@ onUnmounted(() => {
 
 .post-time-reply strong {
   color: #2c3e50;
+}
+
+.pin-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
 }
 
 /* ========== 犇犇模块 ========== */
