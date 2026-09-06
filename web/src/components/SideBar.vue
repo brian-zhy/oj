@@ -19,7 +19,7 @@ watch(() => route.path, (newPath) => {
 // 判断是否激活
 const isActive = (path: string) => {
   // 精确匹配：主页、用户管理（避免 /admin/logs 误高亮 /admin）
-  if (path === '/' || path === '/admin') {
+  if (path === '/' || path === '/admin/user') {
     return activePath.value === path
   }
   return activePath.value.startsWith(path)
@@ -297,9 +297,9 @@ const onSidebarLeave = () => {
         <li v-if="authStore.currentUser && (authStore.currentUser.is_super_admin || authStore.currentUser.is_admin || authStore.currentUser.can_manage_users)">
           <a
             class="nav-item"
-            :class="{ 'active': isActive('/admin') }"
-            href="/admin"
-            @click.prevent="navigateTo('/admin')"
+            :class="{ 'active': isActive('/admin/user') }"
+            href="/admin/user"
+            @click.prevent="navigateTo('/admin/user')"
           >
             <span class="nav-icon">👥</span>
             <span class="nav-text">用户管理</span>

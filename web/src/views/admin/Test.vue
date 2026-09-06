@@ -16,8 +16,8 @@
     <div class="routes">
       <h2>可用路由：</h2>
       <ul>
-        <li><router-link to="/admin">用户管理</router-link></li>
-        <li><router-link to="/admin">新集成管理后台</router-link></li>
+        <li><router-link to="/admin/user">用户管理</router-link></li>
+        <li><router-link to="/admin/user">新集成管理后台</router-link></li>
       </ul>
     </div>
   </div>

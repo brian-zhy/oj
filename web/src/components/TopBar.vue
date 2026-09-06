@@ -195,7 +195,7 @@ onUnmounted(() => {
       <!-- 管理后台入口（仅管理员可见，与原站一致的齿轮按钮） -->
       <router-link
         v-if="authStore.currentUser?.is_admin"
-        to="/admin"
+        to="/admin/user"
         class="admin-gear"
         title="进入管理后台"
       >⚙️</router-link>
