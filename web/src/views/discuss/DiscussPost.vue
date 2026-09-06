@@ -15,22 +15,28 @@ const error = ref('')
 const replyContent = ref('')
 const replySubmitting = ref(false)
 
-// 置顶/锁定（仅秩序管理）
+// 置顶/锁定（仅秩序管理）——乐观更新：点击立即生效，请求失败回滚
 const togglePinPost = async () => {
+  const target = !post.value.is_pinned
+  post.value.is_pinned = target
   try {
-    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_pinned: !post.value.is_pinned })
+    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_pinned: target })
     post.value.is_pinned = res.is_pinned
   } catch (err: any) {
-    alert(err.response?.data?.detail || '操作失败')
+    post.value.is_pinned = !target
+    alert(err.response?.data?.detail || err.message || '操作失败')
   }
 }
 
 const toggleLockPost = async () => {
+  const target = !post.value.is_locked
+  post.value.is_locked = target
   try {
-    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_locked: !post.value.is_locked })
+    const res: any = await apiClient.put(`/api/forum/posts/${route.params.id}/moderate`, { is_locked: target })
     post.value.is_locked = res.is_locked
   } catch (err: any) {
-    alert(err.response?.data?.detail || '操作失败')
+    post.value.is_locked = !target
+    alert(err.response?.data?.detail || err.message || '操作失败')
   }
 }
 

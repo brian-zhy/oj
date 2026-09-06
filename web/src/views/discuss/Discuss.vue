@@ -91,22 +91,28 @@ const removePost = async (id: number) => {
 const canDelete = (p: any) =>
   isStaff.value || (authStore.currentUser && p.author?.user_id === authStore.currentUser.id)
 
-// 置顶/锁定（仅秩序管理）
+// 置顶/锁定（仅秩序管理）——乐观更新：点击立即生效，请求失败回滚
 const togglePin = async (p: any) => {
+  const target = !p.is_pinned
+  p.is_pinned = target
   try {
-    await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_pinned: !p.is_pinned })
-    p.is_pinned = !p.is_pinned
+    const res: any = await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_pinned: target })
+    p.is_pinned = res.is_pinned
   } catch (err: any) {
-    alert(err.response?.data?.detail || '操作失败')
+    p.is_pinned = !target
+    alert(err.response?.data?.detail || err.message || '操作失败')
   }
 }
 
 const toggleLock = async (p: any) => {
+  const target = !p.is_locked
+  p.is_locked = target
   try {
-    await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_locked: !p.is_locked })
-    p.is_locked = !p.is_locked
+    const res: any = await apiClient.put(`/api/forum/posts/${p.id}/moderate`, { is_locked: target })
+    p.is_locked = res.is_locked
   } catch (err: any) {
-    alert(err.response?.data?.detail || '操作失败')
+    p.is_locked = !target
+    alert(err.response?.data?.detail || err.message || '操作失败')
   }
 }
 
