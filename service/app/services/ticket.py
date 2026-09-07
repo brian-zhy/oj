@@ -258,14 +258,17 @@ class TicketService:
     ) -> TicketReply:
         """追加回复。
 
-        - 工单处于终态（resolved/closed/deleted）时仅管理员可回复
-        - 管理员回复 → 状态改为 replied（待用户补充）；用户回复 → pending（待处理）
+        - 公开工单：任何登录用户都可评论，但须处于未完结状态（pending/replied/processing/suspended）
+        - 私密工单（账号申诉）：仅创建者与管理员可回复
+        - 状态流转：管理员回复 → 待补充；创建者回复 → 待处理；第三方评论不改变状态
         """
         is_staff = TicketService.is_staff_user(user)
         is_creator = ticket.creator_id == user.id
 
-        if not is_staff and not is_creator:
-            raise PermissionError("只能回复自己的工单")
+        # 私密工单（账号申诉）仅创建者与管理员可回复
+        if not ticket.is_public and not (is_staff or is_creator):
+            raise PermissionError("申诉类工单仅创建者与管理员可回复")
+        # 非管理员须在工单未完结时回复
         if not is_staff and ticket.status not in OPEN_STATUSES:
             raise PermissionError("工单已完结，如仍有问题请新建工单")
 
@@ -279,8 +282,8 @@ class TicketService:
         ticket.last_reply_at = reply.created_at
         ticket.last_reply_by = "staff" if is_staff else "user"
 
-        # 管理员回复 → 通知工单创建者
-        if is_staff:
+        # 非创建者回复（管理员处理或普通用户评论）→ 通知工单创建者
+        if not is_creator:
             await TicketService.notify(
                 db,
                 ticket.creator_id,

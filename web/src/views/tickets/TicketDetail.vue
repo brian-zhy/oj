@@ -102,7 +102,9 @@ const isCreator = computed(() => ticket.value?.is_creator)
 const canReply = computed(() => {
   if (!ticket.value) return false
   if (isStaff.value) return true
-  return isCreator.value && OPEN_STATUSES.includes(ticket.value.status)
+  if (isCreator.value) return OPEN_STATUSES.includes(ticket.value.status)
+  // 其他登录用户可评论他人的公开、未完结工单
+  return !!ticket.value.is_public && OPEN_STATUSES.includes(ticket.value.status)
 })
 
 const letterAvatar = (name: string) => {
@@ -389,7 +391,7 @@ onMounted(() => loadTicket())
         <!-- 回复框 -->
         <div v-if="canReply" class="reply-box card">
           <div class="reply-box-head">
-            {{ isStaff ? '以管理员身份回复（仅「待处理」工单会自动变为「待补充」，其他状态保持不变）' : '补充信息 / 追问' }}
+            {{ isStaff ? '以管理员身份回复（仅「待处理」工单会自动变为「待补充」，其他状态保持不变）' : isCreator ? '补充信息 / 追问' : '发表评论' }}
           </div>
           <textarea
             v-model="replyContent"
