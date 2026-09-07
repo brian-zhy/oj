@@ -29,7 +29,9 @@ def _user_brief(user: User | None) -> Dict[str, Any]:
             "user_number": None,
             "username_color": "",
             "is_cheater": False,
+            "can_manage_users": False,
             "can_manage_posts": False,
+            "can_manage_problems": False,
         }
     return {
         "id": user.id,
@@ -41,7 +43,9 @@ def _user_brief(user: User | None) -> Dict[str, Any]:
         "user_number": user.user_number,
         "username_color": user.username_color or "",
         "is_cheater": bool(user.is_cheater),
+        "can_manage_users": bool(user.can_manage_users),
         "can_manage_posts": bool(user.can_manage_posts),
+        "can_manage_problems": bool(user.can_manage_problems),
     }
 
 

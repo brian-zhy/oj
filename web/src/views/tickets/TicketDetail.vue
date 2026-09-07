@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import { userNameColor } from '@/utils/userColor'
 
 const router = useRouter()
 const route = useRoute()
@@ -131,7 +132,7 @@ const relTime = (iso: string) => {
 }
 
 // 用户名颜色（管理员紫 / 普通红）
-const userColor = (u: any) => (u?.is_admin ? '#9C3DCF' : '#e74c3c')
+const userColor = (u: any) => userNameColor(u)
 
 // 状态中文名 → 配色（时间线记录用）
 const statusColorByText = (text: string) => {
@@ -217,12 +218,12 @@ onMounted(() => loadTicket())
                 <router-link
                   :to="ticket.creator?.user_number ? `/user/${ticket.creator.user_number}` : '#'"
                   class="creator-link"
-                  :style="{ color: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  :style="{ color: userColor(ticket.creator) }"
                 >{{ ticket.creator?.username || '未知用户' }}</router-link>
                 <span
                   v-if="ticket.creator?.user_tag"
                   class="user-tag-display"
-                  :style="{ backgroundColor: ticket.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                  :style="{ backgroundColor: userColor(ticket.creator) }"
                 >{{ ticket.creator.user_tag }}</span>
               </div>
             </div>
@@ -233,12 +234,12 @@ onMounted(() => loadTicket())
                   <router-link
                     :to="ticket.assignee.user_number ? `/user/${ticket.assignee.user_number}` : '#'"
                     class="creator-link"
-                    :style="{ color: ticket.assignee.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                    :style="{ color: userColor(ticket.assignee) }"
                   >{{ ticket.assignee.username }}</router-link>
                   <span
                     v-if="ticket.assignee.user_tag"
                     class="user-tag-display"
-                    :style="{ backgroundColor: ticket.assignee.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                    :style="{ backgroundColor: userColor(ticket.assignee) }"
                   >{{ ticket.assignee.user_tag }}</span>
                 </template>
                 <span v-else class="muted">暂无</span>
@@ -353,12 +354,12 @@ onMounted(() => loadTicket())
                   <router-link
                     :to="r.action_target.user_number ? `/user/${r.action_target.user_number}` : '#'"
                     class="action-user"
-                    :style="{ color: r.action_target.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                    :style="{ color: userColor(r.action_target) }"
                   >{{ r.action_target.username }}</router-link>
                   <span
                     v-if="r.action_target.user_tag"
                     class="user-tag-display"
-                    :style="{ backgroundColor: r.action_target.is_admin ? '#9C3DCF' : '#e74c3c' }"
+                    :style="{ backgroundColor: userColor(r.action_target) }"
                   >{{ r.action_target.user_tag }}</span>
                 </span>
                 <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>

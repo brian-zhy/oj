@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import { userNameColor } from '@/utils/userColor'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -17,11 +18,7 @@ const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 
 // 获取用户显示颜色
-const getUserDisplayColor = (user: any) => {
-  if (user?.is_cheater) return COLOR_BROWN
-  if (user?.is_admin) return COLOR_PURPLE
-  return COLOR_RED
-}
+const getUserDisplayColor = (user: any) => userNameColor(user)
 
 // 获取用户标签显示
 const getUserTagDisplay = (user: any) => {
