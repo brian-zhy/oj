@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import apiClient from '@/api/client'
+import { userNameColor } from '@/utils/userColor'
 
 // showAdmin：是否显示操作管理员（陶片放逐公共页不显示，管理日志页显示）
 const props = defineProps<{ showAdmin?: boolean }>()
@@ -61,10 +62,7 @@ const COLOR_BROWN = '#AD8B00'
 const COLOR_BANNED = '#95a5a6'
 
 function getUserColor(user: LogUser): string {
-  if (user.is_banned) return COLOR_BANNED
-  if (user.is_cheater) return COLOR_BROWN
-  if (user.is_admin) return COLOR_PURPLE
-  return COLOR_RED
+  return userNameColor(user)
 }
 
 // ================================================================

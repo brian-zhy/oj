@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import Swal from 'sweetalert2'
+import { userNameColor as userColor } from '@/utils/userColor'
 
 const router = useRouter()
 const route = useRoute()
@@ -110,8 +111,6 @@ const letterAvatar = (name: string) => {
   const ch = (name || 'U').trim().charAt(0).toUpperCase() || 'U'
   return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23e74c3c'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='16' font-family='Arial'%3E${encodeURIComponent(ch)}%3C/text%3E%3C/svg%3E`
 }
-
-const userColor = (u: any) => (u?.is_banned ? '#95a5a6' : u?.is_admin ? '#9C3DCF' : '#e74c3c')
 
 const fmtTime = (iso: string) => {
   if (!iso) return ''

@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import { userNameColor as userColor } from '@/utils/userColor'
 
 const router = useRouter()
 const route = useRoute()
@@ -157,7 +158,7 @@ onMounted(() => loadTickets(false))
           <tbody>
             <tr v-for="t in tickets" :key="t.id" @click="router.push(`/tickets/${t.id}`)">
               <td class="col-no">{{ t.ticket_no }}</td>
-              <td v-if="scope === 'all'" class="col-user" :style="{ color: t.creator?.is_admin ? '#9C3DCF' : '#e74c3c' }">
+              <td v-if="scope === 'all'" class="col-user" :style="{ color: userColor(t.creator) }">
                 {{ t.creator?.username }}
               </td>
               <td class="col-title">{{ t.title }}</td>

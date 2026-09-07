@@ -41,6 +41,7 @@ def format_user_for_original(user: User) -> Dict[str, Any]:
         "can_speak": user.can_speak,
         "can_manage_users": user.can_manage_users,
         "can_manage_posts": user.can_manage_posts,
+        "can_manage_problems": getattr(user, 'can_manage_problems', False),
         "can_assign_admin": getattr(user, 'can_assign_admin', False),
         "avatar_url": user.avatar_url,
         "user_tag": user.user_tag,

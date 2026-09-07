@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import apiClient from '@/api/client'
+import { userNameColor } from '@/utils/userColor'
 
 // 陶片放逐公共页专用：卡片式样式（深色头部）
 // 仅展示目标用户与操作内容（操作管理员不在此页展示）
@@ -169,7 +170,7 @@ function buildRenderedLog(log: JudgementLog): RenderedLog {
   const info = getActionInfo(log)
   const time = formatTime(log.created_at)
 
-  const targetColor = target.is_cheater ? COLOR_BROWN : (target.is_admin ? COLOR_PURPLE : COLOR_RED)
+  const targetColor = userNameColor(target)
 
   const tags: { text: string; color: string }[] = []
   if (target.user_tag) {

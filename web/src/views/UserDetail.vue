@@ -3,6 +3,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import { userNameColor } from '@/utils/userColor'
 
 const router = useRouter()
 const route = useRoute()
@@ -22,12 +23,7 @@ const COLOR_RED = '#e74c3c'
 const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 
-const getUserDisplayColor = (user: any) => {
-  if (!user) return COLOR_RED
-  if (user.is_cheater) return COLOR_BROWN
-  if (user.is_admin) return COLOR_PURPLE
-  return COLOR_RED
-}
+const getUserDisplayColor = (user: any) => userNameColor(user)
 
 const getUserTagDisplay = (user: any) => {
   if (!user) return ''

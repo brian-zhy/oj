@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import Swal from 'sweetalert2'
+import { userNameColor } from '@/utils/userColor'
 
 const authStore = useAuthStore()
 
@@ -140,9 +141,7 @@ function letterAvatar(name: string): string {
 }
 
 function getUserDisplayColor(user: any): string {
-  if (user?.is_cheater) return COLOR_BROWN
-  if (user?.is_admin) return COLOR_PURPLE
-  return COLOR_RED
+  return userNameColor(user)
 }
 
 function isUserOnline(user: any): boolean {

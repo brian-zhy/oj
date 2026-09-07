@@ -30,6 +30,9 @@ class ForumService:
                 "user_tag": "",
                 "is_admin": False,
                 "is_banned": False,
+                "can_manage_users": False,
+                "can_manage_posts": False,
+                "can_manage_problems": False,
                 "user_number": None,
                 "avatar_url": "",
             }
@@ -39,6 +42,9 @@ class ForumService:
             "user_tag": user.user_tag or "",
             "is_admin": bool(user.is_admin),
             "is_banned": bool(user.is_banned),
+            "can_manage_users": bool(user.can_manage_users),
+            "can_manage_posts": bool(user.can_manage_posts),
+            "can_manage_problems": bool(user.can_manage_problems),
             "user_number": user.user_number,
             "avatar_url": user.avatar_url or "",
         }
