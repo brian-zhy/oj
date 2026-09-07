@@ -314,13 +314,10 @@ async def update_user_permissions(
             detail=str(e)
         )
 
-    # 授予用户管理/秩序管理权限时，自动授予进入后台权限（与参考项目一致）
+    # 更新权限（授予用户/秩序管理不再自动附带进入后台 is_admin，
+    # 紫名与后台身份严格以 is_admin 为准）
     apply_changes = dict(changes)
-    if (apply_changes.get("can_manage_users") is True or apply_changes.get("can_manage_posts") is True) \
-            and not user.is_admin:
-        apply_changes["is_admin"] = True
 
-    # 更新权限
     allowed_permissions = [
         'is_admin', 'is_super_admin', 'can_manage_users',
         'can_manage_posts', 'can_manage_problems', 'can_speak',
