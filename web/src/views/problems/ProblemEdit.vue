@@ -137,7 +137,7 @@ const doDelete = () => {
     try {
       await problemsApi.remove(editingId.value)
       Swal.fire({ icon: 'success', title: '已删除', timer: 1200, showConfirmButton: false })
-      router.push('/admin/problems')
+      router.push('/problems')
     } catch (err: any) {
       Swal.fire('删除失败', err.response?.data?.detail || '请重试', 'error')
     }

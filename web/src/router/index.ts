@@ -155,12 +155,6 @@ const routes = [
     name: 'ProblemDetail',
     component: () => import('@/views/problems/ProblemDetail.vue'),
     meta: { requiresAuth: true }
-  },
-  {
-    path: '/admin/problems',
-    name: 'AdminProblems',
-    component: () => import('@/views/admin/AdminProblems.vue'),
-    meta: { requiresAuth: true, requiresProblemManage: true }
   }
 ]
 
@@ -274,10 +268,10 @@ router.beforeEach(async (to) => {
     }
   }
 
-  // 检查是否需要题目管理权限（题库管理页）
+  // 检查是否需要题目管理权限（建题/编辑页）：严格只认 can_manage_problems
   if (to.meta.requiresProblemManage) {
     const user = authStore.currentUser
-    if (!user || !(user.can_manage_problems || user.is_admin || user.is_super_admin)) {
+    if (!user || !user.can_manage_problems) {
       console.log('用户没有题目管理权限，跳转无权访问页')
       return { path: '/no-access', query: { from: to.fullPath } }
     }

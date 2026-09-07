@@ -17,9 +17,8 @@ router = APIRouter(prefix="/problems", tags=["problems"])
 
 
 def _can_manage_problems(user: User) -> bool:
-    return bool(
-        user.can_manage_problems or user.is_admin or user.is_super_admin
-    )
+    # 严格只认题目管理权限（is_admin / is_super_admin 不放行）
+    return bool(user.can_manage_problems)
 
 
 def _require_problem_manage(user: User) -> None:

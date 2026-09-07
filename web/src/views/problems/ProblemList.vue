@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
 import type { ProblemListItem } from '@/types'
 import { DIFFICULTY_LIST, difficultyColor } from '@/utils/difficulty'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+
+// 严格只认题目管理权限
+const canManage = computed(() => !!authStore.currentUser?.can_manage_problems)
 
 const PAGE_SIZE = 20
 
@@ -136,6 +141,7 @@ onMounted(() => {
           <h2 class="page-title">题库</h2>
           <p class="page-sub">按难度、来源或关键词查找题目，点击题名查看题面。</p>
         </div>
+        <button v-if="canManage" class="btn-new" @click="router.push('/problems/new')">＋ 新建题目</button>
       </div>
 
       <div class="card">
@@ -244,7 +250,27 @@ onMounted(() => {
 }
 
 .page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
   margin-bottom: 16px;
+}
+
+.btn-new {
+  padding: 9px 22px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-new:hover {
+  background: #c0392b;
 }
 
 .page-title {
