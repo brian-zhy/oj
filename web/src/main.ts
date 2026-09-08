@@ -17,4 +17,14 @@ app.use(router)
 const authStore = useAuthStore()
 authStore.restoreState()
 
+// 切回标签页时静默同步最新权限（60 秒节流）：
+// 管理员改完权限，用户切回来即生效，无需刷新
+let lastPermissionSync = 0
+window.addEventListener('focus', () => {
+  const now = Date.now()
+  if (now - lastPermissionSync < 60_000) return
+  lastPermissionSync = now
+  if (authStore.isAuthenticated) authStore.syncCurrentUser()
+})
+
 app.mount('#app')
