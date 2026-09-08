@@ -206,6 +206,10 @@ const router = createRouter({
   routes
 })
 
+// 每次整页加载（F5 / 首次进入）只静默同步一次用户信息：
+// 管理员修改权限后，用户刷新页面即可拿到最新权限，无需清浏览器缓存
+let userSyncedThisLoad = false
+
 // 路由守卫
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
@@ -241,6 +245,10 @@ router.beforeEach(async (to) => {
       authStore.logout()
       return { name: 'Login', query: { redirect: to.fullPath } }
     }
+  } else if (authStore.isAuthenticated && !userSyncedThisLoad) {
+    // 本地有缓存的用户信息：整页加载后静默同步一次最新权限
+    userSyncedThisLoad = true
+    await authStore.syncCurrentUser()
   }
 
   // 检查是否需要管理员权限

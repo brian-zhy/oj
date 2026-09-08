@@ -122,6 +122,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // 静默同步用户信息：管理员可能已修改本用户权限。
+  // 与 fetchCurrentUser 的区别：失败时保留本地登录态（不因网络抖动把人登出）。
+  async function syncCurrentUser() {
+    if (!accessToken.value) return null
+    try {
+      user.value = await authApi.getCurrentUser()
+      return user.value
+    } catch {
+      // 静默失败：保留现有本地信息
+      return null
+    }
+  }
+
   async function refreshAccessToken() {
     if (!refreshToken.value) return false
 
@@ -198,6 +211,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     fetchCurrentUser,
+    syncCurrentUser,
     refreshAccessToken,
     restoreState
   }
