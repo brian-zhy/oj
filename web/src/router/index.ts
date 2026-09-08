@@ -155,6 +155,24 @@ const routes = [
     name: 'ProblemDetail',
     component: () => import('@/views/problems/ProblemDetail.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/problems/:id(\\d+)/submit',
+    name: 'ProblemSubmit',
+    component: () => import('@/views/problems/ProblemSubmit.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/submissions',
+    name: 'SubmissionList',
+    component: () => import('@/views/SubmissionList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/submissions/:id(\\d+)',
+    name: 'SubmissionDetail',
+    component: () => import('@/views/problems/SubmissionDetail.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -165,7 +183,6 @@ const comingSoonPaths = [
   '/courses',       // 网校
   '/training',      // 训练题单
   '/contests',      // 比赛
-  '/submissions',   // 评测记录
   '/articles',      // 文章广场
   '/ranking',       // 排行榜
   '/image',         // 图片上传

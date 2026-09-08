@@ -3,9 +3,10 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Swal from 'sweetalert2'
 import { problemsApi } from '@/api/problems'
+import { testCasesApi } from '@/api/submissions'
 import { renderRichText } from '@/utils/markdown'
 import { DIFFICULTY_LIST } from '@/utils/difficulty'
-import type { ProblemDifficulty, ProblemSample } from '@/types'
+import type { ProblemDifficulty, ProblemSample, TestCaseItem } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -67,6 +68,7 @@ const loadProblem = async () => {
     form.output_format = p.output_format || ''
     form.hint = p.hint || ''
     samples.value = (p.samples || []).map((s) => ({ input: s.input || '', output: s.output || '' }))
+    loadTestCases()
   } catch (err: any) {
     Swal.fire('加载失败', err.response?.data?.detail || '请重试', 'error')
   } finally {
@@ -77,6 +79,48 @@ const loadProblem = async () => {
 // ===== 样例组 =====
 const addSample = () => samples.value.push({ input: '', output: '' })
 const removeSample = (i: number) => samples.value.splice(i, 1)
+
+// ===== 测试点（评测用，建题后管理） =====
+const testCases = ref<TestCaseItem[]>([])
+const newCase = reactive({ input_data: '', expected_output: '' })
+
+const loadTestCases = async () => {
+  if (editingId.value === null) return
+  try {
+    testCases.value = await testCasesApi.list(editingId.value)
+  } catch {
+    testCases.value = []
+  }
+}
+
+const addCase = async () => {
+  if (editingId.value === null) return
+  if (!newCase.input_data && !newCase.expected_output) {
+    Swal.fire('请填写测试点内容', '', 'warning')
+    return
+  }
+  try {
+    await testCasesApi.create(editingId.value, {
+      input_data: newCase.input_data,
+      expected_output: newCase.expected_output,
+    })
+    newCase.input_data = ''
+    newCase.expected_output = ''
+    loadTestCases()
+  } catch (err: any) {
+    Swal.fire('添加失败', err.response?.data?.detail || '请重试', 'error')
+  }
+}
+
+const removeCase = async (id: number) => {
+  if (editingId.value === null) return
+  try {
+    await testCasesApi.remove(editingId.value, id)
+    loadTestCases()
+  } catch (err: any) {
+    Swal.fire('删除失败', err.response?.data?.detail || '请重试', 'error')
+  }
+}
 
 // ===== 保存 =====
 const saving = ref(false)
@@ -243,6 +287,34 @@ onMounted(loadProblem)
             </div>
             <button class="btn-ghost add-sample" @click="addSample">＋ 添加样例组</button>
           </div>
+        </div>
+
+        <!-- 测试数据（评测用） -->
+        <div class="card">
+          <div class="section-title">测试数据</div>
+          <template v-if="editingId !== null">
+            <p class="tc-tip">评测用测试点：提交的代码将逐点运行并与期望输出比对（忽略行尾空白）。至少添加 1 个测试点，否则该题无法提交评测。</p>
+            <div v-for="(tc, i) in testCases" :key="tc.id" class="sample-group">
+              <div class="sample-head">
+                <span class="sample-name">测试点 #{{ i + 1 }}</span>
+                <span class="action-link red" @click="removeCase(tc.id)">删除</span>
+              </div>
+              <div class="sample-grid">
+                <textarea class="md-textarea plain" rows="3" readonly :value="tc.input_data" placeholder="输入"></textarea>
+                <textarea class="md-textarea plain" rows="3" readonly :value="tc.expected_output" placeholder="期望输出"></textarea>
+              </div>
+            </div>
+            <div v-if="testCases.length === 0" class="tc-empty">暂无测试点</div>
+            <div class="tc-add">
+              <div class="tc-label">新增测试点</div>
+              <div class="sample-grid">
+                <textarea v-model="newCase.input_data" class="md-textarea plain" rows="3" placeholder="测试点输入"></textarea>
+                <textarea v-model="newCase.expected_output" class="md-textarea plain" rows="3" placeholder="期望输出"></textarea>
+              </div>
+              <button class="btn-ghost add-sample" @click="addCase">＋ 添加测试点</button>
+            </div>
+          </template>
+          <p v-else class="tc-tip">题目创建后即可在这里添加评测测试点。</p>
         </div>
 
         <div class="save-row">
@@ -485,6 +557,28 @@ onMounted(loadProblem)
 
 .add-sample {
   border-radius: 8px;
+}
+
+.tc-tip {
+  color: #8a9aa8;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.tc-empty {
+  color: #b6c2cf;
+  font-size: 13px;
+  padding: 8px 0 12px;
+}
+
+.tc-add {
+  margin-top: 4px;
+}
+
+.tc-label {
+  font-size: 13px;
+  color: #5b6e8c;
+  margin-bottom: 6px;
 }
 
 .action-link.red {

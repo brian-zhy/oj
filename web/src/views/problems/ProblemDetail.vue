@@ -111,6 +111,12 @@ const doDelete = () => {
             </span>
           </div>
 
+          <!-- 操作行 -->
+          <div class="p-actions">
+            <button class="btn-primary" @click="router.push(`/problems/${problem.id}/submit`)">提交代码</button>
+            <button class="btn-op" @click="router.push(`/submissions?problem_id=${problem.id}`)">提交记录</button>
+          </div>
+
           <!-- 限制与统计 -->
           <div class="p-limits">
             <span>时间限制：<b>{{ problem.time_limit }} ms</b></span>
@@ -281,6 +287,27 @@ const doDelete = () => {
   border-top: 1px solid #f0f2f5;
   color: #5b6e8c;
   font-size: 13px;
+}
+
+.p-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn-primary {
+  padding: 9px 28px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 22px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #c0392b;
 }
 
 .p-limits b {
