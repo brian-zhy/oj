@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Runtime mode
     ENV: Literal["dev", "prod"] = "dev"
 
+    # go-judge 评测沙箱地址（宿主机 systemd 服务）
+    GO_JUDGE_URL: str = "http://host.docker.internal:5050"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -95,23 +95,63 @@ export interface ProblemListResponse {
 }
 
 // 提交相关类型
+export type SubmissionStatus =
+  | 'pending'
+  | 'judging'
+  | 'accepted'
+  | 'wrong_answer'
+  | 'time_limit_exceeded'
+  | 'memory_limit_exceeded'
+  | 'runtime_error'
+  | 'compile_error'
+  | 'system_error'
+
+export interface SubmissionCaseResult {
+  case: number
+  status: string
+  time: number
+  memory: number
+}
+
+export interface SubmissionUser {
+  user_id: number
+  username: string
+  user_number: number
+  avatar_url: string
+  is_admin: boolean
+}
+
 export interface Submission {
   id: number
   problem_id: number
-  user_id: number
-  code: string
+  problem_number: string
+  problem_title?: string | null
+  user: SubmissionUser
   language: string
-  status: 'pending' | 'judging' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'runtime_error' | 'compile_error'
-  submit_time: string
-  judge_time?: string
-  runtime?: number
-  memory_usage?: number
+  status: SubmissionStatus
+  score: number
+  time_used?: number | null
+  memory_used?: number | null
+  error_message?: string | null
+  test_results: SubmissionCaseResult[]
+  code?: string
+  code_visible?: boolean
+  judged_at?: string | null
+  created_at: string
 }
 
-export interface CreateSubmissionData {
-  problem_id: number
-  code: string
-  language: string
+export interface SubmissionListResponse {
+  total: number
+  page: number
+  page_size: number
+  items: Submission[]
+}
+
+export interface TestCaseItem {
+  id: number
+  input_data: string
+  expected_output: string
+  sort_order: number
 }
 
 // 通用 API 响应类型
