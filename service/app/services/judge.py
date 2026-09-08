@@ -187,9 +187,17 @@ async def _judge(db: AsyncSession, submission_id: int) -> None:
                 })
                 if res.get("status") != "Accepted":
                     sub.status = "compile_error"
-                    sub.error_message = (res.get("files", {}).get("stderr")
-                                         or res.get("files", {}).get("stdout")
-                                         or "编译失败")[:20_000]
+                    stderr = (res.get("files") or {}).get("stderr") or ""
+                    if res.get("status") == "File Error" and not stderr.strip():
+                        # 沙箱里找不到编译器可执行文件 → 宿主机没装 g++/gcc
+                        sub.error_message = (
+                            "编译器不可用：评测沙箱中找不到 g++/gcc，"
+                            "请联系管理员在宿主机安装编译器"
+                        )
+                    else:
+                        sub.error_message = (stderr
+                                             or (res.get("files") or {}).get("stdout")
+                                             or "编译失败")[:20_000]
                     sub.judged_at = datetime.now(timezone.utc)
                     await db.commit()
                     return
