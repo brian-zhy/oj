@@ -15,6 +15,7 @@ export interface User {
   can_manage_posts: boolean
   can_manage_problems: boolean
   can_assign_admin: boolean
+  experience?: number
   avatar_url?: string | null
   user_tag?: string | null
   username_color?: string | null

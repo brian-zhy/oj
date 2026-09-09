@@ -21,6 +21,7 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.problem import Problem
 from app.models.submission import Submission, TestCase
+from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,19 @@ SANDBOX_ENV = ["PATH=/usr/bin:/bin"]
 
 # 汇总优先级：劣化方向（取整个提交的最差结果）
 _SEVERITY = ["accepted", "wrong_answer", "runtime_error", "memory_limit_exceeded", "time_limit_exceeded"]
+
+# 首次 AC 经验表（按难度等级递增，每题每用户仅一次）
+XP_BY_DIFFICULTY = {
+    "入门": 1,
+    "普及-": 5,
+    "普及": 10,
+    "普及/提高-": 50,
+    "普及+/提高": 100,
+    "提高+/省选-": 500,
+    "省选/NOI-": 900,
+    "NOI/NOI+/CTSC": 1500,
+    "暂无评定": 0,
+}
 
 # 沙箱资源参数
 COMPILE_CPU_NS = 30_000_000_000      # 编译 30s
@@ -269,7 +283,7 @@ async def _judge(db: AsyncSession, submission_id: int) -> None:
     sub.test_results = results
     sub.judged_at = datetime.now(timezone.utc)
 
-    # 统计回写：提交数 +1；首次 AC（该用户该题此前无 AC）则通过数 +1
+    # 统计回写：提交数 +1；首次 AC（该用户该题此前无 AC）则通过数 +1 并加经验
     problem.submit_count = (problem.submit_count or 0) + 1
     if overall == "accepted":
         prior_ac = (await db.execute(
@@ -282,5 +296,14 @@ async def _judge(db: AsyncSession, submission_id: int) -> None:
         )).scalar_one_or_none()
         if prior_ac is None:
             problem.solved_count = (problem.solved_count or 0) + 1
+            # 首次 AC 发经验（每题每用户永远只加一次）
+            xp = XP_BY_DIFFICULTY.get(problem.difficulty, 0)
+            if xp > 0:
+                ac_user = await db.get(User, sub.user_id)
+                if ac_user is not None:
+                    ac_user.experience = (ac_user.experience or 0) + xp
+                    logger.info("用户 %s 首次 AC P%s(%s) +%d 经验",
+                                ac_user.username, 1000 + sub.problem_id,
+                                problem.difficulty, xp)
 
     await db.commit()

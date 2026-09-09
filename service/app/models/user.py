@@ -68,6 +68,11 @@ class User(Base, TimestampMixin):
         Boolean, default=False, server_default=text("false"), nullable=False
     )
 
+    # 经验值：首次 AC 题目按难度获得（每题每用户仅一次）
+    experience: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+
     # 用户个性化信息
     avatar_url: Mapped[str | None] = mapped_column(
         String(500), nullable=True
