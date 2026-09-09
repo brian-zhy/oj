@@ -52,9 +52,13 @@ SANDBOX_STATUS_MAP = {
     "Memory Limit Exceeded": "memory_limit_exceeded",
     "Output Limit Exceeded": "runtime_error",
     "Runtime Error": "runtime_error",
+    "Nonzero Exit Status": "runtime_error",
     "File Error": "runtime_error",
     "Internal Error": "system_error",
 }
+
+# go-judge 默认环境没有 PATH，g++ 会找不到 as/ld 链接器 → 必须显式提供
+SANDBOX_ENV = ["PATH=/usr/bin:/bin"]
 
 # 汇总优先级：劣化方向（取整个提交的最差结果）
 _SEVERITY = ["accepted", "wrong_answer", "runtime_error", "memory_limit_exceeded", "time_limit_exceeded"]
@@ -177,6 +181,7 @@ async def _judge(db: AsyncSession, submission_id: int) -> None:
             if lang["compile"]:
                 res = await _run_cmd(client, {
                     "args": lang["compile"],
+                    "env": SANDBOX_ENV,
                     "files": [{"content": ""}, {"name": "stdout", "max": STDERR_MAX},
                               {"name": "stderr", "max": STDERR_MAX}],
                     "copyIn": {lang["source"]: {"content": sub.code}},
@@ -211,6 +216,7 @@ async def _judge(db: AsyncSession, submission_id: int) -> None:
                 )
                 res = await _run_cmd(client, {
                     "args": lang["run"],
+                    "env": SANDBOX_ENV,
                     "files": _basic_files(tc.input_data),
                     "copyIn": copy_in,
                     "cpuLimit": cpu_ns,
