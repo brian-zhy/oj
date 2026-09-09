@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from pydantic import BaseModel, Field, field_validator
 
 # 洛谷 8 级难度（含「暂无评定」）
@@ -16,7 +18,8 @@ DIFFICULTIES = [
     "省选/NOI-",
     "NOI/NOI+/CTSC",
 ]
-_DIFF = "|".join(DIFFICULTIES)
+# re.escape：难度名里的 + / - 是正则元字符，不转义会导致这些难度永远校验失败
+_DIFF = "|".join(re.escape(d) for d in DIFFICULTIES)
 
 
 class ProblemSample(BaseModel):

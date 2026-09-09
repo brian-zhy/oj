@@ -312,6 +312,7 @@ onMounted(() => {
                   <div class="follow-stats">
                     <span>关注 <span class="num">0</span></span>
                     <span>粉丝 <span class="num">0</span></span>
+                    <span>经验 <span class="num">{{ profile.experience ?? 0 }}</span></span>
                   </div>
                   <!-- 关注按钮（非本人显示） -->
                   <a
