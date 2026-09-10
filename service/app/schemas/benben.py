@@ -20,7 +20,12 @@ class BenbenResponse(BaseModel):
     username: str
     avatar_url: Optional[str] = None
     is_admin: bool = False
+    is_super_admin: bool = False
+    is_banned: bool = False
     is_cheater: bool = False
+    can_manage_users: bool = False
+    can_manage_posts: bool = False
+    can_manage_problems: bool = False
     username_color: Optional[str] = None
     user_tag: Optional[str] = None
     content: str
