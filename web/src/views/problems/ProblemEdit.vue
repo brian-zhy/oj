@@ -165,29 +165,6 @@ const save = async () => {
   }
 }
 
-// ===== 删除（仅编辑模式） =====
-const doDelete = () => {
-  if (editingId.value === null) return
-  Swal.fire({
-    title: '删除题目',
-    text: '删除后不可恢复，确定吗？',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    confirmButtonColor: '#e74c3c',
-  }).then(async (r) => {
-    if (!r.isConfirmed || editingId.value === null) return
-    try {
-      await problemsApi.remove(editingId.value)
-      Swal.fire({ icon: 'success', title: '已删除', timer: 1200, showConfirmButton: false })
-      router.push('/problems')
-    } catch (err: any) {
-      Swal.fire('删除失败', err.response?.data?.detail || '请重试', 'error')
-    }
-  })
-}
-
 onMounted(loadProblem)
 </script>
 
@@ -202,7 +179,6 @@ onMounted(loadProblem)
           </h2>
           <div class="head-actions">
             <button v-if="editingId !== null" class="btn-ghost" @click="router.push(`/problems/${editingId}`)">查看题目</button>
-            <button v-if="editingId !== null" class="btn-danger" @click="doDelete">删除题目</button>
             <button class="btn-primary" :disabled="saving" @click="save">
               {{ saving ? '保存中...' : '保存' }}
             </button>

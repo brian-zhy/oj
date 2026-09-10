@@ -136,8 +136,3 @@ class ProblemService:
         await db.commit()
         await db.refresh(problem)
         return problem
-
-    @staticmethod
-    async def delete(db: AsyncSession, problem: Problem) -> None:
-        await db.delete(problem)
-        await db.commit()
