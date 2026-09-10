@@ -141,7 +141,12 @@ class BenbenService:
                 "username": username,
                 "avatar_url": user.avatar_url if user else None,
                 "is_admin": user.is_admin if user else False,
+                "is_super_admin": user.is_super_admin if user else False,
+                "is_banned": user.is_banned if user else False,
                 "is_cheater": user.is_cheater if user else False,
+                "can_manage_users": user.can_manage_users if user else False,
+                "can_manage_posts": user.can_manage_posts if user else False,
+                "can_manage_problems": user.can_manage_problems if user else False,
                 "username_color": user.username_color if user else None,
                 "user_tag": user.user_tag if user else None,
                 "is_owner": current_user_number == benben.user_number if current_user_number else False
