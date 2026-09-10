@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.models.user import User
+from app.services.user import allocate_user_number
 
 
 def generate_captcha() -> tuple[str, str]:
@@ -120,13 +121,7 @@ async def create_user_with_number(
         创建的用户对象
     """
     # 顺序分配：取最小未占用的用户编号（从 1 开始递增）
-    result = await db.execute(
-        select(User.user_number).order_by(User.user_number)
-    )
-    used_numbers = set(result.scalars().all())
-    user_number = 1
-    while user_number in used_numbers:
-        user_number += 1
+    user_number = await allocate_user_number(db)
 
     # 创建新用户
     user = User(

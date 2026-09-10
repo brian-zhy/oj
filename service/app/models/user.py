@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, text
+from sqlalchemy import Boolean, Date, DateTime, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -70,6 +70,15 @@ class User(Base, TimestampMixin):
 
     # 经验值：首次 AC 题目按难度获得（每题每用户仅一次）
     experience: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+
+    # 打卡：最近打卡日期（东八区）/ 当前连续天数 / 累计打卡天数
+    last_checkin_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    checkin_streak: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+    checkin_total: Mapped[int] = mapped_column(
         Integer, default=0, server_default=text("0"), nullable=False
     )
 
