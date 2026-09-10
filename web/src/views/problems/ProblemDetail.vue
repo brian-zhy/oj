@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
 import { renderRichText } from '@/utils/markdown'
@@ -60,28 +59,6 @@ const loadProblem = async () => {
 
 watch(problemId, loadProblem)
 onMounted(loadProblem)
-
-const doDelete = () => {
-  if (!problem.value) return
-  Swal.fire({
-    title: '删除题目',
-    text: `确定删除 ${problem.value.problem_number}「${problem.value.title}」吗？此操作不可恢复。`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    confirmButtonColor: '#e74c3c',
-  }).then(async (r) => {
-    if (!r.isConfirmed || !problem.value) return
-    try {
-      await problemsApi.remove(problem.value.id)
-      Swal.fire({ icon: 'success', title: '已删除', timer: 1200, showConfirmButton: false })
-      router.push('/problems')
-    } catch (err: any) {
-      Swal.fire('删除失败', err.response?.data?.detail || '请重试', 'error')
-    }
-  })
-}
 </script>
 
 <template>
@@ -107,7 +84,6 @@ const doDelete = () => {
             <span v-if="!problem.is_public" class="draft-badge">未公开</span>
             <span v-if="canManage" class="head-ops">
               <button class="btn-op" @click="router.push(`/problems/${problem.id}/edit`)">编辑</button>
-              <button class="btn-op danger" @click="doDelete">删除</button>
             </span>
           </div>
 
