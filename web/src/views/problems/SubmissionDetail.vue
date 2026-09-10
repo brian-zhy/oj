@@ -8,6 +8,7 @@ import {
   submissionStatusColor,
   caseStatusText,
 } from '@/utils/submissionStatus'
+import { fmtDateTime } from '@/utils/datetime'
 import type { Submission } from '@/types'
 
 const route = useRoute()
@@ -83,7 +84,7 @@ onBeforeUnmount(() => {
             </a></span>
             <span>提交者：<b>{{ sub.user?.username }}</b></span>
             <span>语言：<b>{{ sub.language }}</b></span>
-            <span>提交时间：<b>{{ sub.created_at?.replace('T', ' ').slice(0, 16) }}</b></span>
+            <span>提交时间：<b>{{ fmtDateTime(sub.created_at) }}</b></span>
           </div>
         </div>
 

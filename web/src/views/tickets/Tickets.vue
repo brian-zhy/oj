@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor as userColor } from '@/utils/userColor'
+import { fmtDateTime } from '@/utils/datetime'
 
 const router = useRouter()
 const route = useRoute()
@@ -104,8 +105,6 @@ watch(() => route.fullPath, () => {
   loadTickets(false)
 })
 
-const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '—')
-
 onMounted(() => loadTickets(false))
 </script>
 
@@ -168,7 +167,7 @@ onMounted(() => loadTickets(false))
                   {{ STATUS[t.status]?.text || t.status }}
                 </span>
               </td>
-              <td class="col-time">{{ fmtTime(t.last_reply_at || t.created_at) }}</td>
+              <td class="col-time">{{ fmtDateTime(t.last_reply_at || t.created_at) }}</td>
             </tr>
           </tbody>
         </table>

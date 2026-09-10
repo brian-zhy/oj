@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { submissionsApi } from '@/api/submissions'
 import { submissionStatusText, submissionStatusColor } from '@/utils/submissionStatus'
+import { fmtDateTime } from '@/utils/datetime'
 import type { Submission } from '@/types'
 
 const router = useRouter()
@@ -59,8 +60,6 @@ const fetchData = async () => {
 
 watch(() => route.fullPath, fetchData)
 onMounted(fetchData)
-
-const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16) : '—')
 </script>
 
 <template>
@@ -112,7 +111,7 @@ const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 1
                 <td class="col-num">{{ s.time_used === null || s.time_used === undefined ? '—' : s.time_used + ' ms' }}</td>
                 <td class="col-num">{{ s.memory_used === null || s.memory_used === undefined ? '—' : (s.memory_used / 1024).toFixed(1) + ' MB' }}</td>
                 <td>{{ s.language }}</td>
-                <td class="col-time">{{ fmtTime(s.created_at) }}</td>
+                <td class="col-time">{{ fmtDateTime(s.created_at) }}</td>
               </tr>
             </tbody>
           </table>

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/api/client'
+import { fmtDateTime } from '@/utils/datetime'
 
 const router = useRouter()
 
@@ -17,8 +18,6 @@ const loading = ref(false)
 const hasMore = ref(true)
 const error = ref('')
 const unreadCount = computed(() => notifications.value.filter(n => !n.is_read).length)
-
-const fmtTime = (iso: string) => (iso ? String(iso).replace('T', ' ').slice(0, 16).replace(/-/g, '/') : '')
 
 const loadNotifications = async (append = false) => {
   if (loading.value || !hasMore.value) return
@@ -89,7 +88,7 @@ onMounted(() => loadNotifications(false))
               <span v-if="!n.is_read" class="unread-dot"></span>
               {{ n.content }}
             </div>
-            <div class="n-time">{{ fmtTime(n.created_at) }}</div>
+            <div class="n-time">{{ fmtDateTime(n.created_at, '') }}</div>
           </div>
           <span v-if="n.ticket_id" class="n-go">›</span>
         </div>
