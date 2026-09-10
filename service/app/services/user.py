@@ -37,6 +37,18 @@ async def get_user_by_identifier(db: AsyncSession, identifier: str) -> User | No
     return result.scalar_one_or_none()
 
 
+async def allocate_user_number(db: AsyncSession) -> int:
+    """顺序分配：取最小未占用的用户编号 UID（从 1 开始递增）。"""
+    result = await db.execute(
+        select(User.user_number).order_by(User.user_number)
+    )
+    used_numbers = set(result.scalars().all())
+    user_number = 1
+    while user_number in used_numbers:
+        user_number += 1
+    return user_number
+
+
 async def create_user(db: AsyncSession, data: UserCreate) -> User:
     """Create a user, raising 409 on a username/email conflict.
 
@@ -60,6 +72,9 @@ async def create_user(db: AsyncSession, data: UserCreate) -> User:
         username=data.username,
         email=data.email,
         hashed_password=hash_password(data.password),
+        # user_number 为 NOT NULL UNIQUE，缺省插入会触发 IntegrityError
+        # 并被下方 except 误报为「用户名或邮箱已注册」
+        user_number=await allocate_user_number(db),
     )
     db.add(user)
     try:

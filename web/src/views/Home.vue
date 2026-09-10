@@ -42,16 +42,17 @@ const getUserAvatar = (item: any) => {
 // 富文本渲染（Markdown + LaTeX 公式）
 import { renderRichText as renderMarkdown } from '@/utils/markdown'
 
-// ==================== 打卡（纯前端，localStorage 存储） ====================
+// ==================== 打卡（服务端存储，跨设备一致） ====================
 
-const PUNCH_KEY = 'oj_punch_records'
+// 打卡状态来自后端（users 表），换设备 / 重装 / 清缓存不丢失
+const checkinState = ref({ today_checked: false, streak: 0, total: 0 })
 
-// 读取本地打卡记录
-const readPunchRecords = (): Record<string, boolean> => {
+const loadCheckin = async () => {
+  if (!isLoggedIn.value) return
   try {
-    return JSON.parse(localStorage.getItem(PUNCH_KEY) || '{}')
+    checkinState.value = await apiClient.get('/api/checkin')
   } catch {
-    return {}
+    // 静默失败：保持当前状态，不影响页面其余模块
   }
 }
 
@@ -81,15 +82,6 @@ function getDailySeed(userId: string) {
   const dateNum = parseInt(today.replace(/-/g, ''))
   hash = ((hash >>> 0) ^ dateNum * 2654435761) >>> 0
   return Math.abs(hash) >>> 0
-}
-
-function getDeviceId() {
-  let id = localStorage.getItem('device_id')
-  if (!id) {
-    id = 'dev_' + Math.random().toString(36).slice(2, 10)
-    localStorage.setItem('device_id', id)
-  }
-  return id
 }
 
 // 日期工具（时区为东八区）
@@ -139,35 +131,9 @@ const monthChineseFull = computed(() => getMonthChinese(now.value) + getMonthSiz
 const cspDays1 = computed(() => daysUntil(new Date(2026, 8, 18)))
 const cspDays2 = computed(() => daysUntil(new Date(2026, 9, 30)))
 
-// 打卡记录写入localStorage（非响应式），用它触发依赖打卡数据的computed重新求值
-const punchVersion = ref(0)
-
-// 今日是否已打卡
-const checkedInToday = computed(() => {
-  void punchVersion.value
-  return !!readPunchRecords()[getTodayDateStr()]
-})
-
-// 连续打卡天数
-const streakDays = computed(() => {
-  void punchVersion.value
-  const punchDates = new Set(Object.keys(readPunchRecords()))
-  let streak = 0
-  const checkDate = new Date(getTodayDateStr() + 'T00:00:00+08:00')
-  while (true) {
-    const year = checkDate.getFullYear()
-    const month = String(checkDate.getMonth() + 1).padStart(2, '0')
-    const day = String(checkDate.getDate()).padStart(2, '0')
-    const dateStr = `${year}-${month}-${day}`
-    if (punchDates.has(dateStr)) {
-      streak++
-      checkDate.setDate(checkDate.getDate() - 1)
-    } else {
-      break
-    }
-  }
-  return streak
-})
+// 今日是否已打卡 / 连续打卡天数（均为服务端状态）
+const checkedInToday = computed(() => checkinState.value.today_checked)
+const streakDays = computed(() => checkinState.value.streak)
 
 // ===== 运势 =====
 const ACTIVITIES = [
@@ -240,10 +206,10 @@ const FORTUNE_LEVELS = [
   { label: '大凶', cls: 'terrible' }
 ]
 
-// 计算今日运势（纯前端种子算法）
+// 计算今日运势（纯前端种子算法：同人同日恒定，无需持久化）
 const dailyFortune = computed(() => {
-  if (!checkedInToday.value) return null
-  const userIdSeed = isLoggedIn.value ? String(currentUser.value?.user_number || '') : getDeviceId()
+  if (!checkedInToday.value || !isLoggedIn.value) return null
+  const userIdSeed = String(currentUser.value?.user_number || '')
   const rand = splitmix32(getDailySeed(userIdSeed))
   const fortuneIdx = Math.floor(rand() * FORTUNE_LEVELS.length)
   const fortune = FORTUNE_LEVELS[fortuneIdx]
@@ -280,18 +246,18 @@ const fortuneBadItems = computed(() =>
   dailyFortune.value?.label === '大吉' ? [] : (dailyFortune.value?.badItems || [])
 )
 
-// 点击打卡
-const doPunch = () => {
+// 点击打卡（服务端幂等：当日重复打卡直接返回现状）
+const doPunch = async () => {
   if (!isLoggedIn.value) {
     router.push('/login')
     return
   }
-  const today = getTodayDateStr()
-  const records = readPunchRecords()
-  if (records[today]) return
-  records[today] = true
-  localStorage.setItem(PUNCH_KEY, JSON.stringify(records))
-  punchVersion.value++
+  if (checkinState.value.today_checked) return
+  try {
+    checkinState.value = await apiClient.post('/api/checkin')
+  } catch (error: any) {
+    alert('打卡失败：' + (error.response?.data?.detail || error.message || '未知错误'))
+  }
 }
 
 // 当前用户的展示信息
@@ -568,10 +534,18 @@ const backToTop = () => {
 // 生命周期
 onMounted(async () => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  let lastDayStr = getTodayDateStr()
   clockTimer = window.setInterval(() => {
     now.value = new Date()
+    // 跨天：重新拉取打卡状态（零点后未打卡状态要立即恢复可打卡）
+    const today = getTodayDateStr()
+    if (today !== lastDayStr) {
+      lastDayStr = today
+      loadCheckin()
+    }
   }, 60000)
   loadRecentPosts()
+  loadCheckin()
 
   if (isLoggedIn.value) {
     await loadBenbenList(true)
