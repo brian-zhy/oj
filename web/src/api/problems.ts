@@ -41,10 +41,6 @@ export const problemsApi = {
   async update(id: number, data: Partial<Problem>): Promise<Problem> {
     return apiClient.put(`/api/problems/${id}`, data)
   },
-
-  async remove(id: number): Promise<{ success: boolean }> {
-    return apiClient.delete(`/api/problems/${id}`)
-  },
 }
 
 export type { Problem, ProblemListItem }
