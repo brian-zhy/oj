@@ -46,14 +46,14 @@ export interface TokenResponse {
   token_type: string
 }
 
-// 题目相关类型（洛谷 8 级难度）
+// 题目相关类型（难度）
 export type ProblemDifficulty =
   | '暂无评定'
   | '入门'
   | '普及-'
   | '普及'
-  | '普及/提高-'
   | '普及+/提高'
+  | '提高'
   | '提高+/省选-'
   | '省选/NOI-'
   | 'NOI/NOI+/CTSC'

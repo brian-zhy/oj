@@ -6,14 +6,14 @@ import re
 
 from pydantic import BaseModel, Field, field_validator
 
-# 洛谷 8 级难度（含「暂无评定」）
+# 难度等级（洛谷 8 级基础上自定义：「普及/提高-」并入「普及」，新增「提高」）
 DIFFICULTIES = [
     "暂无评定",
     "入门",
     "普及-",
     "普及",
-    "普及/提高-",
     "普及+/提高",
+    "提高",
     "提高+/省选-",
     "省选/NOI-",
     "NOI/NOI+/CTSC",
