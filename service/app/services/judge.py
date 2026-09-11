@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -76,6 +76,39 @@ XP_BY_DIFFICULTY = {
     "NOI/NOI+/CTSC": 1500,
     "暂无评定": 0,
 }
+
+async def adjust_experience_on_difficulty_change(
+    db: AsyncSession, problem_id: int, old_difficulty: str, new_difficulty: str
+) -> int:
+    """题目难度变更时，重算所有首次 AC 该题用户的经验（返回受影响人数）。
+
+    「每题每用户仅一次」——每个 AC 过该题的用户恰好拿过一次该难度的经验，
+    故对差值 delta = XP(新) - XP(旧) 整体增减即可；难度多次改动的差值
+    会自然抵消（A→B→A 净变化为 0）。
+    """
+    delta = (XP_BY_DIFFICULTY.get(new_difficulty, 0)
+             - XP_BY_DIFFICULTY.get(old_difficulty, 0))
+    if delta == 0:
+        return 0
+    ac_user_ids = (await db.execute(
+        select(Submission.user_id).where(
+            Submission.problem_id == problem_id,
+            Submission.status == "accepted",
+        ).distinct()
+    )).scalars().all()
+    if not ac_user_ids:
+        return 0
+    await db.execute(
+        update(User)
+        .where(User.id.in_(ac_user_ids))
+        .values(experience=User.experience + delta)
+    )
+    await db.commit()
+    logger.info("P%s 难度 %s → %s，%d 名 AC 用户经验 %+d",
+                1000 + problem_id, old_difficulty, new_difficulty,
+                len(ac_user_ids), delta)
+    return len(ac_user_ids)
+
 
 # 沙箱资源参数
 COMPILE_CPU_NS = 30_000_000_000      # 编译 30s

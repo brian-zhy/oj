@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.user import User
 from app.schemas.problem import ProblemCreate, ProblemUpdate
+from app.services.judge import adjust_experience_on_difficulty_change
 from app.services.problem import ProblemService
 
 router = APIRouter(prefix="/problems", tags=["problems"])
@@ -109,8 +110,15 @@ async def update_problem(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
         )
+    old_difficulty = problem.difficulty
     problem = await ProblemService.update(
         db, problem, payload.model_dump(exclude_unset=True)
     )
+    # 难度变更：重算所有首次 AC 该题用户的经验（delta 增减）
+    if (payload.difficulty is not None
+            and payload.difficulty != old_difficulty):
+        await adjust_experience_on_difficulty_change(
+            db, problem.id, old_difficulty, payload.difficulty
+        )
     return ProblemService._dict(problem, with_description=True)
 
