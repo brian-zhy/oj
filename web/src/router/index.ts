@@ -75,6 +75,18 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/teams',
+    name: 'TeamList',
+    component: () => import('@/views/teams/TeamList.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/teams/:id(\\d+)',
+    name: 'TeamDetail',
+    component: () => import('@/views/teams/TeamDetail.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/user/notification',
     name: 'Notifications',
     component: () => import('@/views/Notifications.vue'),
