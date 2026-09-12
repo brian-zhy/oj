@@ -18,7 +18,7 @@
 
 body {
   margin: 0;
-  font-family: "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  font-family: "Google Sans Flax", "Noto Sans SC", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -39,7 +39,18 @@ body {
   -ms-overflow-style: none;
 }
 
-body,
-body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.monaco-editor):not(.monaco-editor *) {
-  font-family: "Noto Sans SC", system-ui, -apple-system, sans-serif;
+body {
+  font-family: "Google Sans Flex", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+}
+
+body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.monaco-editor):not(.monaco-editor *):not(code):not(pre):not(kbd):not(samp):not(.katex):not(.katex *) {
+  font-family: "Google Sans Flex", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+}
+
+code, pre, kbd, samp {
+  font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
+}
+
+.katex, .katex-display, .katex * {
+  font-family: KaTeX_Main, "Times New Roman", serif;
 }
