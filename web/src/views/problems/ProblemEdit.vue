@@ -16,6 +16,12 @@ const editingId = computed(() => {
   return Number.isFinite(id) ? id : null
 })
 
+// 团队私有题模式：/problems/new?team_id=N（需团队管理权限）
+const teamId = computed(() => {
+  const v = parseInt(route.query.team_id as string, 10)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
+
 // ===== 表单 =====
 const form = reactive({
   title: '',
@@ -150,9 +156,11 @@ const save = async () => {
   saving.value = true
   try {
     if (editingId.value === null) {
-      const created = await problemsApi.create(payload)
+      // 团队私有题模式：携带 team_id，编号自动分配 T 系列
+      const body = teamId.value ? { ...payload, team_id: teamId.value } : payload
+      const created = await problemsApi.create(body)
       await Swal.fire({ icon: 'success', title: '创建成功', timer: 1200, showConfirmButton: false })
-      router.push(`/problems/${created.id}`)
+      router.push(teamId.value ? `/teams/${teamId.value}` : `/problems/${created.id}`)
     } else {
       await problemsApi.update(editingId.value, payload)
       await Swal.fire({ icon: 'success', title: '保存成功', timer: 1200, showConfirmButton: false })
@@ -175,7 +183,7 @@ onMounted(loadProblem)
       <div class="card head-card">
         <div class="head-row">
           <h2 class="page-title">
-            {{ editingId === null ? '新建题目' : `编辑 P${1000 + editingId}` }}
+            {{ editingId === null ? (teamId ? '创建团队题目' : '新建题目') : `编辑 P${1000 + editingId}` }}
           </h2>
           <div class="head-actions">
             <button v-if="editingId !== null" class="btn-ghost" @click="router.push(`/problems/${editingId}`)">查看题目</button>

@@ -42,6 +42,15 @@ export interface TeamJoinRequestItem {
   user: TeamUserBrief
 }
 
+export interface TeamProblemItem {
+  id: number
+  problem_number: string
+  title: string
+  difficulty: string
+  submit_count: number
+  solved_count: number
+}
+
 export interface TeamDetailItem extends TeamItem {
   members: TeamMemberItem[]
   is_pending: boolean
@@ -67,6 +76,11 @@ export const teamsApi = {
 
   async requests(id: number): Promise<{ items: TeamJoinRequestItem[] }> {
     return apiClient.get(`/api/teams/${id}/requests`)
+  },
+
+  // 团队私有题库（成员可见；题目为 T 编号系列）
+  async problems(id: number): Promise<TeamProblemItem[]> {
+    return apiClient.get(`/api/teams/${id}/problems`)
   },
 
   async approveRequest(teamId: number, userId: number): Promise<{ success: boolean }> {

@@ -34,6 +34,8 @@ class ProblemCreate(BaseModel):
     )
     source: str | None = Field(None, max_length=100, description="题目来源")
     tags: list[str] = Field(default_factory=list, max_length=10, description="算法标签")
+    # 团队私有题：非空时题目归入该团队（需团队管理员权限），编号走 T 序列
+    team_id: int | None = Field(None, description="归属团队（团队私有题）")
     description: str = Field(default="", max_length=100_000, description="题目描述（Markdown）")
     background: str = Field(default="", max_length=100_000, description="题目背景（Markdown）")
     input_format: str = Field(default="", max_length=100_000, description="输入格式（Markdown）")

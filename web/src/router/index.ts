@@ -169,6 +169,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    // 统一题号入口：/problem/P1001（主题库）或 /problem/T10（团队题）
+    path: '/problem/:code',
+    name: 'ProblemByCode',
+    component: () => import('@/views/problems/ProblemDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/problems/:id(\\d+)/submit',
     name: 'ProblemSubmit',
     component: () => import('@/views/problems/ProblemSubmit.vue'),

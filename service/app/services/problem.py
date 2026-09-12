@@ -66,8 +66,11 @@ class ProblemService:
         page: int = 0,
         page_size: int = 20,
     ) -> dict[str, Any]:
-        """题目列表：筛选 → 计数 → 分页（按题号升序，洛谷习惯）。"""
-        query = select(Problem)
+        """题目列表：筛选 → 计数 → 分页（按题号升序，洛谷习惯）。
+
+        只含主题库题（team_id 为空）；团队私有题走团队页的独立列表。
+        """
+        query = select(Problem).where(Problem.team_id.is_(None))
         if not include_private:
             query = query.where(Problem.is_public.is_(True))
 
@@ -110,10 +113,11 @@ class ProblemService:
 
     @staticmethod
     async def list_sources(db: AsyncSession) -> list[str]:
-        """去重后的非空来源列表（筛选下拉用）。"""
+        """去重后的非空来源列表（仅主题库题，筛选下拉用）。"""
         result = await db.execute(
             select(Problem.source)
-            .where(Problem.source.isnot(None), Problem.source != "")
+            .where(Problem.source.isnot(None), Problem.source != "",
+                   Problem.team_id.is_(None))
             .distinct()
             .order_by(Problem.source.asc())
         )
