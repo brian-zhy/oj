@@ -24,6 +24,7 @@ from app.models.contest import Contest, ContestParticipant, ContestProblem
 from app.models.problem import Problem
 from app.models.submission import Submission
 from app.models.user import User
+from app.services.problem import ProblemService
 
 router = APIRouter(prefix="/contests", tags=["contests"])
 
@@ -153,16 +154,32 @@ async def create_contest(
     if end_time <= start_time:
         raise HTTPException(status_code=400, detail="结束时间必须晚于开始时间")
 
-    problem_ids = [p for p in (payload.get("problem_ids") or []) if isinstance(p, int)]
+    # 题目按题号输入（P1001 / T10），顺序即比赛内 A/B/C/D
+    raw_codes = payload.get("problem_codes") or []
+    if not raw_codes:
+        raise HTTPException(status_code=400, detail="请至少添加一道比赛题目")
     seen: set[int] = set()
-    unique_ids = [p for p in problem_ids if not (p in seen or seen.add(p))]
-    if unique_ids:
-        found = set((await db.execute(
-            select(Problem.id).where(Problem.id.in_(unique_ids))
-        )).scalars().all())
-        missing = [p for p in unique_ids if p not in found]
-        if missing:
-            raise HTTPException(status_code=400, detail=f"题目不存在: {missing}")
+    unique_ids: list[int] = []
+    for raw in raw_codes:
+        code = str(raw).strip().upper()
+        if code.startswith("T") and code[1:].isdigit():
+            problem = (await db.execute(
+                select(Problem).where(Problem.t_no == int(code[1:]))
+            )).scalar_one_or_none()
+        elif code.startswith("P") and code[1:].isdigit():
+            problem = await ProblemService.get_by_id(db, int(code[1:]) - 1000)
+        else:
+            problem = None
+        if problem is None or (
+            problem.team_id is not None
+            and not problem.is_public
+            and not await _is_team_admin(db, problem.team_id, current_user)
+        ):
+            raise HTTPException(status_code=400, detail=f"题目 {raw} 不存在或无权使用")
+        if problem.id in seen:
+            continue
+        seen.add(problem.id)
+        unique_ids.append(problem.id)
 
     # 公开程度：public 公开庭 / private 邀请赛（报名需邀请码）
     visibility = payload.get("visibility") or "public"

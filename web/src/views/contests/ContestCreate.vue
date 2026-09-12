@@ -18,20 +18,47 @@ const form = ref({ title: '', description: '', start_date: '', start_time: '', e
 const createError = ref('')
 const creating = ref(false)
 
-// 题目池（主题库公开题，勾选顺序即比赛内 A/B/C/D）
-const pool = ref<{ id: number; title: string; problem_number: string }[]>([])
-const picked = ref<number[]>([])
-const poolLoading = ref(false)
+// 比赛题目：直接输入题号（P1001 / T10），按添加顺序作为 A/B/C/D…
+const picked = ref<{ code: string; title: string }[]>([])
+const codeInput = ref('')
+const addingCode = ref(false)
 
 const canSubmit = computed(() =>
   form.value.title.trim() && form.value.start_date && form.value.start_time
   && form.value.end_date && form.value.end_time && picked.value.length > 0
 )
 
-const togglePick = (id: number) => {
-  const i = picked.value.indexOf(id)
-  if (i === -1) picked.value.push(id)
-  else picked.value.splice(i, 1)
+const addProblem = async () => {
+  const code = codeInput.value.trim().toUpperCase()
+  if (!code) return
+  if (picked.value.some(p => p.code === code)) {
+    createError.value = `题目 ${code} 已添加`
+    return
+  }
+  addingCode.value = true
+  createError.value = ''
+  try {
+    const p = await problemsApi.getByCode(code)
+    picked.value.push({ code, title: p.title })
+    codeInput.value = ''
+  } catch (err: any) {
+    createError.value = err.response?.data?.detail === '题目不存在'
+      ? `题目 ${code} 不存在或不可用` : (err.response?.data?.detail || `题目 ${code} 添加失败`)
+  } finally {
+    addingCode.value = false
+  }
+}
+
+const removeProblem = (code: string) => {
+  picked.value = picked.value.filter(p => p.code !== code)
+}
+
+const moveProblem = (index: number, dir: -1 | 1) => {
+  const target = index + dir
+  if (target < 0 || target >= picked.value.length) return
+  const arr = [...picked.value]
+  ;[arr[index], arr[target]] = [arr[target], arr[index]]
+  picked.value = arr
 }
 
 // 默认时间：今天 19:00 ~ 明天 21:00（东八区语义按浏览器本地时间）
@@ -61,7 +88,7 @@ const doCreate = async () => {
       description: form.value.description.trim() || undefined,
       start_time: new Date(`${form.value.start_date}T${form.value.start_time}`).toISOString(),
       end_time: new Date(`${form.value.end_date}T${form.value.end_time}`).toISOString(),
-      problem_ids: picked.value,
+      problem_codes: picked.value.map(p => p.code),
       visibility: visibility.value,
       invite_code: visibility.value === 'private' ? inviteCode.value.trim() : undefined,
     })
@@ -73,14 +100,8 @@ const doCreate = async () => {
   }
 }
 
-onMounted(async () => {
-  poolLoading.value = true
-  try {
-    const data: any = await problemsApi.list({ page: 0, page_size: 100 })
-    pool.value = data.items
-  } finally {
-    poolLoading.value = false
-  }
+onMounted(() => {
+  // 题目通过题号即时校验添加，无需预拉题库
 })
 </script>
 
@@ -160,14 +181,29 @@ onMounted(async () => {
         <div class="form-row top">
           <span class="row-label">比赛题目</span>
           <div class="row-value">
-            <div class="hint mb">按勾选顺序作为比赛内的 A / B / C / D…（{{ picked.length }} 道已选）</div>
-            <div v-if="poolLoading" class="hint">题目加载中...</div>
-            <div v-else class="pool">
-              <label v-for="p in pool" :key="p.id" class="pool-item">
-                <input type="checkbox" :checked="picked.includes(p.id)" @change="togglePick(p.id)" />
-                <span class="pool-no">{{ p.problem_number }}</span> {{ p.title }}
-              </label>
+            <div class="code-add-row">
+              <input
+                v-model="codeInput"
+                class="form-input w-title"
+                placeholder="输入题号，如 P1001 或 T5，回车添加"
+                :disabled="addingCode"
+                @keydown.enter.prevent="addProblem"
+              />
+              <button class="btn-secondary" :disabled="addingCode || !codeInput.trim()" @click="addProblem">
+                {{ addingCode ? '校验中...' : '添加' }}
+              </button>
             </div>
+            <div v-if="picked.length" class="picked-list">
+              <div v-for="(p, i) in picked" :key="p.code" class="picked-item">
+                <span class="picked-alias">{{ String.fromCharCode(65 + i) }}</span>
+                <span class="picked-code">{{ p.code }}</span>
+                <span class="picked-title">{{ p.title }}</span>
+                <button class="mini-btn" title="上移" :disabled="i === 0" @click="moveProblem(i, -1)">↑</button>
+                <button class="mini-btn" title="下移" :disabled="i === picked.length - 1" @click="moveProblem(i, 1)">↓</button>
+                <button class="mini-btn danger" title="移除" @click="removeProblem(p.code)">✕</button>
+              </div>
+            </div>
+            <div class="hint">按顺序作为比赛内的 A / B / C / D…（当前 {{ picked.length }} 道）</div>
           </div>
         </div>
 
@@ -208,9 +244,16 @@ textarea.form-input { width: 100%; box-sizing: border-box; resize: vertical; }
 .hint { font-size: 12px; color: #8e9aaf; }
 .hint.mb { margin-bottom: 8px; }
 
-.pool { max-height: 240px; overflow-y: auto; border: 1px solid #eef1f5; border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; width: 100%; box-sizing: border-box; }
-.pool-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #1f2a3a; cursor: pointer; }
-.pool-item input { accent-color: var(--primary); }
+.code-add-row { display: flex; gap: 10px; width: 100%; }
+.picked-list { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.picked-item { display: flex; align-items: center; gap: 10px; background: #fafbfc; border: 1px solid #eef1f5; border-radius: 8px; padding: 7px 12px; font-size: 13px; }
+.picked-alias { font-weight: 700; color: var(--primary); min-width: 18px; }
+.picked-code { color: var(--primary); font-weight: 600; min-width: 52px; }
+.picked-title { flex: 1; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-btn { border: 1px solid #e2e8f0; background: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px; cursor: pointer; color: #4a5568; }
+.mini-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.mini-btn:disabled { opacity: .4; cursor: not-allowed; }
+.mini-btn.danger:hover { border-color: #e74c3c; color: #e74c3c; }
 .pool-no { color: var(--primary); font-weight: 600; }
 
 .form-error { color: #e74c3c; font-size: 13px; margin-top: 12px; }
