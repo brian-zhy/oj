@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'
 import { problemsApi } from '@/api/problems'
 import { testCasesApi } from '@/api/submissions'
 import { renderRichText } from '@/utils/markdown'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 import { DIFFICULTY_LIST } from '@/utils/difficulty'
 import type { ProblemDifficulty, ProblemSample, TestCaseItem } from '@/types'
 
@@ -244,12 +245,11 @@ onMounted(loadProblem)
           <div v-for="s in SECTIONS" :key="s.key" class="md-section">
             <div class="md-label">{{ s.label }}</div>
             <div class="md-editor">
-              <textarea
+              <MarkdownSplitEditor
                 v-model="form[s.key]"
-                class="md-textarea"
-                rows="6"
+                height="220px"
                 :placeholder="s.placeholder"
-              ></textarea>
+              />
               <div class="md-preview">
                 <div class="prose preview-body" v-html="previewOf(s.key)"></div>
               </div>

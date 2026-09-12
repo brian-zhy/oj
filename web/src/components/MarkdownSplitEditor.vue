@@ -1,20 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { renderRichText } from '@/utils/markdown'
 
 const props = defineProps<{
   modelValue: string
   placeholder?: string
   height?: string
+  maxlength?: string | number
 }>()
 
 const emit = defineEmits<{ (e: 'update:modelValue', v: string): void }>()
 
+const ta = ref<HTMLTextAreaElement | null>(null)
 const previewHtml = computed(() => renderRichText(props.modelValue || ''))
 
 const onInput = (e: Event) => {
   emit('update:modelValue', (e.target as HTMLTextAreaElement).value)
 }
+
+// 供父组件聚焦（如犇犇「回复」自动定位光标）；返回内部输入元素
+const focus = (): HTMLTextAreaElement | null => {
+  ta.value?.focus()
+  return ta.value
+}
+defineExpose({ focus })
 </script>
 
 <template>
@@ -22,9 +31,11 @@ const onInput = (e: Event) => {
     <div class="md-pane">
       <div class="pane-head">编写（Markdown）</div>
       <textarea
+        ref="ta"
         class="md-input"
         :value="modelValue"
         :placeholder="placeholder"
+        :maxlength="maxlength"
         @input="onInput"
       />
     </div>
