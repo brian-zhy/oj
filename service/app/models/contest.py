@@ -22,6 +22,12 @@ class Contest(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 公开程度：public 公开庭（自由报名）/ private 邀请赛（报名需邀请码）
+    visibility: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="public", server_default="'public'"
+    )
+    # 邀请赛报名邀请码（visibility=private 时必填）
+    invite_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # 创建者（可编辑/删除比赛）

@@ -13,6 +13,8 @@ export interface ContestItem {
   id: number
   title: string
   description: string
+  visibility: 'public' | 'private'
+  invite_code?: string | null
   start_time: string | null
   end_time: string | null
   status: 'pending' | 'running' | 'ended'
@@ -55,6 +57,8 @@ export const contestsApi = {
     start_time: string
     end_time: string
     problem_ids: number[]
+    visibility?: 'public' | 'private'
+    invite_code?: string
   }): Promise<ContestItem> {
     return apiClient.post('/api/contests', data)
   },
@@ -63,8 +67,9 @@ export const contestsApi = {
     return apiClient.delete(`/api/contests/${id}`)
   },
 
-  async register(id: number): Promise<{ success: boolean }> {
-    return apiClient.post(`/api/contests/${id}/register`)
+  async register(id: number, inviteCode?: string): Promise<{ success: boolean }> {
+    return apiClient.post(`/api/contests/${id}/register`,
+      inviteCode ? { invite_code: inviteCode } : undefined)
   },
 
   async rank(id: number): Promise<{ aliases: string[]; rows: RankRow[] }> {

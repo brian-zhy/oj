@@ -207,6 +207,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/contests/new',
+    name: 'ContestCreate',
+    component: () => import('@/views/contests/ContestCreate.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/contests/:id(\\d+)',
     name: 'ContestDetail',
     component: () => import('@/views/contests/ContestDetail.vue'),
