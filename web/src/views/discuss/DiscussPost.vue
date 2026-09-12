@@ -121,6 +121,7 @@ const fmtTime = (iso: string) => {
 
 // 富文本渲染（Markdown + LaTeX 公式）
 import { renderRichText } from '@/utils/markdown'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 const renderContent = (content: string) => renderRichText(content)
 
 const loadPost = async () => {
@@ -216,7 +217,7 @@ onMounted(() => loadPost())
                 <input v-model="editTitle" class="edit-title-input" maxlength="100" />
               </div>
               <span class="edit-label">正文</span>
-              <textarea v-model="editContent" rows="12" class="edit-content-input" maxlength="20000"></textarea>
+              <MarkdownSplitEditor v-model="editContent" height="300px" :maxlength="20000" />
               <div class="edit-actions">
                 <button class="btn-submit" :disabled="editSaving" @click="saveEditPost">
                   {{ editSaving ? '保存中...' : '保存' }}
@@ -262,13 +263,12 @@ onMounted(() => loadPost())
           <div v-else-if="isLoggedIn && post.is_locked" class="state-box"><i class="fa-solid fa-lock"></i> 该帖子已锁定，无法回复</div>
           <div v-else-if="isLoggedIn" class="reply-box">
             <div class="reply-box-head">发表回复</div>
-            <textarea
+            <MarkdownSplitEditor
               v-model="replyContent"
-              rows="4"
-              class="reply-textarea"
+              height="220px"
               placeholder="支持 Markdown：**粗体**、*斜体*、```代码块```、$公式$"
-              maxlength="10000"
-            ></textarea>
+              :maxlength="10000"
+            />
             <div class="reply-actions">
               <button class="btn-submit" :disabled="replySubmitting || !replyContent.trim()" @click="submitReply">
                 {{ replySubmitting ? '发送中...' : '回复' }}

@@ -41,6 +41,7 @@ const getUserAvatar = (item: any) => {
 
 // 富文本渲染（Markdown + LaTeX 公式）
 import { renderRichText as renderMarkdown } from '@/utils/markdown'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 
 // ==================== 打卡（服务端存储，跨设备一致） ====================
 
@@ -307,7 +308,7 @@ const currentReplyUsername = ref<string | null>(null)
 const sentinelText = ref('')
 const sentinelVisible = ref(true)
 
-const benbenTextareaRef = ref<HTMLTextAreaElement | null>(null)
+const benbenTextareaRef = ref<any>(null)
 const loadingSentinelRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
@@ -445,10 +446,8 @@ const replyToBenben = (item: any) => {
   benbenContent.value = replyText
 
   nextTick(() => {
-    const textarea = benbenTextareaRef.value
+    const textarea = benbenTextareaRef.value?.focus()
     if (textarea) {
-      textarea.focus()
-      // 将光标移动到文本开头
       textarea.setSelectionRange(0, 0)
       textarea.scrollTop = 0
     }
@@ -738,12 +737,13 @@ onUnmounted(() => {
         <div class="benben-header">有什么新鲜事告诉大家</div>
 
         <div class="benben-editor">
-          <textarea
+          <MarkdownSplitEditor
             ref="benbenTextareaRef"
             v-model="benbenContent"
-            rows="3"
+            height="150px"
+            :maxlength="MAX_LENGTH"
             :disabled="cannotSpeak"
-          ></textarea>
+          />
           <div class="benben-submit-btn">
             <button
               class="auth-btn"
