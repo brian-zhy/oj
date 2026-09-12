@@ -199,6 +199,18 @@ const routes = [
     name: 'SubmissionDetail',
     component: () => import('@/views/problems/SubmissionDetail.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/contests',
+    name: 'ContestList',
+    component: () => import('@/views/contests/ContestList.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/contests/:id(\\d+)',
+    name: 'ContestDetail',
+    component: () => import('@/views/contests/ContestDetail.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
@@ -208,7 +220,6 @@ import ComingSoon from '@/views/ComingSoon.vue'
 const comingSoonPaths = [
   '/courses',       // 网校
   '/training',      // 训练题单
-  '/contests',      // 比赛
   '/articles',      // 文章广场
   '/ranking',       // 排行榜
   '/image',         // 图片上传

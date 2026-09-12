@@ -12,6 +12,11 @@ const route = useRoute()
 const router = useRouter()
 
 const problemId = computed(() => parseInt(route.params.id as string, 10))
+// 比赛上下文：从比赛详情页进入提交时（/problems/:id?contest=N），提交计入比赛
+const contestId = computed(() => {
+  const v = parseInt(route.query.contest as string, 10)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
 const problem = ref<Problem | null>(null)
 const loading = ref(true)
 
@@ -64,6 +69,7 @@ const submit = async () => {
     const sub = await submissionsApi.create(problemId.value, {
       code: code.value,
       language: language.value,
+      contest_id: contestId.value ?? undefined,
     })
     router.push(`/submissions/${sub.id}`)
   } catch (err: any) {
@@ -108,6 +114,7 @@ onMounted(async () => {
           <div class="p-limits">
             <span>时间限制：<b>{{ problem.time_limit }} ms</b></span>
             <span>内存限制：<b>{{ problem.memory_limit }} MB</b></span>
+            <span v-if="contestId" class="contest-tag">🏆 比赛模式：本次提交计入比赛成绩</span>
           </div>
         </div>
 
@@ -196,6 +203,13 @@ onMounted(async () => {
 
 .p-limits b {
   color: #2c3e50;
+}
+
+.contest-tag {
+  color: #ad6800;
+  background: #fff7e6;
+  padding: 2px 10px;
+  border-radius: 12px;
 }
 
 .submit-toolbar {

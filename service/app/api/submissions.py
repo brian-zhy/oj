@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.deps import get_current_user
+from app.models.contest import Contest, ContestParticipant, ContestProblem
 from app.models.problem import Problem
 from app.models.submission import Submission, TestCase
 from app.models.team import Team, TeamMember
@@ -176,6 +179,42 @@ async def create_submission(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
     # 团队私有题仅成员可提交
     await _require_team_member_for_problem(db, problem, current_user)
+
+    # 比赛内提交：进行中 + 已报名 + 题目属于该比赛
+    contest_id = payload.contest_id
+    if contest_id is not None:
+        contest = (await db.execute(
+            select(Contest).where(Contest.id == contest_id)
+        )).scalar_one_or_none()
+        if contest is None:
+            raise HTTPException(status_code=404, detail="比赛不存在")
+        now = datetime.now(timezone.utc)
+        st_ = contest.start_time
+        en = contest.end_time
+        # SQLite 读回 naive datetime，统一按 UTC 处理
+        if st_.tzinfo is None:
+            st_ = st_.replace(tzinfo=timezone.utc)
+        if en.tzinfo is None:
+            en = en.replace(tzinfo=timezone.utc)
+        if now < st_:
+            raise HTTPException(status_code=400, detail="比赛尚未开始")
+        if now > en:
+            raise HTTPException(status_code=400, detail="比赛已结束，不计成绩")
+        participant = (await db.execute(
+            select(ContestParticipant.id).where(
+                ContestParticipant.contest_id == contest_id,
+                ContestParticipant.user_id == current_user.id)
+        )).scalar_one_or_none()
+        if participant is None:
+            raise HTTPException(status_code=403, detail="请先报名比赛再提交")
+        in_contest = (await db.execute(
+            select(ContestProblem.id).where(
+                ContestProblem.contest_id == contest_id,
+                ContestProblem.problem_id == problem_id)
+        )).scalar_one_or_none()
+        if in_contest is None:
+            raise HTTPException(status_code=400, detail="该题目不属于这场比赛")
+
     if current_user.is_banned:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="被封禁用户不能提交评测"
@@ -205,6 +244,7 @@ async def create_submission(
         code=payload.code,
         language=payload.language,
         status="pending",
+        contest_id=contest_id,
     )
     db.add(sub)
     await db.commit()

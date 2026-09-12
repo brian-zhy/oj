@@ -12,6 +12,8 @@ _LANG = "|".join(LANGUAGES)
 class SubmissionCreate(BaseModel):
     code: str = Field(min_length=1, max_length=100_000, description="源代码")
     language: str = Field(pattern=f"^({_LANG})$", description="语言：cpp / c / python3")
+    # 比赛内提交：非空时按比赛规则校验（进行中 + 已报名 + 题目在比赛中）
+    contest_id: int | None = Field(None, description="归属比赛（比赛内提交）")
 
 
 class TestCaseCreate(BaseModel):
