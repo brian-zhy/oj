@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { contestsApi } from '@/api/contests'
 import { problemsApi } from '@/api/problems'
 import { userNameColor } from '@/utils/userColor'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -174,7 +175,11 @@ onMounted(() => {
         <div class="form-row top">
           <span class="row-label">比赛说明</span>
           <div class="row-value">
-            <textarea v-model="form.description" class="form-input" rows="6" placeholder="邀请码、来源、描述、难度、赛时答疑与赛后题解……（支持 Markdown）" />
+            <MarkdownSplitEditor
+              v-model="form.description"
+              height="300px"
+              placeholder="邀请码、来源、描述、难度、赛时答疑与赛后题解……（支持 Markdown）"
+            />
           </div>
         </div>
 
