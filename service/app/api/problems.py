@@ -99,6 +99,7 @@ async def list_problems(
         tag=tag,
         keyword=keyword,
         include_private=include_private,
+        user_id=current_user.id,
         page=page,
         page_size=page_size,
     )

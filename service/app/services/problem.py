@@ -8,6 +8,7 @@ from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.problem import Problem
+from app.models.submission import Submission
 
 
 class ProblemService:
@@ -55,6 +56,36 @@ class ProblemService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    async def attach_user_status(
+        db: AsyncSession, problems: list[Problem], user_id: Optional[int]
+    ) -> dict[int, str]:
+        """批量查询当前用户在这批题目上的完成状态。
+
+        返回 ``{problem_id: "accepted" | "attempted"}``（未提交的题不在结果里）。
+        一页题目只发一条 SQL，走 submissions 的 (problem_id, user_id) 索引；
+        accepted 优先于 attempted（同题既有 AC 又有非 AC 时算 AC）。
+        """
+        if not user_id or not problems:
+            return {}
+        ids = [p.id for p in problems]
+        rows = (await db.execute(
+            select(Submission.problem_id, Submission.status)
+            .where(
+                Submission.user_id == user_id,
+                Submission.problem_id.in_(ids),
+            )
+            .distinct()
+        )).all()
+        accepted: set[int] = set()
+        attempted: set[int] = set()
+        for problem_id, st in rows:
+            (accepted if st == "accepted" else attempted).add(problem_id)
+        return {
+            problem_id: ("accepted" if problem_id in accepted else "attempted")
+            for problem_id in (accepted | attempted)
+        }
+
+    @staticmethod
     async def list_problems(
         db: AsyncSession,
         *,
@@ -63,12 +94,15 @@ class ProblemService:
         tag: Optional[str] = None,
         keyword: Optional[str] = None,
         include_private: bool = False,
+        user_id: Optional[int] = None,
         page: int = 0,
         page_size: int = 20,
     ) -> dict[str, Any]:
         """题目列表：筛选 → 计数 → 分页（按题号升序，洛谷习惯）。
 
         只含主题库题（team_id 为空）；团队私有题走团队页的独立列表。
+        传入 ``user_id`` 时，每条 item 附带 ``my_status``：accepted /
+        attempted / None（从未提交），供题库列表展示做题状态。
         """
         query = select(Problem).where(Problem.team_id.is_(None))
         if not include_private:
@@ -104,11 +138,18 @@ class ProblemService:
         )
         problems = result.scalars().all()
 
+        status_map = await ProblemService.attach_user_status(db, problems, user_id)
+        items = []
+        for p in problems:
+            item = ProblemService._dict(p)
+            item["my_status"] = status_map.get(p.id)
+            items.append(item)
+
         return {
             "total": total,
             "page": page,
             "page_size": page_size,
-            "items": [ProblemService._dict(p) for p in problems],
+            "items": items,
         }
 
     @staticmethod

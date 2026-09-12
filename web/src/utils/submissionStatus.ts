@@ -31,3 +31,31 @@ export function caseStatusText(s: string): string {
   }
   return map[s] ?? s
 }
+
+// 题库列表：当前用户对某题的完成状态 → Font Awesome 图标 / 颜色 / 提示文案
+// 图标需与 index.html 引入的 Font Awesome 6 匹配（<i class="...">）
+export const PROBLEM_USER_STATUS: Record<
+  string,
+  { icon: string; color: string; text: string }
+> = {
+  accepted: {
+    icon: 'fa-solid fa-circle-check',
+    color: '#52c41a',
+    text: '已通过',
+  },
+  attempted: {
+    icon: 'fa-solid fa-circle-xmark',
+    color: '#e74c3c',
+    text: '尝试过，未通过',
+  },
+}
+
+const PROBLEM_USER_STATUS_NONE = {
+  icon: 'fa-regular fa-circle',
+  color: '#c8d0d8',
+  text: '未提交',
+}
+
+export function problemUserStatusMeta(status?: string | null) {
+  return PROBLEM_USER_STATUS[status ?? ''] ?? PROBLEM_USER_STATUS_NONE
+}

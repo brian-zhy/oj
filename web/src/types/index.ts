@@ -63,6 +63,9 @@ export interface ProblemSample {
   output: string
 }
 
+// 题库列表中当前用户对某题的完成状态：已通过 / 提交过但未通过 / 从未提交
+export type ProblemUserStatus = 'accepted' | 'attempted' | null
+
 export interface Problem {
   id: number
   problem_number: string
@@ -84,6 +87,8 @@ export interface Problem {
   is_public: boolean
   created_at: string
   updated_at: string
+  // 仅题库列表接口返回（详情接口没有该字段）
+  my_status?: ProblemUserStatus
 }
 
 export type ProblemListItem = Omit<Problem, 'description'>

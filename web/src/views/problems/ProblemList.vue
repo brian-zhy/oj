@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
 import type { ProblemListItem } from '@/types'
 import { DIFFICULTY_LIST, difficultyColor } from '@/utils/difficulty'
+import { problemUserStatusMeta } from '@/utils/submissionStatus'
 
 const router = useRouter()
 const route = useRoute()
@@ -175,6 +176,7 @@ onMounted(() => {
           <table class="problem-table">
             <thead>
               <tr>
+                <th class="col-status">状态</th>
                 <th class="col-pid">题号</th>
                 <th>题目名称</th>
                 <th class="col-tags">算法标签</th>
@@ -184,6 +186,15 @@ onMounted(() => {
             </thead>
             <tbody>
               <tr v-for="p in items" :key="p.id">
+                <td class="col-status">
+                  <i
+                    class="status-icon"
+                    :class="problemUserStatusMeta(p.my_status).icon"
+                    :style="{ color: problemUserStatusMeta(p.my_status).color }"
+                    :title="problemUserStatusMeta(p.my_status).text"
+                    :aria-label="problemUserStatusMeta(p.my_status).text"
+                  ></i>
+                </td>
                 <td class="col-pid">
                   <RouterLink class="p-link" :to="`/problems/${p.id}`">{{ p.problem_number }}</RouterLink>
                 </td>
@@ -392,6 +403,22 @@ onMounted(() => {
 
 .col-pid {
   white-space: nowrap;
+}
+
+.col-status {
+  width: 44px;
+  white-space: nowrap;
+}
+
+/* 特异性需盖过 .problem-table th { text-align: left }，否则表头左对齐 */
+.problem-table .col-status {
+  text-align: center;
+}
+
+.status-icon {
+  font-size: 15px;
+  vertical-align: middle;
+  cursor: help;
 }
 
 .col-tags {
