@@ -245,6 +245,41 @@ async def list_problem_submissions(
     return {"total": total, "page": page, "page_size": page_size, "items": items}
 
 
+@router.get(
+    "/problems/{problem_id}/my-last-submission",
+    summary="我在该题的最后一次提交（含代码）",
+)
+async def get_my_last_submission(
+    problem_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Optional[dict]:
+    """提交页回填用：返回当前用户在该题最近一次提交（含 code）。
+
+    从未提交过时返回 ``null``（前端据此显示默认代码模板）。
+    """
+    problem = await _load_problem(db, problem_id)
+    if problem is None or (
+        not problem.is_public and not _can_manage(current_user)
+    ):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    # 团队私有题仅成员可见/可提交
+    await _require_team_member_for_problem(db, problem, current_user)
+
+    sub = (await db.execute(
+        select(Submission)
+        .where(
+            Submission.problem_id == problem_id,
+            Submission.user_id == current_user.id,
+        )
+        .order_by(Submission.id.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+    if sub is None:
+        return None
+    return _dict(sub, problem=problem, with_code=True)
+
+
 @router.get("/submissions/mine", summary="我的提交记录")
 async def list_my_submissions(
     problem_id: Optional[int] = Query(None),

@@ -35,6 +35,11 @@ export const submissionsApi = {
     return apiClient.get('/api/submissions/mine', { params })
   },
 
+  // 我在该题的最后一次提交（含代码，用于提交页回填）；从未提交返回 null
+  async getMyLast(problemId: number): Promise<Submission | null> {
+    return apiClient.get(`/api/problems/${problemId}/my-last-submission`)
+  },
+
   // 提交详情
   async get(id: number): Promise<Submission> {
     return apiClient.get(`/api/submissions/${id}`)
