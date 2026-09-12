@@ -129,7 +129,7 @@ onMounted(() => loadNotifications(false))
 }
 
 .page-sub {
-  color: #e74c3c;
+  color: var(--primary);
   font-size: 13px;
   margin-top: 4px;
 }
@@ -145,8 +145,8 @@ onMounted(() => loadNotifications(false))
 }
 
 .btn-read-all:hover {
-  color: #e74c3c;
-  border-color: #e74c3c;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .notification-list {
@@ -195,7 +195,7 @@ onMounted(() => loadNotifications(false))
   display: inline-block;
   width: 8px;
   height: 8px;
-  background: #e74c3c;
+  background: var(--primary);
   border-radius: 50%;
   margin-right: 6px;
   vertical-align: middle;
@@ -237,8 +237,8 @@ onMounted(() => loadNotifications(false))
 }
 
 .btn-more:hover:not(:disabled) {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 </style>

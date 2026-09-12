@@ -210,7 +210,7 @@ watch(currentCaptcha, () => {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h1 class="login-title">✨ NLNOJ</h1>
+      <h1 class="login-title"><img src="/favicon.svg" width="45"> NLNOJ</h1>
       <div class="login-subtitle">登录账号</div>
 
       <!-- 登录表单 -->
@@ -322,9 +322,14 @@ watch(currentCaptcha, () => {
 .login-title {
   font-size: 28px;
   text-align: center;
-  color: #e74c3c;
+  color: var(--primary);
   margin-bottom: 8px;
   font-weight: 700;
+  display: flex;
+  align-items: center;    
+  justify-content: center;
+  gap: 10px;              
+  margin: 0;
 }
 
 .login-subtitle {
@@ -357,7 +362,7 @@ watch(currentCaptcha, () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #e74c3c;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
   background: white;
 }
@@ -428,7 +433,7 @@ watch(currentCaptcha, () => {
 .login-btn {
   width: 100%;
   padding: 12px;
-  background: #e74c3c;
+  background: var(--primary);
   border: none;
   border-radius: 40px;
   color: white;
@@ -439,7 +444,7 @@ watch(currentCaptcha, () => {
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .login-btn:disabled {
@@ -457,13 +462,13 @@ watch(currentCaptcha, () => {
 }
 
 .footer-link {
-  color: #e74c3c;
+  color: var(--primary);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .footer-link:hover {
-  color: #c0392b;
+  color: var(--primary-hover);
   textext-decoration: underline;
 }
 

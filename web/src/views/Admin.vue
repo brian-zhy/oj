@@ -8,7 +8,7 @@ import { userNameColor } from '@/utils/userColor'
 const authStore = useAuthStore()
 
 // ===== 常量定义（与目标项目完全一致） =====
-const COLOR_RED = '#e74c3c'
+const COLOR_RED = 'var(--primary)'
 const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 const ONLINE_THRESHOLD = 60
@@ -907,7 +907,7 @@ onUnmounted(() => {
 .card-header {
   font-size: 1.25rem;
   font-weight: 600;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 12px;
   margin-bottom: 20px;
 }
@@ -933,7 +933,7 @@ onUnmounted(() => {
 }
 
 .search-bar input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .search-bar .result-count {
@@ -989,8 +989,8 @@ onUnmounted(() => {
 
 .filter-tag.active-offline {
   background: #fdedec;
-  color: #e74c3c;
-  border-color: #e74c3c;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 /* ========== 表格样式（与目标项目完全一致） ========== */
@@ -1078,8 +1078,8 @@ td.check-col input {
 }
 
 .row-checkbox.offline {
-  border-color: #e74c3c;
-  background: #e74c3c;
+  border-color: var(--primary);
+  background: var(--primary);
 }
 
 .row-checkbox.online:checked {
@@ -1088,8 +1088,8 @@ td.check-col input {
 }
 
 .row-checkbox.offline:checked {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .row-checkbox:disabled {
@@ -1159,7 +1159,7 @@ td.check-col input {
 }
 
 .editable-field-input {
-  border: 1px solid #e74c3c;
+  border: 1px solid var(--primary);
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 14px;
@@ -1221,7 +1221,7 @@ td.check-col input {
 }
 
 .btn-sm.confirm {
-  background: #e74c3c;
+  background: var(--primary);
   color: white;
   border: none;
   padding: 4px 10px;
@@ -1235,7 +1235,7 @@ td.check-col input {
 }
 
 .btn-sm.confirm:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-sm.confirm:disabled {
@@ -1244,7 +1244,7 @@ td.check-col input {
 }
 
 .btn-sm.confirm:disabled:hover {
-  background: #e74c3c;
+  background: var(--primary);
 }
 
 .btn-reset-password {
@@ -1303,14 +1303,14 @@ td.check-col input {
 
 /* ========== OI/XCPC 徽章（与目标项目完全一致） ========== */
 @keyframes rainbow-fill {
-  0% { fill: #e74c3c; }
+  0% { fill: var(--primary); }
   14.28% { fill: #e67e22; }
   28.57% { fill: #f1c40f; }
   42.85% { fill: #2ecc71; }
   57.14% { fill: #3498db; }
   71.42% { fill: #9b59b6; }
   85.71% { fill: #8e44ad; }
-  100% { fill: #e74c3c; }
+  100% { fill: var(--primary); }
 }
 
 .rainbow-badge path,

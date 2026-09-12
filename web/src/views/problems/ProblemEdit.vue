@@ -348,7 +348,7 @@ onMounted(loadProblem)
 
 .btn-primary {
   padding: 8px 26px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 22px;
@@ -358,7 +358,7 @@ onMounted(loadProblem)
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-primary.big {
@@ -381,22 +381,22 @@ onMounted(loadProblem)
 }
 
 .btn-ghost:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .btn-danger {
   padding: 8px 20px;
-  border: 1px solid #e74c3c;
+  border: 1px solid var(--primary);
   background: #fff;
   border-radius: 22px;
   font-size: 13px;
-  color: #e74c3c;
+  color: var(--primary);
   cursor: pointer;
 }
 
 .btn-danger:hover {
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
 }
 
@@ -404,7 +404,7 @@ onMounted(loadProblem)
   font-size: 1.05rem;
   font-weight: 700;
   color: #2c3e50;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 10px;
   margin-bottom: 16px;
 }
@@ -444,7 +444,7 @@ onMounted(loadProblem)
 }
 
 .form-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 /* 分节编辑器 */
@@ -558,7 +558,7 @@ onMounted(loadProblem)
 }
 
 .action-link.red {
-  color: #e74c3c;
+  color: var(--primary);
   cursor: pointer;
   font-size: 12px;
 }

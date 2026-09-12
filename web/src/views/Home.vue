@@ -13,7 +13,7 @@ const currentUser = computed(() => authStore.currentUser)
 
 // ==================== 通用工具 ====================
 
-const COLOR_RED = '#e74c3c'
+const COLOR_RED = 'var(--primary)'
 const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 
@@ -675,7 +675,7 @@ onUnmounted(() => {
               </div>
 
               <div class="lg-small fortune-days">
-                你已经在 <span class="brand-highlight">✨ NLNOJ</span> 连续打卡了 <strong>{{ streakDays }}</strong> 天
+                你已经在 <span class="brand-highlight"> NLNOJ </span> 连续打卡了 <strong>{{ streakDays }}</strong> 天
               </div>
             </template>
           </div>
@@ -804,7 +804,7 @@ onUnmounted(() => {
               <div class="benben-text prose" v-html="renderMarkdown(item.content)"></div>
 
               <div v-if="item.reply_to_username" class="benben-reply-hint">
-                ↩️ 回复了 @{{ item.reply_to_username }}
+                <i class="fa-solid fa-reply"></i> 回复了 @{{ item.reply_to_username }}
               </div>
             </div>
           </div>
@@ -847,7 +847,7 @@ onUnmounted(() => {
 .card-header {
   font-size: 1.25rem;
   font-weight: 600;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 12px;
   margin-bottom: 20px;
 }
@@ -1056,7 +1056,7 @@ onUnmounted(() => {
 }
 
 .brand-highlight {
-  color: #e74c3c;
+  color: var(--primary);
   font-weight: 700;
 }
 
@@ -1112,7 +1112,7 @@ onUnmounted(() => {
 }
 
 .post-title-link {
-  color: #e74c3c;
+  color: var(--primary);
   font-weight: 600;
   font-size: 14px;
 }
@@ -1131,7 +1131,7 @@ onUnmounted(() => {
 }
 
 .post-forum-name {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .post-time-reply strong {
@@ -1140,7 +1140,7 @@ onUnmounted(() => {
 
 .pin-badge {
   display: inline-block;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -1154,7 +1154,7 @@ onUnmounted(() => {
 .benben-header {
   font-size: 1.25rem;
   font-weight: 600;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 12px;
   margin-bottom: 20px;
 }
@@ -1175,7 +1175,7 @@ onUnmounted(() => {
 
 .benben-editor textarea:focus {
   outline: none;
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .benben-submit-btn {
@@ -1183,7 +1183,7 @@ onUnmounted(() => {
 }
 
 .auth-btn {
-  background: #e74c3c;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 30px;
@@ -1223,14 +1223,14 @@ onUnmounted(() => {
 }
 
 .benben-tab:hover {
-  color: #e74c3c;
+  color: var(--primary);
   background: #f0f2f5;
 }
 
 .benben-tab.active {
-  color: #e74c3c;
+  color: var(--primary);
   background: white;
-  border-bottom-color: #e74c3c;
+  border-bottom-color: var(--primary);
 }
 
 .benben-list {
@@ -1331,7 +1331,7 @@ onUnmounted(() => {
 }
 
 .benben-username:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .user-tag-display {
@@ -1376,7 +1376,7 @@ onUnmounted(() => {
 .benben-report-btn:hover,
 .benben-reply-btn:hover,
 .benben-delete:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .benben-text {
@@ -1401,7 +1401,7 @@ onUnmounted(() => {
 }
 
 .benben-text :deep(a) {
-  color: #e74c3c;
+  color: var(--primary);
   text-decoration: none;
 }
 
@@ -1438,7 +1438,7 @@ onUnmounted(() => {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -1452,7 +1452,7 @@ onUnmounted(() => {
 }
 
 .back-to-top:hover {
-  background: #e74c3c;
+  background: var(--primary);
   transform: scale(1.1);
 }
 

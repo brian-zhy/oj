@@ -154,14 +154,14 @@ onMounted(() => load())
 .teams-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
 .teams-container { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.page-title { color: #e74c3c; font-size: 22px; margin: 0; }
+.page-title { color: var(--primary); font-size: 22px; margin: 0; }
 
 .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
 .team-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 18px; cursor: pointer; transition: transform .12s, box-shadow .12s; display: flex; flex-direction: column; gap: 8px; }
 .team-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.09); }
 .team-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .team-name { font-size: 16px; font-weight: 700; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.team-count { flex-shrink: 0; font-size: 12px; color: #e74c3c; background: #fef0ef; border-radius: 20px; padding: 2px 10px; font-weight: 600; }
+.team-count { flex-shrink: 0; font-size: 12px; color: var(--primary); background: #fef0ef; border-radius: 20px; padding: 2px 10px; font-weight: 600; }
 .team-desc { font-size: 13px; color: #8e9aaf; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-card-foot { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .owner-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
@@ -171,8 +171,8 @@ onMounted(() => load())
 .load-more { text-align: center; margin-top: 18px; }
 .empty { text-align: center; color: #999; padding: 48px 0; }
 
-.btn-primary { background: #e74c3c; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; cursor: pointer; font-size: 14px; }
-.btn-primary:hover { background: #c0392b; }
+.btn-primary { background: var(--primary); color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.btn-primary:hover { background: var(--primary-hover); }
 .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
 .btn-secondary { background: #eee; color: #333; border: none; border-radius: 8px; padding: 8px 20px; font-weight: 600; cursor: pointer; font-size: 14px; }
 
@@ -184,7 +184,7 @@ onMounted(() => load())
 .form-item { display: block; margin-bottom: 14px; }
 .form-label { display: block; font-size: 13px; font-weight: 600; color: #4b4b4b; margin-bottom: 6px; }
 .form-input { width: 100%; box-sizing: border-box; padding: 8px 12px; border: 1px solid #dce0e6; border-radius: 8px; font-size: 14px; outline: none; font-family: inherit; resize: vertical; }
-.form-input:focus { border-color: #e74c3c; }
-.form-error { color: #e74c3c; font-size: 13px; }
+.form-input:focus { border-color: var(--primary); }
+.form-error { color: var(--primary); font-size: 13px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
 </style>

@@ -244,13 +244,13 @@ onMounted(loadProblem)
 }
 
 .btn-op.danger {
-  color: #e74c3c;
+  color: var(--primary);
   border-color: #f5b7b1;
 }
 
 .btn-op.danger:hover {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
@@ -273,7 +273,7 @@ onMounted(loadProblem)
 
 .btn-primary {
   padding: 9px 28px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 22px;
@@ -283,7 +283,7 @@ onMounted(loadProblem)
 }
 
 .btn-primary:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .p-limits b {
@@ -387,8 +387,8 @@ onMounted(loadProblem)
 }
 
 .btn-back:hover {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 

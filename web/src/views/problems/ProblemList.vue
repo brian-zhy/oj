@@ -259,7 +259,7 @@ onMounted(() => {
 
 .btn-new {
   padding: 9px 22px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 24px;
@@ -270,7 +270,7 @@ onMounted(() => {
 }
 
 .btn-new:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .page-title {
@@ -320,12 +320,12 @@ onMounted(() => {
 }
 
 .filter-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .btn-search {
   padding: 8px 22px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -335,7 +335,7 @@ onMounted(() => {
 }
 
 .btn-search:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-reset {
@@ -418,7 +418,7 @@ onMounted(() => {
 }
 
 .p-title:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .tag-badge {
@@ -496,13 +496,13 @@ onMounted(() => {
 }
 
 .page-btn:hover:not(:disabled):not(.active) {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .page-btn.active {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
   font-weight: 600;
 }

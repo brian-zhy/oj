@@ -160,7 +160,7 @@ onUnmounted(() => {
 <template>
   <div class="topbar">
     <!-- Logo -->
-    <a href="/" class="logo">✨ NLNOJ</a>
+    <a href="/" class="logo"><img src="/favicon.svg" width="30"> <span>NLNOJ</span></a>
 
     <!-- 认证按钮区域 -->
     <div class="auth-buttons" v-if="!authStore.isAuthenticated">
@@ -221,13 +221,16 @@ onUnmounted(() => {
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #e74c3c;
+  color: var(--primary);
   text-decoration: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .logo:hover {
-  color: #c0392b;
+  color: var(--primary-hover);
 }
 
 .auth-buttons {
@@ -237,7 +240,7 @@ onUnmounted(() => {
 }
 
 .auth-btn {
-  background: #e74c3c;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 30px;
@@ -250,7 +253,7 @@ onUnmounted(() => {
 }
 
 .auth-btn:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
   text-decoration: none;
   color: white;
 }
@@ -273,14 +276,14 @@ onUnmounted(() => {
 }
 
 .bell-icon:hover {
-  color: #e74c3c;
+  color: var(--primary-hover);
 }
 
 .bell-badge {
   position: absolute;
   top: -8px;
   right: -12px;
-  background-color: #e74c3c;
+  background-color: var(--primary);
   color: white;
   font-size: 10px;
   font-weight: bold;
@@ -369,7 +372,7 @@ onUnmounted(() => {
 }
 
 .admin-gear:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 @media (max-width: 600px) {

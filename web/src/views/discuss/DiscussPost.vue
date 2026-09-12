@@ -67,7 +67,7 @@ const togglePinPost = async () => {
     showCancelButton: true,
     confirmButtonText: target ? '确认置顶' : '确认取消',
     cancelButtonText: '取消',
-    confirmButtonColor: '#e74c3c',
+    confirmButtonColor: 'var(--primary)',
     cancelButtonColor: '#909399'
   })
   if (!result.isConfirmed) return
@@ -90,7 +90,7 @@ const toggleLockPost = async () => {
     showCancelButton: true,
     confirmButtonText: target ? '确认锁定' : '确认解锁',
     cancelButtonText: '取消',
-    confirmButtonColor: '#e74c3c',
+    confirmButtonColor: 'var(--primary)',
     cancelButtonColor: '#909399'
   })
   if (!result.isConfirmed) return
@@ -394,7 +394,7 @@ onMounted(() => loadPost())
 
 .pin-badge {
   display: inline-block;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -448,7 +448,7 @@ onMounted(() => loadPost())
 }
 
 .staff-badge {
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   font-size: 11px;
   padding: 1px 8px;
@@ -471,7 +471,7 @@ onMounted(() => loadPost())
 }
 
 .head-btn:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 /* ===== 正文卡片 ===== */
@@ -518,7 +518,7 @@ onMounted(() => loadPost())
 }
 
 .edit-title-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .edit-content-input {
@@ -536,7 +536,7 @@ onMounted(() => loadPost())
 }
 
 .edit-content-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .edit-actions {
@@ -571,7 +571,7 @@ onMounted(() => loadPost())
 }
 
 .content-card :deep(a) {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 /* ===== 右侧信息卡 ===== */
@@ -658,8 +658,8 @@ onMounted(() => loadPost())
 }
 
 .side-action-btn:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .report-btn {
@@ -669,14 +669,14 @@ onMounted(() => loadPost())
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 13px;
-  color: #e74c3c;
+  color: var(--primary);
   cursor: pointer;
   text-align: left;
   transition: all 0.2s;
 }
 
 .report-btn:hover {
-  border-color: #e74c3c;
+  border-color: var(--primary);
   background: #fdf1ef;
 }
 
@@ -769,7 +769,7 @@ onMounted(() => loadPost())
 }
 
 .reply-textarea:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .reply-actions {
@@ -779,7 +779,7 @@ onMounted(() => loadPost())
 
 .btn-submit {
   padding: 8px 28px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -802,11 +802,11 @@ onMounted(() => loadPost())
 }
 
 .error-text {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .link {
-  color: #e74c3c;
+  color: var(--primary);
   margin: 0 4px;
 }
 

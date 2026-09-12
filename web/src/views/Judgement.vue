@@ -28,7 +28,7 @@ import JudgementLogList from '@/components/JudgementLogList.vue'
 .card-header {
   font-size: 1.25rem;
   font-weight: 600;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 12px;
   margin-bottom: 20px;
 }

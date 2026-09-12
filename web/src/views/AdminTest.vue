@@ -90,7 +90,7 @@ const testAdminApi = async () => {
 
 h1 {
   color: #333;
-  border-bottom: 2px solid #e74c3c;
+  border-bottom: 2px solid var(--primary);
   padding-bottom: 10px;
 }
 

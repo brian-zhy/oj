@@ -227,7 +227,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 <template>
   <div class="register-page">
     <div class="register-card">
-      <h1 class="register-title">✨ NLNOJ</h1>
+      <h1 class="register-title"><img src="/favicon.svg" width="45"> NLNOJ</h1>
       <div class="register-subtitle">注册新账户</div>
 
       <!-- 注册表单 -->
@@ -380,9 +380,14 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 .register-title {
   font-size: 28px;
   text-align: center;
-  color: #e74c3c;
+  color: var(--primary);
   margin-bottom: 8px;
   font-weight: 700;
+  display: flex;
+  align-items: center;    
+  justify-content: center;
+  gap: 10px;              
+  margin: 0;
 }
 
 .register-subtitle {
@@ -413,13 +418,13 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 }
 
 .type-btn:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .type-btn.active {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: white;
   cursor: default;
 }
@@ -447,7 +452,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 
 .form-input:focus {
   outline: none;
-  border-color: #e74c3c;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
   background: white;
 }
@@ -474,7 +479,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 /* 发送验证码按钮 */
 .send-code-btn {
   padding: 12px 16px;
-  background: #e74c3c;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 12px;
@@ -486,7 +491,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 }
 
 .send-code-btn:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .send-code-btn:disabled {
@@ -551,7 +556,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 .register-btn {
   width: 100%;
   padding: 12px;
-  background: #e74c3c;
+  background: var(--primary);
   border: none;
   border-radius: 40px;
   color: white;
@@ -562,7 +567,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 }
 
 .register-btn:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .register-btn:disabled {
@@ -580,13 +585,13 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 }
 
 .footer-link {
-  color: #e74c3c;
+  color: var(--primary);
   text-decoration: none;
   transition: color 0.2s;
 }
 
 .footer-link:hover {
-  color: #c0392b;
+  color: var(--primary-hover);
   text-decoration: underline;
 }
 

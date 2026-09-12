@@ -215,7 +215,7 @@ onMounted(() => loadTickets(false))
 
 .btn-new {
   padding: 9px 22px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 24px;
@@ -227,7 +227,7 @@ onMounted(() => loadTickets(false))
 }
 
 .btn-new:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .filter-bar {
@@ -255,8 +255,8 @@ onMounted(() => loadTickets(false))
 }
 
 .tab.active {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
@@ -364,8 +364,8 @@ onMounted(() => loadTickets(false))
 }
 
 .btn-more:hover:not(:disabled) {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
