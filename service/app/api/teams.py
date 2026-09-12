@@ -129,8 +129,9 @@ async def list_teams(
         select(Team).order_by(Team.id.desc())
         .offset(page * page_size).limit(page_size)
     )).scalars().all()
+    # 人数 = team_members 行数 + owner（owner 不在成员表，需手动计入）
     items = [
-        _team_dict(t, await _member_count(db, t.id), current_user) for t in teams
+        _team_dict(t, await _member_count(db, t.id) + 1, current_user) for t in teams
     ]
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
@@ -161,7 +162,8 @@ async def create_team(
     db.add(team)
     await db.commit()
     await db.refresh(team)
-    return _team_dict(team, 0, current_user)
+    # 创建者即首位成员（owner 不在成员表，人数按 1 计）
+    return _team_dict(team, 1, current_user)
 
 
 @router.get("/{team_id}", summary="团队详情")
@@ -177,7 +179,8 @@ async def team_detail(
         select(TeamMember).where(TeamMember.team_id == team_id)
         .order_by(TeamMember.id)
     )).scalars().all()
-    d = _team_dict(team, len(members), current_user)
+    # 人数 = 成员行数 + owner（与下方 members 列表拼入 owner 保持一致）
+    d = _team_dict(team, len(members) + 1, current_user)
     # 成员列表：owner 拼在最前（role='owner'），其余按加入顺序
     d["members"] = [{
         "user_id": team.owner_id,
