@@ -181,7 +181,7 @@ onMounted(() => loadPost())
           <div class="post-head-card">
             <h1 class="post-title">{{ post.title }}</h1>
             <span v-if="post.is_pinned" class="pin-badge">置顶</span>
-            <span v-if="post.is_locked" class="lock-badge">🔒 已锁定</span>
+            <span v-if="post.is_locked" class="lock-badge"><i class="fa-solid fa-lock"></i> 已锁定</span>
             <div class="author-line">
               <img
                 :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
@@ -258,8 +258,8 @@ onMounted(() => loadPost())
           </div>
 
           <!-- 回复框 -->
-          <div v-if="isLoggedIn && isMuted" class="state-box">⛔ 你已被禁言，无法回复</div>
-          <div v-else-if="isLoggedIn && post.is_locked" class="state-box">🔒 该帖子已锁定，无法回复</div>
+          <div v-if="isLoggedIn && isMuted" class="state-box"><i class="fa-solid fa-ban"></i> 你已被禁言，无法回复</div>
+          <div v-else-if="isLoggedIn && post.is_locked" class="state-box"><i class="fa-solid fa-lock"></i> 该帖子已锁定，无法回复</div>
           <div v-else-if="isLoggedIn" class="reply-box">
             <div class="reply-box-head">发表回复</div>
             <textarea
@@ -325,18 +325,18 @@ onMounted(() => loadPost())
               <div class="side-divider"></div>
               <div class="side-label manage-title">管理操作</div>
               <button class="side-action-btn" @click="startEditPost">
-                ✏️ 编辑帖子
+                <i class="fa-solid fa-pen"></i> 编辑帖子
               </button>
               <button class="side-action-btn" @click="togglePinPost">
-                {{ post.is_pinned ? '📌 取消置顶' : '📌 置顶' }}
+                {{ post.is_pinned ? '<i class="fa-solid fa-thumbtack-slash"></i> 取消置顶' : '<i class="fa-solid fa-thumbtack"></i> 置顶' }}
               </button>
               <button class="side-action-btn" @click="toggleLockPost">
-                {{ post.is_locked ? '🔓 解锁' : '🔒 锁定' }}
+                {{ post.is_locked ? '<i class="fa-solid fa-unlock"></i> 解锁' : '<i class="fa-solid fa-lock"></i> 锁定' }}
               </button>
             </template>
 
             <div class="side-divider"></div>
-            <button class="report-btn" @click="reportPost">🚩 举报</button>
+            <button class="report-btn" @click="reportPost"><i class="fa-solid fa-flag"></i> 举报</button>
           </div>
         </aside>
       </template>

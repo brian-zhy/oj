@@ -71,7 +71,7 @@ const submit = async () => {
   <div class="post-new-page">
     <div class="new-container">
       <h2 class="page-title">发布帖子</h2>
-      <div v-if="isMuted" class="mute-tip">⛔ 你已被禁言，无法发布帖子，如有疑问请通过工单联系我们。</div>
+      <div v-if="isMuted" class="mute-tip"><i class="fa-solid fa-ban"></i> 你已被禁言，无法发布帖子，如有疑问请通过工单联系我们。</div>
 
       <div class="section-label">选择版块 <span class="required">*</span></div>
       <div class="forum-grid">
@@ -84,7 +84,7 @@ const submit = async () => {
         >
           <div class="forum-name">{{ f.name }}</div>
           <div class="forum-desc">{{ f.desc }}</div>
-          <div v-if="isForumDisabled(f.key)" class="forum-lock">🔒 仅秩序管理</div>
+          <div v-if="isForumDisabled(f.key)" class="forum-lock"><i class="fa-solid fa-lock"></i> 仅秩序管理</div>
         </div>
       </div>
 
