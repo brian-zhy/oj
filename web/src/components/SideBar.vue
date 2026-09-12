@@ -25,8 +25,13 @@ const isActive = (path: string) => {
   return activePath.value.startsWith(path)
 }
 
+// 移动端菜单展开状态（桌面端不受影响：恒为收起态，靠 hover 展开）
+const mobileMenuOpen = ref(false)
+
 // 导航到指定路径
 const navigateTo = (path: string) => {
+  // 移动端点完自动收起，避免菜单一直占着屏幕
+  mobileMenuOpen.value = false
   router.push(path)
 }
 
@@ -40,7 +45,23 @@ const onSidebarLeave = () => {
 </script>
 
 <template>
-  <div ref="sidebarRef" class="nav-sidebar" @mouseleave="onSidebarLeave">
+  <!-- 移动端专用：默认收起菜单，点这个小按钮才展开 -->
+  <button
+    type="button"
+    class="mobile-menu-toggle"
+    :aria-expanded="mobileMenuOpen"
+    @click="mobileMenuOpen = !mobileMenuOpen"
+  >
+    <i :class="mobileMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'"></i>
+    {{ mobileMenuOpen ? '收起菜单' : '展开菜单' }}
+  </button>
+
+  <div
+    ref="sidebarRef"
+    class="nav-sidebar"
+    :class="{ 'nav-sidebar--open': mobileMenuOpen }"
+    @mouseleave="onSidebarLeave"
+  >
     <!-- 主菜单 第一部分（主页 ~ 评测记录） -->
     <div class="nav-group">
       <ul>
@@ -176,8 +197,8 @@ const onSidebarLeave = () => {
     </div>
 
 
-    <!-- 更多功能 -->
-    <div class="nav-group">
+    <!-- 更多功能（桌面端收缩时隐藏，展开后显示） -->
+    <div class="nav-group nav-group--extra">
       <span class="group-title">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Pro 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2024 Fonticons, Inc. --><path d="M176 88l0 40 160 0 0-40c0-4.4-3.6-8-8-8L184 80c-4.4 0-8 3.6-8 8zm-48 40l0-40c0-30.9 25.1-56 56-56l144 0c30.9 0 56 25.1 56 56l0 40 28.1 0c12.7 0 24.9 5.1 33.9 14.1l51.9 51.9c9 9 14.1 21.2 14.1 33.9l0 92.1-128 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32-128 0 0-32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 32L0 320l0-92.1c0-12.7 5.1-24.9 14.1-33.9l51.9-51.9c9-9 21.2-14.1 33.9-14.1l28.1 0zM0 416l0-64 128 0c0 17.7 14.3 32 32 32s32-14.3 32-32l128 0c0 17.7 14.3 32 32 32s32-14.3 32-32l128 0 0 64c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64z"/></svg>
@@ -241,8 +262,8 @@ const onSidebarLeave = () => {
     </div>
 
 
-    <!-- 相关链接 -->
-    <div class="nav-group">
+    <!-- 相关链接（桌面端收缩时隐藏，展开后显示） -->
+    <div class="nav-group nav-group--extra">
       <span class="group-title">
         <span class="nav-icon">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Pro 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2024 Fonticons, Inc. --><path d="M579.8 267.7c56.5-56.5 56.5-148 0-204.5c-50-50-128.8-56.5-186.3-15.4l-1.6 1.1c-14.4 10.3-17.7 30.3-7.4 44.6s30.3 17.7 44.6 7.4l1.6-1.1c32.1-22.9 76-19.3 103.8 8.6c31.5 31.5 31.5 82.5 0 114L422.3 334.8c-31.5 31.5-82.5 31.5-114 0c-27.9-27.9-31.5-71.8-8.6-103.8l1.1-1.6c10.3-14.4 6.9-34.4-7.4-44.6s-34.4-6.9-44.6 7.4l-1.1 1.6C206.5 251.2 213 330 263 380c56.5 56.5 148 56.5 204.5 0L579.8 267.7zM60.2 244.3c-56.5 56.5-56.5 148 0 204.5c50 50 128.8 56.5 186.3 15.4l1.6-1.1c14.4-10.3 17.7-30.3 7.4-44.6s-30.3-17.7-44.6-7.4l-1.6 1.1c-32.1 22.9-76 19.3-103.8-8.6C74 372 74 321 105.5 289.5L217.7 177.2c31.5-31.5 82.5-31.5 114 0c27.9 27.9 31.5 71.8 8.6 103.9l-1.1 1.6c-10.3 14.4-6.9 34.4 7.4 44.6s34.4 6.9 44.6-7.4l1.1-1.6C433.5 260.8 427 182 377 132c-56.5-56.5-148-56.5-204.5 0L60.2 244.3z"/></svg>
@@ -421,12 +442,11 @@ const onSidebarLeave = () => {
   white-space: nowrap;
 }
 
+/* 桌面端收缩态（未 hover）：只保留「更多功能」以上的按钮，
+   「更多功能」「相关链接」整组隐藏，展开后才出现 */
 @media (min-width: 769px) {
-  .nav-sidebar:not(:hover) .group-title .nav-text {
+  .nav-sidebar:not(:hover) .nav-group--extra {
     display: none;
-  }
-  .nav-sidebar:not(:hover) .group-title .nav-icon {
-    display: flex;   /* 收缩态显示图标 */
   }
 }
 
@@ -537,17 +557,76 @@ const onSidebarLeave = () => {
   margin: 8px 0;
 }
 
+/* ===== 移动端菜单开关按钮（桌面端不显示） ===== */
+.mobile-menu-toggle {
+  display: none;
+}
+
 /* 响应式适配 */
 @media (max-width: 768px) {
+  /* 悬浮开关：水平居中固定在顶栏中部（顶栏中间本就是空的），脱离文档流，
+     展开/收起时始终可点 */
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 410;
+    padding: 7px 14px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e5e7eb;
+    border-radius: 20px;
+    color: #2c3e50;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-menu-toggle:hover,
+  .mobile-menu-toggle[aria-expanded='true'] {
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  .mobile-menu-toggle:active {
+    transform: translateX(-50%) scale(0.94);
+  }
+
+  /* 全屏悬浮菜单：脱离文档流浮在整页之上（不再把正文挤下去），
+     默认淡出+上移收起，展开时平滑滑入 */
   .nav-sidebar {
-    position: relative;
+    position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    height: auto;
-    padding: 12px 0;
-    box-shadow: none;
-    border-bottom: 1px solid #e5e7eb;
+    height: 100%;
+    padding: 58px 0 24px;      /* 顶部留出悬浮按钮的位置 */
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    border-bottom: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 400;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s ease;
+  }
+
+  .nav-sidebar.nav-sidebar--open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
   }
 
   .nav-sidebar:hover {
@@ -610,6 +689,13 @@ const onSidebarLeave = () => {
 @media (max-width: 600px) {
   .nav-group ul {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* 窄屏把悬浮开关收得更紧凑，避免与顶栏 logo / 登录按钮挤在一起 */
+  .mobile-menu-toggle {
+    gap: 4px;
+    padding: 5px 12px;
+    font-size: 12px;
   }
 
   .nav-icon {
