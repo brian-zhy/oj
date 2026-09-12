@@ -6,7 +6,7 @@ import CodeEditor from '@/components/CodeEditor.vue'
 import { problemsApi } from '@/api/problems'
 import { submissionsApi } from '@/api/submissions'
 import { difficultyColor } from '@/utils/difficulty'
-import type { Problem } from '@/types'
+import type { Problem, Submission } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +32,8 @@ const DEFAULT_CODE: Record<string, string> = {
 }
 
 const submitting = ref(false)
+// 是否回填了上次提交的代码（用于给用户一个提示）
+const restoredFromLast = ref(false)
 
 const loadProblem = async () => {
   try {
@@ -40,8 +42,15 @@ const loadProblem = async () => {
     Swal.fire('题目不存在', err.response?.data?.detail || '', 'error').then(() =>
       router.push('/problems')
     )
-  } finally {
-    loading.value = false
+  }
+}
+
+// 我在这题的最后一次提交（从未提交 / 请求异常都按「无」处理）
+const fetchLastSubmission = async (): Promise<Submission | null> => {
+  try {
+    return await submissionsApi.getMyLast(problemId.value)
+  } catch {
+    return null
   }
 }
 
@@ -64,9 +73,20 @@ const submit = async () => {
   }
 }
 
-onMounted(() => {
-  loadProblem()
-  code.value = DEFAULT_CODE[language.value] ?? ''
+onMounted(async () => {
+  // 并行拉取题目与上次提交；有上次提交则回填代码与语言，否则用默认模板。
+  // 等两者都就绪再结束 loading，避免编辑器先渲染模板再被覆盖（闪一下）
+  const [, last] = await Promise.all([loadProblem(), fetchLastSubmission()])
+  if (last?.code) {
+    if (LANGUAGES.some((l) => l.value === last.language)) {
+      language.value = last.language
+    }
+    code.value = last.code
+    restoredFromLast.value = true
+  } else {
+    code.value = DEFAULT_CODE[language.value] ?? ''
+  }
+  loading.value = false
 })
 </script>
 
@@ -111,7 +131,7 @@ onMounted(() => {
 
           <CodeEditor v-model="code" :language="monacoLang" height="480px" />
 
-          <p class="tip">支持 C++14 / C / Python 3；评测在隔离沙箱中运行，每个测试点限时 {{ problem.time_limit }} ms。</p>
+          <p class="tip"><template v-if="restoredFromLast">已载入你上次提交的代码。<br /></template>支持 C++14 / C / Python 3；评测在隔离沙箱中运行，每个测试点限时 {{ problem.time_limit }} ms。</p>
         </div>
       </template>
     </div>
