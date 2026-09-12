@@ -328,10 +328,12 @@ onMounted(() => loadPost())
                 <i class="fa-solid fa-pen"></i> 编辑帖子
               </button>
               <button class="side-action-btn" @click="togglePinPost">
-                {{ post.is_pinned ? '<i class="fa-solid fa-thumbtack-slash"></i> 取消置顶' : '<i class="fa-solid fa-thumbtack"></i> 置顶' }}
+                <i :class="post.is_pinned ? 'fa-solid fa-thumbtack-slash' : 'fa-solid fa-thumbtack'"></i>
+                {{ post.is_pinned ? ' 取消置顶' : ' 置顶' }}
               </button>
               <button class="side-action-btn" @click="toggleLockPost">
-                {{ post.is_locked ? '<i class="fa-solid fa-unlock"></i> 解锁' : '<i class="fa-solid fa-lock"></i> 锁定' }}
+                <i :class="post.is_locked ? 'fa-solid fa-unlock' : 'fa-solid fa-lock'"></i>
+                {{ post.is_locked ? ' 解锁' : ' 锁定' }}
               </button>
             </template>
 
