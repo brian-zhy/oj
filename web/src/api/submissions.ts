@@ -15,7 +15,7 @@ export const submissionsApi = {
   // 提交代码（后台评测，返回的 status 短暂为 pending/judging）
   async create(
     problemId: number,
-    data: { code: string; language: string }
+    data: { code: string; language: string; contest_id?: number }
   ): Promise<Submission> {
     return apiClient.post(`/api/problems/${problemId}/submissions`, data)
   },

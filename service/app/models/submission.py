@@ -46,6 +46,12 @@ class Submission(Base, TimestampMixin):
 
     judged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # 比赛内提交（NULL=常规提交）；比赛删除时置空
+    contest_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("contests.id", ondelete="SET NULL"),
+        index=True, nullable=True,
+    )
+
     # 提交者（selectin：async 下自动随查询加载，避免懒加载炸绿票）
     user: Mapped["User"] = relationship("User", lazy="selectin")  # noqa: F821
 
