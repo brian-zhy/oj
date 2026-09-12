@@ -56,7 +56,7 @@ export const contestsApi = {
     description?: string
     start_time: string
     end_time: string
-    problem_ids: number[]
+    problem_codes: string[]
     visibility?: 'public' | 'private'
     invite_code?: string
   }): Promise<ContestItem> {
