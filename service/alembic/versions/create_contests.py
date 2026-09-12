@@ -17,12 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "submissions",
-        sa.Column("contest_id", sa.Integer(),
-                  sa.ForeignKey("contests.id", ondelete="SET NULL"), nullable=True),
-    )
-
+    # 注意顺序：先建 contests 表，submissions.contest_id 的外键才指向已存在的表
     op.create_table(
         "contests",
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
@@ -36,6 +31,12 @@ def upgrade() -> None:
                   server_default=sa.func.now(), nullable=False),
     )
     op.create_index("ix_contests_owner_id", "contests", ["owner_id"])
+
+    op.add_column(
+        "submissions",
+        sa.Column("contest_id", sa.Integer(),
+                  sa.ForeignKey("contests.id", ondelete="SET NULL"), nullable=True),
+    )
 
     op.create_table(
         "contest_problems",
@@ -65,8 +66,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.drop_column("submissions", "contest_id")
     op.drop_table("contest_participants")
     op.drop_table("contest_problems")
     op.drop_index("ix_contests_owner_id", table_name="contests")
     op.drop_table("contests")
-    op.drop_column("submissions", "contest_id")
