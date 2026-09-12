@@ -15,10 +15,10 @@ interface CategoryOption {
 }
 
 const CATEGORIES: CategoryOption[] = [
-  { key: 'consult', name: '一般咨询', desc: '关于本站平台功能或相关事宜的询问', icon: '💬' },
-  { key: 'suggestion', name: '建议反馈', desc: '为平台提供功能建议', icon: '💡' },
-  { key: 'bug', name: 'Bug反馈', desc: '报告站点功能异常', icon: '🐞' },
-  { key: 'appeal', name: '账号申诉', desc: '被封禁用户提交的账号申诉', icon: '🛡️' },
+  { key: 'consult', name: '一般咨询', desc: '关于本站平台功能或相关事宜的询问', icon: 'fa-solid fa-comment' },
+  { key: 'suggestion', name: '建议反馈', desc: '为平台提供功能建议', icon: 'fa-solid fa-lightbulb' },
+  { key: 'bug', name: 'Bug反馈', desc: '报告站点功能异常', icon: 'fa-solid fa-bug' },
+  { key: 'appeal', name: '账号申诉', desc: '被封禁用户提交的账号申诉', icon: 'fa-solid fa-shield-halved' },
 ]
 
 const isBanned = computed(() => authStore.currentUser?.is_banned === true)
@@ -99,7 +99,7 @@ const submit = async () => {
 
       <!-- 规则提示 -->
       <div class="rules-card">
-        <b>📋 工单规范</b>
+        <b><i class="fa-solid fa-clipboard-list"></i> 工单规范</b>
         <ul>
           <li><b>一事一单</b>：每个工单仅反馈一个具体问题，多个问题请分别创建</li>
           <li><b>标题明确</b>：标题应体现主要需求，方便管理员快速识别分类</li>
@@ -121,7 +121,7 @@ const submit = async () => {
           }"
           @click="pickCategory(c.key)"
         >
-          <div class="cat-icon">{{ c.icon }}</div>
+          <div class="cat-icon"><i :class="c.icon"></i></div>
           <div class="cat-name">{{ c.name }}</div>
           <div class="cat-desc">{{ c.desc }}</div>
         </div>

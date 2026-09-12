@@ -85,7 +85,7 @@ const goToLogin = () => {
 
       <!-- 令牌无效 -->
       <div v-else-if="!isValidToken" class="error-state">
-        <div class="error-icon">✕</div>
+        <div class="error-icon"><i class="fa-solid fa-xmark"></i></div>
         <div class="error-title">重置链接无效</div>
         <div class="error-message">{{ error }}</div>
         <button @click="goToLogin" class="action-btn">

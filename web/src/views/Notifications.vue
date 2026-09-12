@@ -7,10 +7,10 @@ import { fmtDateTime } from '@/utils/datetime'
 const router = useRouter()
 
 const TYPE: Record<string, { icon: string; color: string }> = {
-  reply: { icon: '💬', color: '#3498db' },
-  status: { icon: '🔄', color: '#E6A23C' },
-  assign: { icon: '👤', color: '#9C3DCF' },
-  team: { icon: '👥', color: '#13C2C2' },
+  reply: { icon: 'fa-solid fa-comment', color: '#3498db' },
+  status: { icon: 'fa-solid fa-rotate', color: '#E6A23C' },
+  assign: { icon: 'fa-solid fa-user', color: '#9C3DCF' },
+  team: { icon: 'fa-solid fa-people-group', color: '#13C2C2' },
 }
 
 const notifications = ref<any[]>([])
@@ -83,7 +83,7 @@ onMounted(() => loadNotifications(false))
           :class="{ unread: !n.is_read }"
           @click="openNotification(n)"
         >
-          <span class="n-icon" :style="{ color: TYPE[n.type]?.color }">{{ TYPE[n.type]?.icon || '🔔' }}</span>
+          <span class="n-icon" :style="{ color: TYPE[n.type]?.color }"><i :class="TYPE[n.type]?.icon || 'fa-solid fa-bell'"></i></span>
           <div class="n-body">
             <div class="n-content">
               <span v-if="!n.is_read" class="unread-dot"></span>

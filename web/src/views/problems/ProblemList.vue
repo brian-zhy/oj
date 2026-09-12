@@ -142,7 +142,7 @@ onMounted(() => {
           <h2 class="page-title">题库</h2>
           <p class="page-sub">按难度、来源或关键词查找题目，点击题名查看题面。</p>
         </div>
-        <button v-if="canManage" class="btn-new" @click="router.push('/problems/new')">＋ 新建题目</button>
+        <button v-if="canManage" class="btn-new" @click="router.push('/problems/new')"><i class="fa-solid fa-plus"></i> 新建题目</button>
       </div>
 
       <div class="card">

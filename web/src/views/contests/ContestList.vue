@@ -48,7 +48,7 @@ onMounted(load)
     <div class="contests-container">
       <div class="page-head">
         <h2 class="page-title">比赛</h2>
-        <button v-if="canManage" class="btn-primary" @click="router.push('/contests/new')">＋ 创建比赛</button>
+        <button v-if="canManage" class="btn-primary" @click="router.push('/contests/new')"><i class="fa-solid fa-plus"></i> 创建比赛</button>
       </div>
 
       <div v-if="loading" class="empty">加载中...</div>

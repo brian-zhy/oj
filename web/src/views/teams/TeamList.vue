@@ -85,7 +85,7 @@ onMounted(() => load())
     <div class="teams-container">
       <div class="page-head">
         <h2 class="page-title">团队</h2>
-        <button v-if="isLoggedIn" class="btn-primary" @click="openCreate">＋ 新建团队</button>
+        <button v-if="isLoggedIn" class="btn-primary" @click="openCreate"><i class="fa-solid fa-plus"></i> 新建团队</button>
       </div>
 
       <div v-if="loading && teams.length === 0" class="empty">加载中...</div>
@@ -125,7 +125,7 @@ onMounted(() => load())
         <div class="modal-box">
           <div class="modal-header">
             <h3>新建团队</h3>
-            <button class="modal-close" @click="showCreate = false">✕</button>
+            <button class="modal-close" @click="showCreate = false"><i class="fa-solid fa-xmark"></i></button>
           </div>
           <div class="modal-body">
             <label class="form-item">
