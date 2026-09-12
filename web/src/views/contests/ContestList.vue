@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { contestsApi, type ContestItem } from '@/api/contests'
-import { problemsApi } from '@/api/problems'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -37,60 +36,9 @@ const STATUS: Record<string, { text: string; cls: string }> = {
 const fmt = (iso: string | null) =>
   iso ? iso.slice(0, 16).replace('T', ' ') : '—'
 
-// ===== 创建比赛（管理员） =====
-const showCreate = ref(false)
-const form = ref({ title: '', description: '', start_time: '', end_time: '' })
-const createError = ref('')
-const creating = ref(false)
-const pool = ref<{ id: number; title: string; problem_number: string }[]>([])
-const picked = ref<number[]>([])
-const poolLoading = ref(false)
 
-const openCreate = async () => {
-  form.value = { title: '', description: '', start_time: '', end_time: '' }
-  createError.value = ''
-  picked.value = []
-  showCreate.value = true
-  poolLoading.value = true
-  try {
-    const data: any = await problemsApi.list({ page: 0, page_size: 100 })
-    pool.value = data.items
-  } catch {
-    pool.value = []
-  } finally {
-    poolLoading.value = false
-  }
-}
 
-const togglePick = (id: number) => {
-  const i = picked.value.indexOf(id)
-  if (i === -1) picked.value.push(id)
-  else picked.value.splice(i, 1)
-}
 
-const doCreate = async () => {
-  if (!form.value.title.trim()) { createError.value = '请输入比赛名称'; return }
-  if (!form.value.start_time || !form.value.end_time) { createError.value = '请选择起止时间'; return }
-  if (picked.value.length === 0) { createError.value = '请至少勾选一道比赛题目'; return }
-  creating.value = true
-  createError.value = ''
-  try {
-    // datetime-local 值按本地时间（东八区）提交
-    const created = await contestsApi.create({
-      title: form.value.title.trim(),
-      description: form.value.description.trim() || undefined,
-      start_time: new Date(form.value.start_time).toISOString(),
-      end_time: new Date(form.value.end_time).toISOString(),
-      problem_ids: picked.value,
-    })
-    showCreate.value = false
-    router.push(`/contests/${created.id}`)
-  } catch (err: any) {
-    createError.value = err.response?.data?.detail || '创建失败'
-  } finally {
-    creating.value = false
-  }
-}
 
 onMounted(load)
 </script>
@@ -100,7 +48,7 @@ onMounted(load)
     <div class="contests-container">
       <div class="page-head">
         <h2 class="page-title">比赛</h2>
-        <button v-if="canManage" class="btn-primary" @click="openCreate">＋ 创建比赛</button>
+        <button v-if="canManage" class="btn-primary" @click="router.push('/contests/new')">＋ 创建比赛</button>
       </div>
 
       <div v-if="loading" class="empty">加载中...</div>
@@ -130,56 +78,6 @@ onMounted(load)
         </div>
       </div>
 
-      <!-- 创建比赛弹窗 -->
-      <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
-        <div class="modal-box">
-          <div class="modal-header">
-            <h3>创建比赛</h3>
-            <button class="modal-close" @click="showCreate = false">✕</button>
-          </div>
-          <div class="modal-body">
-            <label class="form-item">
-              <span class="form-label">比赛名称 *</span>
-              <input v-model="form.title" class="form-input" maxlength="100" placeholder="例如：NLNOJ 月赛 #1" />
-            </label>
-            <div class="form-row">
-              <label class="form-item">
-                <span class="form-label">开始时间 *</span>
-                <input v-model="form.start_time" type="datetime-local" class="form-input" />
-              </label>
-              <label class="form-item">
-                <span class="form-label">结束时间 *</span>
-                <input v-model="form.end_time" type="datetime-local" class="form-input" />
-              </label>
-            </div>
-            <label class="form-item">
-              <span class="form-label">比赛简介（可选）</span>
-              <textarea v-model="form.description" class="form-input" rows="2" placeholder="赛制说明等" />
-            </label>
-            <div class="form-item">
-              <span class="form-label">比赛题目 *（勾选，顺序即 A/B/C/D）</span>
-              <div v-if="poolLoading" class="hint">题目加载中...</div>
-              <div v-else class="pool">
-                <label v-for="p in pool" :key="p.id" class="pool-item">
-                  <input
-                    type="checkbox"
-                    :checked="picked.includes(p.id)"
-                    @change="togglePick(p.id)"
-                  />
-                  {{ p.problem_number }} {{ p.title }}
-                </label>
-              </div>
-            </div>
-            <div v-if="createError" class="form-error">{{ createError }}</div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn-secondary" @click="showCreate = false">取消</button>
-            <button class="btn-primary" :disabled="creating" @click="doCreate">
-              {{ creating ? '创建中...' : '创建' }}
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </template>

@@ -66,10 +66,16 @@ const STATUS: Record<string, { text: string; cls: string }> = {
 const fmt = (iso: string | null) => (iso ? iso.slice(0, 16).replace('T', ' ') : '—')
 
 const doRegister = async () => {
+  // 邀请赛需先输入邀请码
+  let inviteCode: string | undefined
+  if (contest.value?.visibility === 'private') {
+    inviteCode = window.prompt('这是一场邀请赛，请输入邀请码：') || ''
+    if (!inviteCode) return
+  }
   acting.value = true
   actionMsg.value = ''
   try {
-    await contestsApi.register(contestId.value)
+    await contestsApi.register(contestId.value, inviteCode)
     actionMsg.value = '报名成功'
     await load()
   } catch (err: any) {

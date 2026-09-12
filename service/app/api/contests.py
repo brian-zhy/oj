@@ -60,6 +60,7 @@ def _contest_dict(
         "id": contest.id,
         "title": contest.title,
         "description": contest.description or "",
+        "visibility": getattr(contest, "visibility", "public") or "public",
         "start_time": contest.start_time.isoformat() if contest.start_time else None,
         "end_time": contest.end_time.isoformat() if contest.end_time else None,
         "status": _status(contest),
@@ -72,6 +73,9 @@ def _contest_dict(
         "is_owner": bool(current_user and contest.owner_id == current_user.id),
         "can_manage": bool(current_user and _can_manage_contest(current_user)),
     }
+    # 邀请码只对创建者/管理员可见
+    if d["can_manage"] or d["is_owner"]:
+        d["invite_code"] = getattr(contest, "invite_code", None)
     if current_user:
         d["is_participant"] = any(
             p.user_id == current_user.id for p in contest.participants
@@ -160,9 +164,22 @@ async def create_contest(
         if missing:
             raise HTTPException(status_code=400, detail=f"题目不存在: {missing}")
 
+    # 公开程度：public 公开庭 / private 邀请赛（报名需邀请码）
+    visibility = payload.get("visibility") or "public"
+    if visibility not in ("public", "private"):
+        raise HTTPException(status_code=400, detail="无效的公开程度")
+    invite_code = (payload.get("invite_code") or "").strip()
+    if visibility == "private":
+        if not (3 <= len(invite_code) <= 32):
+            raise HTTPException(
+                status_code=400, detail="邀请赛需设置 3-32 位邀请码"
+            )
+
     contest = Contest(
         title=title,
         description=(payload.get("description") or "").strip() or None,
+        visibility=visibility,
+        invite_code=invite_code if visibility == "private" else None,
         start_time=start_time, end_time=end_time,
         owner_id=current_user.id,
     )
@@ -206,9 +223,10 @@ async def delete_contest(
     return {"success": True}
 
 
-@router.post("/{contest_id}/register", summary="报名比赛")
+@router.post("/{contest_id}/register", summary="报名比赛（邀请赛需邀请码）")
 async def register_contest(
     contest_id: int,
+    payload: Optional[dict] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
@@ -217,6 +235,10 @@ async def register_contest(
         raise HTTPException(status_code=404, detail="比赛不存在")
     if _status(contest) == "ended":
         raise HTTPException(status_code=400, detail="比赛已结束，无法报名")
+    if (contest.visibility or "public") == "private":
+        code = ((payload or {}).get("invite_code") or "").strip()
+        if not code or code != contest.invite_code:
+            raise HTTPException(status_code=403, detail="邀请码错误")
     exists = (await db.execute(
         select(ContestParticipant.id).where(
             ContestParticipant.contest_id == contest_id,
