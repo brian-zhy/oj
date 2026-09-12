@@ -22,8 +22,19 @@ from app.models.user import User
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
-MAX_TEAMS_PER_USER = 10   # 每人可创建的团队数上限（防刷）
+MAX_TEAMS_NORMAL = 5      # 普通用户可创建的团队数上限
+MAX_TEAMS_ADMIN = 10      # 管理员（非全权限）可创建的团队数上限
 MAX_MEMBERS_PER_TEAM = 200
+
+
+def _team_create_limit(user: User) -> int | None:
+    """按身份返回可创建团队数上限；None = 不限制（全权限超管）。"""
+    if user.is_super_admin:
+        return None
+    if (user.is_admin or user.can_manage_users
+            or user.can_manage_posts or user.can_manage_problems):
+        return MAX_TEAMS_ADMIN
+    return MAX_TEAMS_NORMAL
 
 
 def _user_brief(user: User | None) -> dict[str, Any]:
@@ -164,8 +175,10 @@ async def create_team(
         select(sa_func.count()).select_from(Team)
         .where(Team.owner_id == current_user.id)
     )).scalar() or 0
-    if my_count >= MAX_TEAMS_PER_USER:
-        raise HTTPException(status_code=400, detail=f"每人最多创建 {MAX_TEAMS_PER_USER} 个团队")
+    # 解散即物理删除，不会计入现存数量
+    limit = _team_create_limit(current_user)
+    if limit is not None and my_count >= limit:
+        raise HTTPException(status_code=400, detail=f"你最多可创建 {limit} 个团队（解散的不计入）")
 
     team = Team(name=name, description=description, owner_id=current_user.id)
     db.add(team)
