@@ -117,7 +117,7 @@ onMounted(() => loadTickets(false))
           <h2 class="page-title">工单中心</h2>
           <p class="page-sub">一事一单，标题明确；管理员通常会在 2 周内回复，请勿催促。</p>
         </div>
-        <button class="btn-new" @click="router.push('/tickets/new')">✏️ 提交工单</button>
+        <button class="btn-new" @click="router.push('/tickets/new')"><i class="fa-solid fa-pen"></i> 提交工单</button>
       </div>
 
       <!-- 筛选栏 -->
