@@ -747,7 +747,7 @@ onUnmounted(() => {
               :disabled="cannotSpeak || posting"
               @click="postBenben"
             >
-              {{ posting ? '🚀 发射中...' : '发射犇犇！' }}
+              {{ posting ? '发射中...' : '发射犇犇！' }}
             </button>
           </div>
         </div>
@@ -819,7 +819,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 回到顶部 -->
-    <button v-show="showBackTop" class="back-to-top" title="回到顶部" @click="backToTop">↑</button>
+    <button v-show="showBackTop" class="back-to-top" title="回到顶部" @click="backToTop"><i class='fa-solid fa-arrow-up'></i></button>
   </div>
 </template>
 
