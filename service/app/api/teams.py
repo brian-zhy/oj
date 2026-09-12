@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user, get_current_user_optional
-from app.models.team import Team, TeamMember
+from app.models.notification import Notification
+from app.models.team import Team, TeamMember, TeamJoinRequest
 from app.models.user import User
 
 router = APIRouter(prefix="/teams", tags=["teams"])
@@ -115,6 +116,14 @@ async def _require_team_manage(
         raise HTTPException(status_code=403, detail="需要团队管理权限")
 
 
+def _notify(
+    db: AsyncSession, user_id: int, content: str, actor_id: int | None = None
+) -> None:
+    """发一条站内通知（type=team，进顶栏铃铛）。"""
+    db.add(Notification(user_id=user_id, type="team", content=content,
+                        actor_id=actor_id))
+
+
 @router.get("", summary="团队列表")
 async def list_teams(
     page: int = Query(0, ge=0),
@@ -189,10 +198,19 @@ async def team_detail(
         "joined_at": d["created_at"],
         "user": d["owner"],
     }] + [_member_dict(m) for m in members]
+    # 加入申请：待审核数量（管理员侧徽标）与当前用户的申请状态
+    pending_rows = (await db.execute(
+        select(TeamJoinRequest).where(TeamJoinRequest.team_id == team_id)
+        .order_by(TeamJoinRequest.id)
+    )).scalars().all()
+    d["pending_count"] = len(pending_rows)
+    d["is_pending"] = current_user is not None and any(
+        r.user_id == current_user.id for r in pending_rows
+    )
     return d
 
 
-@router.post("/{team_id}/join", summary="加入团队")
+@router.post("/{team_id}/join", summary="申请加入团队（需管理员审核）")
 async def join_team(
     team_id: int,
     db: AsyncSession = Depends(get_db),
@@ -210,11 +228,30 @@ async def join_team(
     if exists is not None:
         raise HTTPException(status_code=400, detail="你已经是团队成员")
     count = await _member_count(db, team_id)
-    if count >= MAX_MEMBERS_PER_TEAM:
+    if count + 1 > MAX_MEMBERS_PER_TEAM:
         raise HTTPException(status_code=400, detail=f"团队成员已达上限（{MAX_MEMBERS_PER_TEAM} 人）")
-    db.add(TeamMember(team_id=team_id, user_id=current_user.id))
+    # 加入需审核：已有待审申请则不重复提交
+    pending = (await db.execute(
+        select(TeamJoinRequest.id).where(
+            TeamJoinRequest.team_id == team_id,
+            TeamJoinRequest.user_id == current_user.id)
+    )).scalar_one_or_none()
+    if pending is not None:
+        raise HTTPException(status_code=400, detail="已提交申请，等待审核中")
+    db.add(TeamJoinRequest(team_id=team_id, user_id=current_user.id))
+
+    # 通知团队主与所有团队管理员
+    content = (f"{current_user.username} 申请加入团队「{team.name}」，"
+               f"请前往团队页审核")
+    admins = (await db.execute(
+        select(TeamMember.user_id).where(
+            TeamMember.team_id == team_id, TeamMember.role == "admin")
+    )).scalars().all()
+    _notify(db, team.owner_id, content, actor_id=current_user.id)
+    for admin_id in admins:
+        _notify(db, admin_id, content, actor_id=current_user.id)
     await db.commit()
-    return {"success": True}
+    return {"pending": True}
 
 
 @router.post("/{team_id}/leave", summary="退出团队")
@@ -255,6 +292,83 @@ async def dissolve_team(
     return {"success": True}
 
 
+@router.get("/{team_id}/requests", summary="待审核申请列表（团队管理员）")
+async def list_requests(
+    team_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    team = await _load_team(db, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="团队不存在")
+    await _require_team_manage(db, team, current_user)
+    rows = (await db.execute(
+        select(TeamJoinRequest).where(TeamJoinRequest.team_id == team_id)
+        .order_by(TeamJoinRequest.id)
+    )).scalars().all()
+    return {
+        "items": [{
+            "user_id": r.user_id,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "user": _user_brief(r.user),
+        } for r in rows]
+    }
+
+
+@router.post("/{team_id}/requests/{user_id}/approve", summary="通过加入申请")
+async def approve_request(
+    team_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    team = await _load_team(db, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="团队不存在")
+    await _require_team_manage(db, team, current_user)
+    req = (await db.execute(
+        select(TeamJoinRequest).where(
+            TeamJoinRequest.team_id == team_id, TeamJoinRequest.user_id == user_id)
+    )).scalar_one_or_none()
+    if req is None:
+        raise HTTPException(status_code=404, detail="该申请不存在或已处理")
+    count = await _member_count(db, team_id)
+    if count + 1 > MAX_MEMBERS_PER_TEAM:
+        raise HTTPException(status_code=400, detail=f"团队成员已达上限（{MAX_MEMBERS_PER_TEAM} 人）")
+    db.add(TeamMember(team_id=team_id, user_id=user_id))
+    await db.delete(req)
+    _notify(db, user_id,
+            f"你申请加入团队「{team.name}」已通过，欢迎加入！",
+            actor_id=current_user.id)
+    await db.commit()
+    return {"success": True}
+
+
+@router.post("/{team_id}/requests/{user_id}/reject", summary="拒绝加入申请")
+async def reject_request(
+    team_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    team = await _load_team(db, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="团队不存在")
+    await _require_team_manage(db, team, current_user)
+    req = (await db.execute(
+        select(TeamJoinRequest).where(
+            TeamJoinRequest.team_id == team_id, TeamJoinRequest.user_id == user_id)
+    )).scalar_one_or_none()
+    if req is None:
+        raise HTTPException(status_code=404, detail="该申请不存在或已处理")
+    await db.delete(req)
+    _notify(db, user_id,
+            f"你申请加入团队「{team.name}」未通过",
+            actor_id=current_user.id)
+    await db.commit()
+    return {"success": True}
+
+
 @router.put("/{team_id}/members/{user_id}", summary="管理成员（备注 / 设或撤管理员）")
 async def update_member(
     team_id: int,
@@ -277,6 +391,9 @@ async def update_member(
 
     new_role = payload.get("role")
     if new_role is not None:
+        # 设/撤团队管理员是团主专属权限（管理员只能改备注、踢人）
+        if team.owner_id != current_user.id:
+            raise HTTPException(status_code=403, detail="仅团队主可以设置团队管理员")
         if new_role not in ("member", "admin"):
             raise HTTPException(status_code=400, detail="无效的角色")
         member.role = new_role

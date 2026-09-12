@@ -36,8 +36,16 @@ export interface TeamItem {
   is_team_admin: boolean
 }
 
+export interface TeamJoinRequestItem {
+  user_id: number
+  created_at: string | null
+  user: TeamUserBrief
+}
+
 export interface TeamDetailItem extends TeamItem {
   members: TeamMemberItem[]
+  is_pending: boolean
+  pending_count: number
 }
 
 export const teamsApi = {
@@ -53,8 +61,20 @@ export const teamsApi = {
     return apiClient.post('/api/teams', data)
   },
 
-  async join(id: number): Promise<{ success: boolean }> {
+  async join(id: number): Promise<{ pending: boolean }> {
     return apiClient.post(`/api/teams/${id}/join`)
+  },
+
+  async requests(id: number): Promise<{ items: TeamJoinRequestItem[] }> {
+    return apiClient.get(`/api/teams/${id}/requests`)
+  },
+
+  async approveRequest(teamId: number, userId: number): Promise<{ success: boolean }> {
+    return apiClient.post(`/api/teams/${teamId}/requests/${userId}/approve`)
+  },
+
+  async rejectRequest(teamId: number, userId: number): Promise<{ success: boolean }> {
+    return apiClient.post(`/api/teams/${teamId}/requests/${userId}/reject`)
   },
 
   async leave(id: number): Promise<{ success: boolean }> {

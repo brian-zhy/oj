@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { teamsApi, type TeamDetailItem, type TeamMemberItem } from '@/api/teams'
+import { teamsApi, type TeamDetailItem, type TeamMemberItem, type TeamJoinRequestItem } from '@/api/teams'
 import { userNameColor } from '@/utils/userColor'
 
 const route = useRoute()
@@ -57,7 +57,7 @@ const fmtDate = (iso: string | null) => (iso ? iso.slice(0, 10) : '未知')
 const roleText = (role: string) =>
   role === 'owner' ? '团队主' : role === 'admin' ? '管理员' : ''
 
-// ===== 操作：加入 / 退出 / 解散 =====
+// ===== 操作：申请加入 / 退出 / 解散 =====
 const doAction = async (fn: () => Promise<unknown>, okMsg: string) => {
   acting.value = true
   actionMsg.value = ''
@@ -72,7 +72,7 @@ const doAction = async (fn: () => Promise<unknown>, okMsg: string) => {
   }
 }
 
-const joinTeam = () => doAction(() => teamsApi.join(teamId.value), '加入成功')
+const joinTeam = () => doAction(() => teamsApi.join(teamId.value), '申请已提交，等待团队管理员审核')
 const leaveTeam = () => {
   if (!confirm('确定退出该团队吗？')) return
   doAction(() => teamsApi.leave(teamId.value), '已退出')
@@ -136,6 +136,44 @@ const removeMember = async () => {
     manageSaving.value = false
   }
 }
+
+// ===== 入队申请审核 =====
+const showRequests = ref(false)
+const requestItems = ref<TeamJoinRequestItem[]>([])
+const requestsLoading = ref(false)
+const requestsError = ref('')
+const processingReq = ref<number | null>(null)
+
+const openRequests = async () => {
+  showRequests.value = true
+  requestsLoading.value = true
+  requestsError.value = ''
+  try {
+    const data = await teamsApi.requests(teamId.value)
+    requestItems.value = data.items
+  } catch (err: any) {
+    requestsError.value = err.response?.data?.detail || '加载失败'
+  } finally {
+    requestsLoading.value = false
+  }
+}
+
+const handleRequest = async (userId: number, approve: boolean) => {
+  processingReq.value = userId
+  try {
+    if (approve) {
+      await teamsApi.approveRequest(teamId.value, userId)
+    } else {
+      await teamsApi.rejectRequest(teamId.value, userId)
+    }
+    requestItems.value = requestItems.value.filter(r => r.user_id !== userId)
+    await load()
+  } catch (err: any) {
+    requestsError.value = err.response?.data?.detail || '操作失败'
+  } finally {
+    processingReq.value = null
+  }
+}
 </script>
 
 <template>
@@ -173,13 +211,19 @@ const removeMember = async () => {
             </div>
             <div class="head-actions">
               <template v-if="isLoggedIn">
+                <button
+                  v-if="team.is_team_admin"
+                  class="btn-secondary"
+                  @click="openRequests"
+                >入队申请（{{ team.pending_count }}）</button>
                 <button v-if="team.is_owner" class="btn-danger" :disabled="acting" @click="dissolveTeam">解散团队</button>
                 <button v-else-if="team.is_member" class="btn-secondary" :disabled="acting" @click="leaveTeam">退出团队</button>
+                <button v-else-if="team.is_pending" class="btn-secondary" disabled>审核中…</button>
                 <button v-else class="btn-primary" :disabled="acting" @click="joinTeam">
-                  {{ acting ? '处理中...' : '加入团队' }}
+                  {{ acting ? '处理中...' : '申请加入' }}
                 </button>
               </template>
-              <router-link v-else class="btn-secondary" to="/login">登录后可加入</router-link>
+              <router-link v-else class="btn-secondary" to="/login">登录后可申请</router-link>
             </div>
           </div>
         </div>
@@ -214,6 +258,33 @@ const removeMember = async () => {
 
         <div v-else class="card body-card">
           <div class="empty">「{{ activeTab }}」功能开发中，敬请期待</div>
+        </div>
+
+        <!-- 入队申请审核弹窗 -->
+        <div v-if="showRequests" class="modal-overlay" @click.self="showRequests = false">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3>入队申请（{{ requestItems.length }}）</h3>
+              <button class="modal-close" @click="showRequests = false">✕</button>
+            </div>
+            <div v-if="requestsLoading" class="empty small">加载中...</div>
+            <div v-else-if="requestsError" class="form-error">{{ requestsError }}</div>
+            <div v-else-if="requestItems.length === 0" class="empty small">暂无待审核申请</div>
+            <div v-else class="request-list">
+              <div v-for="r in requestItems" :key="r.user_id" class="request-item">
+                <div class="member-left">
+                  <img class="member-avatar" :src="r.user.avatar_url || letterAvatar(r.user.username)" alt="" />
+                  <router-link :to="`/user/${r.user.user_number}`" class="username-link" :style="{ color: userColor(r.user) }">
+                    {{ r.user.username }}
+                  </router-link>
+                </div>
+                <div class="request-actions">
+                  <button class="btn-primary small" :disabled="processingReq === r.user_id" @click="handleRequest(r.user_id, true)">通过</button>
+                  <button class="btn-secondary small" :disabled="processingReq === r.user_id" @click="handleRequest(r.user_id, false)">拒绝</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 管理成员弹窗 -->
@@ -333,6 +404,13 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .form-error { color: #e74c3c; font-size: 13px; margin-top: 10px; }
 .modal-footer { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f2f5; }
 .modal-footer.three .spacer { flex: 1; }
+
+.request-list { max-height: 320px; overflow-y: auto; }
+.request-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
+.request-item:last-child { border-bottom: none; }
+.request-actions { display: flex; gap: 8px; }
+.btn-primary.small, .btn-secondary.small { padding: 5px 14px; font-size: 13px; }
+.empty.small { padding: 16px 0; font-size: 13px; }
 
 @media (max-width: 640px) {
   .member-grid { grid-template-columns: 1fr; }
