@@ -68,3 +68,25 @@ class TeamMember(Base):
 
     team: Mapped["Team"] = relationship(back_populates="members")
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="joined")  # noqa: F821
+
+
+class TeamJoinRequest(Base):
+    """加入团队申请：行存在即视为待审核（通过/拒绝后删除该行）。"""
+
+    __tablename__ = "team_join_requests"
+    __table_args__ = (
+        UniqueConstraint("team_id", "user_id", name="uq_team_join_request"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    team_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("teams.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), index=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], lazy="joined")  # noqa: F821

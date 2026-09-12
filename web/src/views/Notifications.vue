@@ -10,6 +10,7 @@ const TYPE: Record<string, { icon: string; color: string }> = {
   reply: { icon: '💬', color: '#3498db' },
   status: { icon: '🔄', color: '#E6A23C' },
   assign: { icon: '👤', color: '#9C3DCF' },
+  team: { icon: '👥', color: '#13C2C2' },
 }
 
 const notifications = ref<any[]>([])
