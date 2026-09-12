@@ -9,6 +9,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.problem import Problem
 from app.models.submission import Submission
+from app.models.user import User
+
+
+def _user_brief(user: User | None) -> dict[str, Any] | None:
+    """出题人简要信息（全站配色判定字段齐全；无出题人返回 None）。"""
+    if user is None:
+        return None
+    return {
+        "user_id": user.id,
+        "username": user.username,
+        "user_tag": user.user_tag or "",
+        "is_admin": bool(user.is_admin),
+        "is_super_admin": bool(user.is_super_admin),
+        "is_banned": bool(user.is_banned),
+        "is_cheater": bool(user.is_cheater),
+        "can_manage_users": bool(user.can_manage_users),
+        "can_manage_posts": bool(user.can_manage_posts),
+        "can_manage_problems": bool(user.can_manage_problems),
+        "user_number": user.user_number,
+        "avatar_url": user.avatar_url or "",
+    }
 
 
 class ProblemService:
@@ -23,6 +44,7 @@ class ProblemService:
             "difficulty": p.difficulty,
             "source": p.source,
             "tags": p.tags or [],
+            "author": _user_brief(getattr(p, "author", None)),
             "time_limit": p.time_limit,
             "memory_limit": p.memory_limit,
             "submit_count": p.submit_count,

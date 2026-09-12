@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
 import { renderRichText } from '@/utils/markdown'
 import { difficultyColor } from '@/utils/difficulty'
+import { userNameColor } from '@/utils/userColor'
 import type { Problem } from '@/types'
 
 const route = useRoute()
@@ -117,6 +118,13 @@ onMounted(() => {
             <span>时间限制：<b>{{ problem.time_limit }} ms</b></span>
             <span>内存限制：<b>{{ problem.memory_limit }} MB</b></span>
             <span v-if="problem.source">来源：<b>{{ problem.source }}</b></span>
+            <span v-if="problem.author">
+              出题人：<router-link
+                :to="`/user/${problem.author.user_number}`"
+                class="author-link"
+                :style="{ color: userNameColor(problem.author) }"
+              >{{ problem.author.username }}</router-link>
+            </span>
             <span>提交：<b>{{ problem.submit_count }}</b></span>
             <span>通过：<b>{{ problem.solved_count }}</b></span>
             <span>通过率：<b>{{ problem.pass_rate === null ? '暂无' : problem.pass_rate + '%' }}</b></span>
@@ -304,6 +312,12 @@ onMounted(() => {
 .btn-primary:hover {
   background: var(--primary-hover);
 }
+
+.author-link {
+  font-weight: 700;
+  text-decoration: none;
+}
+.author-link:hover { text-decoration: underline; }
 
 .p-limits b {
   color: #2c3e50;

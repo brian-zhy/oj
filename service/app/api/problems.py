@@ -180,6 +180,7 @@ async def create_problem(
             )
         data["team_id"] = team_id
         data.setdefault("is_public", False)
+        data["author_id"] = current_user.id
         # T 编号跨团队全局递增：max+1，并发撞号由 unique 约束兜底后重试
         from sqlalchemy.exc import IntegrityError
         problem = None
@@ -200,6 +201,7 @@ async def create_problem(
             )
         return ProblemService._dict(problem, with_description=True)
     _require_problem_manage(current_user)
+    data["author_id"] = current_user.id
     problem = await ProblemService.create(db, data)
     return ProblemService._dict(problem, with_description=True)
 
