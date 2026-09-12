@@ -69,9 +69,9 @@ onMounted(load)
             </div>
             <div v-if="c.description" class="c-desc">{{ c.description }}</div>
             <div class="c-meta">
-              <span>⏱ {{ fmt(c.start_time) }} ~ {{ fmt(c.end_time) }}</span>
-              <span>📋 {{ c.problem_count }} 题</span>
-              <span>👥 {{ c.participant_count }} 人报名</span>
+              <span><i class="fa-solid fa-stopwatch"></i> {{ fmt(c.start_time) }} ~ {{ fmt(c.end_time) }}</span>
+              <span><i class="fa-solid fa-clipboard-list"></i> {{ c.problem_count }} 题</span>
+              <span><i class="fa-solid fa-user-group"></i> {{ c.participant_count }} 人报名</span>
               <span>发起人：<b>{{ c.owner.username }}</b></span>
             </div>
           </div>
