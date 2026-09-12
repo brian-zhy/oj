@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Integer, JSON, String, Text, text
+from sqlalchemy import Boolean, ForeignKey, Integer, JSON, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin
@@ -62,7 +62,17 @@ class Problem(Base, TimestampMixin):
         Boolean, nullable=False, default=True, server_default=text("true")
     )
 
-    # 题号不落库：P1000 风格，由 id 推导
+    # 团队私有题库：team_id 为空 = 主题库题（P 编号）；非空 = 团队题（T 编号）
+    team_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("teams.id", ondelete="CASCADE"),
+        index=True, nullable=True,
+    )
+    # 团队题全局序号（跨团队共用 team_problem_tno_seq 序列，如 T1、T10）
+    t_no: Mapped[int | None] = mapped_column(Integer, nullable=True, unique=True)
+
+    # 题号不落库：主题库 P1000 风格；团队题 T{n} 风格
     @property
     def problem_number(self) -> str:
+        if self.team_id is not None:
+            return f"T{self.t_no}"
         return f"P{1000 + self.id}"

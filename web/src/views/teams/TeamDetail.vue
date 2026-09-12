@@ -2,7 +2,8 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { teamsApi, type TeamDetailItem, type TeamMemberItem, type TeamJoinRequestItem } from '@/api/teams'
+import { teamsApi, type TeamDetailItem, type TeamMemberItem, type TeamJoinRequestItem, type TeamProblemItem } from '@/api/teams'
+import { difficultyColor } from '@/utils/difficulty'
 import { userNameColor } from '@/utils/userColor'
 
 const route = useRoute()
@@ -53,6 +54,14 @@ const userTag = (u: TeamMemberItem['user']) => {
   return u.user_tag || ''
 }
 const fmtDate = (iso: string | null) => (iso ? iso.slice(0, 10) : '未知')
+
+// 选项卡切换：进入「题目」tab 时加载团队题列表
+const switchTab = (t: string) => {
+  activeTab.value = t
+  if (t === '题目' && teamProblems.value.length === 0 && !problemsLoading.value) {
+    loadTeamProblems()
+  }
+}
 
 const roleText = (role: string) =>
   role === 'owner' ? '团队主' : role === 'admin' ? '管理员' : ''
@@ -153,6 +162,21 @@ const transferTeam = async () => {
   }
 }
 
+// ===== 团队题目（T 系列） =====
+const teamProblems = ref<TeamProblemItem[]>([])
+const problemsLoading = ref(false)
+
+const loadTeamProblems = async () => {
+  problemsLoading.value = true
+  try {
+    teamProblems.value = await teamsApi.problems(teamId.value)
+  } catch {
+    teamProblems.value = []
+  } finally {
+    problemsLoading.value = false
+  }
+}
+
 // ===== 入队申请审核 =====
 const showRequests = ref(false)
 const requestItems = ref<TeamJoinRequestItem[]>([])
@@ -222,7 +246,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
                 :key="t"
                 class="nav-btn"
                 :class="{ active: activeTab === t }"
-                @click="activeTab = t"
+                @click="switchTab(t)"
               >{{ t }}</span>
             </div>
             <div class="head-actions">
@@ -268,6 +292,35 @@ const handleRequest = async (userId: number, approve: boolean) => {
               </div>
               <span v-if="m.role !== 'member'" class="role-tag" :class="m.role">{{ roleText(m.role) }}</span>
               <span v-else-if="canManage && m.role === 'member'" class="manage-hint">管理</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 团队题目（T 系列私有题库） -->
+        <div v-else-if="activeTab === '题目'" class="card body-card">
+          <div class="prob-head">
+            <h4 class="section-title">团队题目 <span class="member-count">（{{ teamProblems.length }} 道）</span></h4>
+            <button
+              v-if="team.is_team_admin"
+              class="btn-primary"
+              @click="router.push(`/problems/new?team_id=${team.id}`)"
+            >＋ 创建题目</button>
+          </div>
+          <div v-if="problemsLoading" class="empty small">加载中...</div>
+          <div v-else-if="teamProblems.length === 0" class="empty small">
+            还没有团队题目，点击右上角「创建题目」出第一道题（编号自动分配 T 系列）
+          </div>
+          <div v-else class="team-problem-list">
+            <div
+              v-for="p in teamProblems"
+              :key="p.id"
+              class="team-problem-item"
+              @click="router.push(`/problem/${p.problem_number}`)"
+            >
+              <span class="prob-no">{{ p.problem_number }}</span>
+              <span class="prob-title">{{ p.title }}</span>
+              <span class="prob-stats">{{ p.solved_count }} / {{ p.submit_count }}</span>
+              <span class="diff-badge" :style="{ background: difficultyColor(p.difficulty) }">{{ p.difficulty }}</span>
             </div>
           </div>
         </div>
@@ -426,6 +479,15 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .form-error { color: var(--primary); font-size: 13px; margin-top: 10px; }
 .modal-footer { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f2f5; }
 .modal-footer.three .spacer { flex: 1; }
+
+.prob-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.team-problem-list { display: flex; flex-direction: column; gap: 8px; }
+.team-problem-item { display: flex; align-items: center; gap: 12px; background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
+.team-problem-item:hover { border-color: #f0b6b0; background: #fff8f7; }
+.prob-no { font-weight: 700; color: #e74c3c; font-size: 14px; min-width: 48px; }
+.prob-title { flex: 1; color: #2c3e50; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prob-stats { color: #8e9aaf; font-size: 13px; }
+.diff-badge { color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 4px; font-weight: 600; }
 
 .request-list { max-height: 320px; overflow-y: auto; }
 .request-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }

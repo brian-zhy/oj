@@ -188,6 +188,40 @@ async def create_team(
     return _team_dict(team, 1, current_user)
 
 
+@router.get("/{team_id}/problems", summary="团队私有题库（成员可见）")
+async def list_team_problems(
+    team_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional),
+) -> list[dict]:
+    from app.models.problem import Problem
+    from app.services.problem import ProblemService
+
+    team = await _load_team(db, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="团队不存在")
+    # 团队私有题仅成员（及团队管理员）可见；管理员另有题目管理权限
+    is_member = False
+    if current_user is not None:
+        if current_user.can_manage_problems or current_user.is_super_admin:
+            is_member = True
+        elif team.owner_id == current_user.id:
+            is_member = True
+        else:
+            is_member = (await db.execute(
+                select(TeamMember.id).where(
+                    TeamMember.team_id == team_id,
+                    TeamMember.user_id == current_user.id)
+            )).scalar_one_or_none() is not None
+    if not is_member:
+        raise HTTPException(status_code=403, detail="仅团队成员可见团队题目")
+    rows = (await db.execute(
+        select(Problem).where(Problem.team_id == team_id)
+        .order_by(Problem.t_no.asc())
+    )).scalars().all()
+    return [ProblemService._dict(p) for p in rows]
+
+
 @router.get("/{team_id}", summary="团队详情")
 async def team_detail(
     team_id: int,

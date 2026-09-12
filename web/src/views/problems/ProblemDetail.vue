@@ -19,6 +19,21 @@ const loading = ref(true)
 const error = ref('')
 
 const problemId = computed(() => parseInt(route.params.id as string, 10))
+// 统一题号入口：/problem/P1001 或 /problem/T10（团队私有题）
+const problemCode = computed(() => (route.params.code as string || '').toUpperCase())
+
+const loadProblemByCode = async (code: string) => {
+  try {
+    loading.value = true
+    error.value = ''
+    problem.value = await problemsApi.getByCode(code)
+  } catch (err: any) {
+    error.value = err.response?.data?.detail || err.message || '加载失败'
+    problem.value = null
+  } finally {
+    loading.value = false
+  }
+}
 
 const descriptionHtml = computed(() =>
   problem.value ? renderRichText(problem.value.description) : ''
@@ -58,7 +73,11 @@ const loadProblem = async () => {
 }
 
 watch(problemId, loadProblem)
-onMounted(loadProblem)
+watch(problemCode, (code) => { if (code) loadProblemByCode(code) })
+onMounted(() => {
+  if (problemCode.value) loadProblemByCode(problemCode.value)
+  else loadProblem()
+})
 </script>
 
 <template>

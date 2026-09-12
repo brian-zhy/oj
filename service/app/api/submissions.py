@@ -13,6 +13,7 @@ from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.problem import Problem
 from app.models.submission import Submission, TestCase
+from app.models.team import Team, TeamMember
 from app.models.user import User
 from app.schemas.submission import SubmissionCreate, TestCaseCreate
 from app.services.judge import judge_submission
@@ -30,6 +31,71 @@ def _require_problem_manage(user: User) -> None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="需要题目管理权限"
         )
+
+
+async def _is_team_admin(db: AsyncSession, team_id: int, user: User) -> bool:
+    """当前用户是否为该团队的团主/团队管理员。"""
+    if user.is_super_admin:
+        return True
+    is_owner = (await db.execute(
+        select(Team.id).where(Team.id == team_id, Team.owner_id == user.id)
+    )).scalar_one_or_none()
+    if is_owner is not None:
+        return True
+    return (await db.execute(
+        select(TeamMember.id).where(
+            TeamMember.team_id == team_id,
+            TeamMember.user_id == user.id,
+            TeamMember.role == "admin",
+        )
+    )).scalar_one_or_none() is not None
+
+
+async def _require_team_member_for_problem(
+    db: AsyncSession, problem: Problem, user: User
+) -> None:
+    """团队私有题仅团队成员可见/可提交，非成员按不存在处理。"""
+    if problem.team_id is None or _can_manage(user):
+        return
+    if await _is_team_admin(db, problem.team_id, user):
+        return
+    row = (await db.execute(
+        select(TeamMember.id).where(
+            TeamMember.team_id == problem.team_id,
+            TeamMember.user_id == user.id)
+    )).scalar_one_or_none()
+    if row is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
+        )
+
+
+async def _require_manage_for_problem(
+    db: AsyncSession, problem: Problem, user: User
+) -> None:
+    """题目管理权：主题库题要题目管理权限；团队题团队管理员亦可。
+
+    非团队成员按不存在处理（404 防探测）；成员但非管理员 403。
+    """
+    if problem.team_id is None:
+        _require_problem_manage(user)
+        return
+    if _can_manage(user):
+        return
+    if await _is_team_admin(db, problem.team_id, user):
+        return
+    member = (await db.execute(
+        select(TeamMember.id).where(
+            TeamMember.team_id == problem.team_id,
+            TeamMember.user_id == user.id)
+    )).scalar_one_or_none()
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
+        )
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, detail="需要团队管理权限"
+    )
 
 
 def _is_staff(user: User) -> bool:
@@ -108,6 +174,8 @@ async def create_submission(
         not problem.is_public and not _can_manage(current_user)
     ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    # 团队私有题仅成员可提交
+    await _require_team_member_for_problem(db, problem, current_user)
     if current_user.is_banned:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="被封禁用户不能提交评测"
@@ -233,7 +301,10 @@ async def list_test_cases(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[dict]:
-    _require_problem_manage(current_user)
+    problem = await _load_problem(db, problem_id)
+    if problem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    await _require_manage_for_problem(db, problem, current_user)
     rows = (await db.execute(
         select(TestCase).where(TestCase.problem_id == problem_id)
         .order_by(TestCase.sort_order.asc(), TestCase.id.asc())
@@ -256,10 +327,10 @@ async def create_test_case(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    _require_problem_manage(current_user)
     problem = await _load_problem(db, problem_id)
     if problem is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    await _require_manage_for_problem(db, problem, current_user)
     count = (await db.execute(
         select(sa_func.count()).select_from(TestCase).where(
             TestCase.problem_id == problem_id)
@@ -292,7 +363,10 @@ async def delete_test_case(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    _require_problem_manage(current_user)
+    problem = await _load_problem(db, problem_id)
+    if problem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    await _require_manage_for_problem(db, problem, current_user)
     tc = (await db.execute(
         select(TestCase).where(
             TestCase.id == case_id, TestCase.problem_id == problem_id)

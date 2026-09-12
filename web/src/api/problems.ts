@@ -28,6 +28,11 @@ export const problemsApi = {
     return apiClient.get(`/api/problems/${id}`)
   },
 
+  // 按统一题号访问（P1001 / T10）
+  async getByCode(code: string): Promise<Problem> {
+    return apiClient.get(`/api/problems/by-code/${encodeURIComponent(code)}`)
+  },
+
   // 去重后的来源列表（筛选下拉用）
   async sources(): Promise<string[]> {
     return apiClient.get('/api/problems/sources')
