@@ -87,6 +87,13 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    // 我所在团队的全部题目（T 系列私有题汇总）
+    path: '/team/problems',
+    name: 'TeamProblemsAll',
+    component: () => import('@/views/teams/TeamProblems.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/user/notification',
     name: 'Notifications',
     component: () => import('@/views/Notifications.vue'),

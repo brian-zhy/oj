@@ -300,11 +300,14 @@ const handleRequest = async (userId: number, approve: boolean) => {
         <div v-else-if="activeTab === '题目'" class="card body-card">
           <div class="prob-head">
             <h4 class="section-title">团队题目 <span class="member-count">（{{ teamProblems.length }} 道）</span></h4>
-            <button
-              v-if="team.is_team_admin"
-              class="btn-primary"
-              @click="router.push(`/problems/new?team_id=${team.id}`)"
-            >＋ 创建题目</button>
+            <div class="prob-head-actions">
+              <router-link to="/team/problems" class="view-all">查看全部团队题目 →</router-link>
+              <button
+                v-if="team.is_team_admin"
+                class="btn-primary"
+                @click="router.push(`/problems/new?team_id=${team.id}`)"
+              >＋ 创建题目</button>
+            </div>
           </div>
           <div v-if="problemsLoading" class="empty small">加载中...</div>
           <div v-else-if="teamProblems.length === 0" class="empty small">
@@ -481,6 +484,9 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 .modal-footer.three .spacer { flex: 1; }
 
 .prob-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.prob-head-actions { display: flex; align-items: center; gap: 14px; }
+.view-all { color: var(--primary); font-size: 13px; text-decoration: none; }
+.view-all:hover { text-decoration: underline; }
 .team-problem-list { display: flex; flex-direction: column; gap: 8px; }
 .team-problem-item { display: flex; align-items: center; gap: 12px; background: #fafafa; border: 1px solid #e8e8e8; border-radius: 8px; padding: 10px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
 .team-problem-item:hover { border-color: #f0b6b0; background: #fff8f7; }

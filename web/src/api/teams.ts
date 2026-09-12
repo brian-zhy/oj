@@ -83,6 +83,11 @@ export const teamsApi = {
     return apiClient.get(`/api/teams/${id}/problems`)
   },
 
+  // 我所在团队的全部题目（T 编号倒序，带团队名）
+  async myProblems(): Promise<{ items: (TeamProblemItem & { team_name: string })[] }> {
+    return apiClient.get('/api/teams/my/problems')
+  },
+
   async approveRequest(teamId: number, userId: number): Promise<{ success: boolean }> {
     return apiClient.post(`/api/teams/${teamId}/requests/${userId}/approve`)
   },

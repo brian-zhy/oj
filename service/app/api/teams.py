@@ -188,6 +188,34 @@ async def create_team(
     return _team_dict(team, 1, current_user)
 
 
+@router.get("/my/problems", summary="我所在团队的全部题目（T 系列）")
+async def list_my_team_problems(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """当前用户所在（创建/加入）的所有团队的私有题汇总，按 T 编号倒序。"""
+    from app.models.problem import Problem
+    from app.services.problem import ProblemService
+
+    member_team_ids = (await db.execute(
+        select(TeamMember.team_id).where(TeamMember.user_id == current_user.id)
+    )).scalars().all()
+    owned_team_ids = (await db.execute(
+        select(Team.id).where(Team.owner_id == current_user.id)
+    )).scalars().all()
+    team_ids = set(member_team_ids) | set(owned_team_ids)
+    if not team_ids:
+        return {"items": []}
+    rows = (await db.execute(
+        select(Problem, Team.name).join(Team, Problem.team_id == Team.id)
+        .where(Problem.team_id.in_(team_ids))
+        .order_by(Problem.t_no.desc())
+    )).all()
+    return {
+        "items": [{**ProblemService._dict(p), "team_name": name} for p, name in rows]
+    }
+
+
 @router.get("/{team_id}/problems", summary="团队私有题库（成员可见）")
 async def list_team_problems(
     team_id: int,
