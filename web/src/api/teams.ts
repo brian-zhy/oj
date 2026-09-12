@@ -85,6 +85,10 @@ export const teamsApi = {
     return apiClient.delete(`/api/teams/${id}`)
   },
 
+  async transfer(teamId: number, userId: number): Promise<{ success: boolean }> {
+    return apiClient.post(`/api/teams/${teamId}/transfer/${userId}`)
+  },
+
   async updateMember(
     teamId: number,
     userId: number,

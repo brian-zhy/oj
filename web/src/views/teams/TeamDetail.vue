@@ -137,6 +137,22 @@ const removeMember = async () => {
   }
 }
 
+const transferTeam = async () => {
+  if (!manageTarget.value || !team.value) return
+  const name = manageTarget.value.user.username
+  if (!confirm(`确定把团队「${team.value.name}」转让给 ${name} 吗？\n转让后你将变为普通成员，此操作不可撤销。`)) return
+  manageSaving.value = true
+  try {
+    await teamsApi.transfer(team.value.id, manageTarget.value.user_id)
+    showManage.value = false
+    await load()
+  } catch (err: any) {
+    manageError.value = err.response?.data?.detail || '转让失败'
+  } finally {
+    manageSaving.value = false
+  }
+}
+
 // ===== 入队申请审核 =====
 const showRequests = ref(false)
 const requestItems = ref<TeamJoinRequestItem[]>([])
@@ -322,6 +338,12 @@ const handleRequest = async (userId: number, approve: boolean) => {
             </div>
             <div class="modal-footer three">
               <button class="btn-danger-outline" :disabled="manageSaving" @click="removeMember">移出团队</button>
+              <button
+                v-if="team?.is_owner"
+                class="btn-danger-outline"
+                :disabled="manageSaving"
+                @click="transferTeam"
+              >转让团队</button>
               <span class="spacer"></span>
               <button class="btn-secondary" @click="showManage = false">取消</button>
               <button class="btn-primary" :disabled="manageSaving" @click="saveManage">
