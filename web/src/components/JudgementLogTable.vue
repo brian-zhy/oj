@@ -56,7 +56,7 @@ function formatTime(iso: string): string {
   }
 }
 
-const COLOR_RED = '#e74c3c'
+const COLOR_RED = 'var(--primary)'
 const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 const COLOR_BANNED = '#95a5a6'
@@ -400,7 +400,7 @@ onUnmounted(() => {
 }
 
 .lcolor--red-3 {
-  color: #e74c3c;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -487,8 +487,8 @@ onUnmounted(() => {
 }
 
 #load-more:hover:not(:disabled) {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
@@ -503,7 +503,7 @@ onUnmounted(() => {
   width: 18px;
   height: 18px;
   border: 2px solid #e2e8f0;
-  border-top-color: #e74c3c;
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -527,7 +527,7 @@ onUnmounted(() => {
   position: fixed;
   bottom: 30px;
   right: 30px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 50%;
@@ -541,7 +541,7 @@ onUnmounted(() => {
 }
 
 #back-to-top:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
   transform: scale(1.1);
 }
 

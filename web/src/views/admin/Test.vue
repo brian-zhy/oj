@@ -66,7 +66,7 @@ li {
 }
 
 a {
-  color: #e74c3c;
+  color: var(--primary);
   text-decoration: none;
 }
 

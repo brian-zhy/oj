@@ -143,7 +143,7 @@ const submit = async () => {
 }
 
 .required {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .forum-grid {
@@ -178,7 +178,7 @@ const submit = async () => {
 }
 
 .forum-card.selected {
-  border-color: #e74c3c;
+  border-color: var(--primary);
   background: #fdf1ef;
 }
 
@@ -206,7 +206,7 @@ const submit = async () => {
 }
 
 .title-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .content-input {
@@ -223,12 +223,12 @@ const submit = async () => {
 }
 
 .content-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .error-tip {
   margin-top: 14px;
-  color: #e74c3c;
+  color: var(--primary);
   font-size: 13px;
 }
 
@@ -250,7 +250,7 @@ const submit = async () => {
 
 .btn-submit {
   padding: 10px 34px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 24px;
@@ -260,7 +260,7 @@ const submit = async () => {
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-submit:disabled {

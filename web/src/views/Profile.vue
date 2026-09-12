@@ -275,7 +275,7 @@ onMounted(() => {
                 v-model="profileForm.username_color"
                 type="text"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="#e74c3c"
+                placeholder="var(--primary)"
               />
             </div>
 

@@ -220,13 +220,13 @@ onMounted(() => {
 }
 
 .btn-ghost:hover {
-  border-color: #e74c3c;
-  color: #e74c3c;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .btn-submit {
   padding: 8px 26px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -236,7 +236,7 @@ onMounted(() => {
 }
 
 .btn-submit:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-submit:disabled {

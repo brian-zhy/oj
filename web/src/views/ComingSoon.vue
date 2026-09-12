@@ -75,7 +75,7 @@ const path = computed(() => route.path)
 
 .btn-home {
   padding: 9px 26px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 22px;
@@ -85,7 +85,7 @@ const path = computed(() => route.path)
 }
 
 .btn-home:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-back {

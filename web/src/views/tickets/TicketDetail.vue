@@ -444,11 +444,11 @@ onMounted(() => loadTicket())
 }
 
 .error-text {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .closed-tip .link {
-  color: #e74c3c;
+  color: var(--primary);
   margin: 0 4px;
 }
 
@@ -602,7 +602,7 @@ onMounted(() => loadTicket())
 
 .btn-status {
   padding: 7px 18px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 18px;
@@ -743,7 +743,7 @@ onMounted(() => loadTicket())
 }
 
 .reply-item.staff {
-  border-left: 3px solid #e74c3c;
+  border-left: 3px solid var(--primary);
 }
 
 .reply-head {
@@ -769,7 +769,7 @@ onMounted(() => loadTicket())
 }
 
 .staff-badge {
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   font-size: 11px;
   padding: 1px 8px;
@@ -818,7 +818,7 @@ onMounted(() => loadTicket())
 }
 
 .reply-textarea:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .reply-actions {
@@ -828,7 +828,7 @@ onMounted(() => loadTicket())
 
 .btn-submit {
   padding: 8px 28px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 20px;
@@ -857,7 +857,7 @@ onMounted(() => loadTicket())
 }
 
 .btn-back:hover {
-  color: #e74c3c;
-  border-color: #e74c3c;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 </style>

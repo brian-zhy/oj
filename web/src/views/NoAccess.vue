@@ -77,7 +77,7 @@ const from = computed(() => (route.query.from as string) || '')
 
 .btn-home {
   padding: 9px 26px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 22px;
@@ -87,7 +87,7 @@ const from = computed(() => (route.query.from as string) || '')
 }
 
 .btn-home:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .btn-back {

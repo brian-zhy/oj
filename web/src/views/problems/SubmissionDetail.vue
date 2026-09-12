@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
               <tbody>
                 <tr v-for="r in sub.test_results" :key="r.case">
                   <td>#{{ r.case }}</td>
-                  <td :style="{ color: r.status === 'accepted' ? '#52c41a' : '#e74c3c', fontWeight: 600 }">
+                  <td :style="{ color: r.status === 'accepted' ? '#52c41a' : 'var(--primary)', fontWeight: 600 }">
                     {{ caseStatusText(r.status) }}
                   </td>
                   <td>{{ r.time }} ms</td>
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
   font-size: 1.02rem;
   font-weight: 700;
   color: #2c3e50;
-  border-left: 4px solid #e74c3c;
+  border-left: 4px solid var(--primary);
   padding-left: 10px;
   margin-bottom: 14px;
 }
@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
 }
 
 .error-title {
-  color: #e74c3c;
+  color: var(--primary);
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 6px;
@@ -265,7 +265,7 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   word-break: break-all;
   font-size: 12px;
-  color: #c0392b;
+  color: var(--primary-hover);
   max-height: 300px;
   overflow-y: auto;
 }
@@ -314,8 +314,8 @@ onBeforeUnmount(() => {
 }
 
 .btn-back:hover {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 </style>

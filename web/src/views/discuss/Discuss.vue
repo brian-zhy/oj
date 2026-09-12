@@ -232,7 +232,7 @@ onMounted(() => loadPosts(false))
 
 .btn-new {
   padding: 9px 22px;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 24px;
@@ -243,7 +243,7 @@ onMounted(() => loadPosts(false))
 }
 
 .btn-new:hover {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .forum-tabs {
@@ -265,8 +265,8 @@ onMounted(() => loadPosts(false))
 }
 
 .forum-tab.active {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 
@@ -351,7 +351,7 @@ onMounted(() => loadPosts(false))
 }
 
 .post-card:hover .post-title {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .post-meta {
@@ -398,7 +398,7 @@ onMounted(() => loadPosts(false))
 }
 
 .post-delete:hover {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .empty {
@@ -425,8 +425,8 @@ onMounted(() => loadPosts(false))
 }
 
 .btn-more:hover:not(:disabled) {
-  background: #e74c3c;
-  border-color: #e74c3c;
+  background: var(--primary);
+  border-color: var(--primary);
   color: #fff;
 }
 </style>

@@ -480,7 +480,7 @@ onMounted(() => {
 
 /* 头部 */
 .profile-header {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   padding: 32px;
   color: white;
   display: flex;
@@ -607,7 +607,7 @@ onMounted(() => {
 .btn-edit {
   padding: 8px 16px;
   background: white;
-  color: #e74c3c;
+  color: var(--primary);
   border: none;
   border-radius: 20px;
   font-size: 14px;
@@ -630,7 +630,7 @@ onMounted(() => {
 .btn-save {
   padding: 8px 16px;
   background: white;
-  color: #e74c3c;
+  color: var(--primary);
   border: none;
   border-radius: 20px;
   font-size: 14px;
@@ -746,7 +746,7 @@ onMounted(() => {
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #e74c3c;
+  border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
@@ -798,7 +798,7 @@ onMounted(() => {
 .stat-value {
   font-size: 32px;
   font-weight: 700;
-  color: #e74c3c;
+  color: var(--primary);
   margin-bottom: 8px;
 }
 
@@ -824,8 +824,8 @@ onMounted(() => {
 .btn-change-password {
   padding: 8px 20px;
   background: white;
-  color: #e74c3c;
-  border: 1px solid #e74c3c;
+  color: var(--primary);
+  border: 1px solid var(--primary);
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;

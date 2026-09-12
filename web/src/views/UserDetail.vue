@@ -19,7 +19,7 @@ const loading = ref(true)
 const error = ref('')
 
 // ==================== 工具 ====================
-const COLOR_RED = '#e74c3c'
+const COLOR_RED = 'var(--primary)'
 const COLOR_PURPLE = '#9C3DCF'
 const COLOR_BROWN = '#AD8B00'
 
@@ -156,7 +156,7 @@ const pickFile = () => {
 }
 
 const onDragOver = (e: DragEvent) => {
-  ;(e.currentTarget as HTMLElement).style.borderColor = '#e74c3c'
+  ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'
 }
 
 const onDragLeave = (e: DragEvent) => {
@@ -176,7 +176,7 @@ const setFile = (file: File) => {
   } else {
     selectedFile.value = null
     uploadFeedback.value = '❌ 请选择图片文件'
-    uploadFeedbackColor.value = '#e74c3c'
+    uploadFeedbackColor.value = 'var(--primary)'
   }
 }
 
@@ -220,7 +220,7 @@ const uploadCover = async () => {
     if (!success) {
       uploading.value = false
       uploadFeedback.value = '❌ ' + (err.response?.data?.detail || '上传失败，请稍后重试')
-      uploadFeedbackColor.value = '#e74c3c'
+      uploadFeedbackColor.value = 'var(--primary)'
       return
     }
   }
@@ -446,7 +446,7 @@ onMounted(() => {
 }
 
 .error-text {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 /* ===== 用户头部（封面）===== */
@@ -571,7 +571,7 @@ onMounted(() => {
   border: none;
   cursor: pointer;
   transition: all 0.25s;
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
   font-family: inherit;
 }
@@ -671,7 +671,7 @@ onMounted(() => {
 }
 
 .slogan-editor-input {
-  border: 1px solid #e74c3c;
+  border: 1px solid var(--primary);
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 16px;
@@ -686,7 +686,7 @@ onMounted(() => {
 }
 
 .slogan-editor-input:focus {
-  border-color: #e74c3c;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
 }
 
@@ -753,12 +753,12 @@ onMounted(() => {
 }
 
 .tab-nav .tab-btn.active {
-  color: #e74c3c;
+  color: var(--primary);
   cursor: default;
 }
 
 .tab-nav .tab-btn.active::after {
-  background: #e74c3c;
+  background: var(--primary);
   width: 100%;
   left: 0;
   transform: translateX(0);
@@ -874,7 +874,7 @@ onMounted(() => {
 }
 
 .cover-upload-panel .upload-area:hover {
-  border-color: #e74c3c;
+  border-color: var(--primary);
 }
 
 .cover-upload-panel .upload-area .hint {
@@ -883,7 +883,7 @@ onMounted(() => {
 }
 
 .cover-upload-panel .upload-area .hint strong {
-  color: #e74c3c;
+  color: var(--primary);
 }
 
 .cover-upload-panel .lfe-caption {
@@ -920,12 +920,12 @@ onMounted(() => {
 }
 
 .cover-upload-panel .panel-actions .btn-upload-cover {
-  background: #e74c3c;
+  background: var(--primary);
   color: #fff;
 }
 
 .cover-upload-panel .panel-actions .btn-upload-cover:hover:not(:disabled) {
-  background: #c0392b;
+  background: var(--primary-hover);
 }
 
 .cover-upload-panel .panel-actions .btn-upload-cover:disabled {
