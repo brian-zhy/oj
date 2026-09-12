@@ -8,8 +8,8 @@
   --primary: #2a8eff;
   --primary-hover: #1a7ae0;
   */
-    --primary: #5a5aff;        /* 蓝紫折中，主色 */
-  --primary-hover: #4a4ae0;
+    --primary: #4a4ae0;        /* 原 #5a5aff 降明度，约 hsl(240, 100%, 58%) */
+  --primary-hover: #3a3ac0;  /* 再深一点，hover 用 */  
   --accent: #9c45ff;          /* 紫，点缀/渐变 */
   --success: #10b981;         /* AC 绿 */
   --danger: #ef4444;          /* WA 红 */
