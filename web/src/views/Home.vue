@@ -1087,7 +1087,7 @@ onUnmounted(() => {
 }
 
 .recent-posts-card .post-card:hover {
-  border-color: #f0a08a;
+  border-color: var(--primary);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 

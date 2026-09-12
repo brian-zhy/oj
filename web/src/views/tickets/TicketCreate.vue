@@ -243,7 +243,7 @@ const submit = async () => {
 }
 
 .category-card:hover:not(.disabled) {
-  border-color: #f0a08a;
+  border-color: var(--primary);
 }
 
 .category-card.selected {
