@@ -127,7 +127,7 @@ onMounted(() => loadPosts(false))
           <h2 class="page-title">讨论区</h2>
           <p class="page-sub">文明发言，理性讨论</p>
         </div>
-        <button class="btn-new" @click="router.push('/discuss/new')">✏️ 发布帖子</button>
+        <button class="btn-new" @click="router.push('/discuss/new')"><i class="fa-solid fa-pen"></i> 发布帖子</button>
       </div>
 
       <!-- 版块筛选 -->
@@ -157,7 +157,7 @@ onMounted(() => loadPosts(false))
           <div class="post-main">
             <div class="post-title">
               <span v-if="p.is_pinned" class="pin-badge">置顶</span>
-              <span v-if="p.is_locked" class="lock-badge">🔒</span>
+              <span v-if="p.is_locked" class="lock-badge"><i class='fa-solid fa-lock'></i></span>
               {{ p.title }}
             </div>
             <div class="post-meta">
