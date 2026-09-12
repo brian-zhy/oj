@@ -58,8 +58,8 @@ const handleLogout = async () => {
     <!-- 页脚 -->
     <footer v-if="showNav" class="page-footer">
       <div class="footer-content">
-        <p class="footer-text">© 2025 NLNOJ - 基于原项目重构</p>
-        <p class="footer-text">基于 FastAPI + Vue 3 + Tailwind CSS 构建</p>
+        <p class="footer-text">Copyright © 2026 NLNOJ</p>
+	<p class="footer-text"><a href="http://beian.miit.gov.cn/">蜀ICP备2026036126号</a></p>
       </div>
     </footer>
   </div>
@@ -74,7 +74,7 @@ const handleLogout = async () => {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

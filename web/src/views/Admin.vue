@@ -882,7 +882,7 @@ onUnmounted(() => {
 
 .admin-page {
   background: #f5f7fa;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: inherit;
   line-height: 1.5;
 }
 
