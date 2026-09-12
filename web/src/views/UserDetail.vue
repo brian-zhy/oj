@@ -69,6 +69,11 @@ const isBanned = computed(() => profile.value?.is_banned === true)
 
 // ==================== 选项卡 ====================
 const TABS = ['主页', '动态', '专栏', '练习', '关注', '我的', '题库', '收藏']
+// 「我的 / 题库 / 收藏」是本人专属标签：访问他人主页时不展示
+const PERSONAL_TABS = ['我的', '题库', '收藏']
+const visibleTabs = computed(() =>
+  isOwner.value ? TABS : TABS.filter((tab) => !PERSONAL_TABS.includes(tab))
+)
 const activeTab = ref('主页')
 const switchTab = (tab: string) => {
   activeTab.value = tab
@@ -368,7 +373,7 @@ onMounted(() => {
             <div class="profile-tabs">
               <nav class="tab-nav">
                 <button
-                  v-for="tab in TABS"
+                  v-for="tab in visibleTabs"
                   :key="tab"
                   class="tab-btn"
                   :class="{ active: activeTab === tab }"
@@ -378,8 +383,9 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- ===== 信息卡片 ===== -->
-          <div class="l-card">
+          <!-- ===== 选项卡内容 ===== -->
+          <!-- 主页：用户信息卡片 -->
+          <div v-if="activeTab === '主页'" class="l-card">
             <div class="l-flex-info-row">
               <span>用户编号</span>
               <div class="right">{{ profile.user_number }}</div>
@@ -392,6 +398,13 @@ onMounted(() => {
               <span>注册时间</span>
               <div class="right"><time :datetime="profile.created_at">{{ formatRegDate(profile.created_at) }}</time></div>
             </div>
+          </div>
+
+          <!-- 其余标签：功能尚未开发 -->
+          <div v-else class="l-card tab-placeholder">
+            <div class="placeholder-icon">🚧</div>
+            <p class="placeholder-title">本功能暂未开放</p>
+            <p class="placeholder-sub">「{{ activeTab }}」正在开发中，敬请期待</p>
           </div>
         </template>
       </template>
@@ -778,6 +791,31 @@ onMounted(() => {
   padding: 18px 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   margin-bottom: 24px;
+}
+
+/* 未开发标签的占位内容（与 ComingSoon 页文案保持一致） */
+.tab-placeholder {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.placeholder-icon {
+  font-size: 44px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.placeholder-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 6px;
+}
+
+.placeholder-sub {
+  font-size: 13px;
+  color: #8a9aa8;
+  margin: 0;
 }
 
 .l-flex-info-row {
