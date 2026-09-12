@@ -58,7 +58,7 @@ const handleLogout = async () => {
     <!-- 页脚 -->
     <footer v-if="showNav" class="page-footer">
       <div class="footer-content">
-        <p class="footer-text">Copyright © 2026 NLNOJ</p>
+        <p class="footer-text">Copyright © 2026 NLNOJ Team</p>
 	<p class="footer-text"><a href="http://beian.miit.gov.cn/">蜀ICP备2026036126号</a></p>
       </div>
     </footer>
