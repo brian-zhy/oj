@@ -174,7 +174,7 @@ const submit = async () => {
 }
 
 .forum-card:hover {
-  border-color: #f0a08a;
+  border-color: var(--primary);
 }
 
 .forum-card.selected {
