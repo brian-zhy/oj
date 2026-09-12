@@ -32,6 +32,7 @@ onMounted(() => {
       automaticLayout: true,
       minimap: { enabled: false },
       fontSize: 14,
+      fontFamily: '"JetBrains Mono", "Fira Code", Consolas, Monaco, monospace',
       lineNumbers: 'on',
       scrollBeyondLastLine: false,
       wordWrap: 'on',

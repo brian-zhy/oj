@@ -181,16 +181,14 @@ onUnmounted(() => {
           />
         </a>
         <div class="top-avatar-menu">
-          <a :href="`/user/${userNumber}`" class="top-avatar-menu-link">👤 个人主页</a>
+          <a :href="`/user/${userNumber}`" class="top-avatar-menu-link">个人主页</a>
           <button @click="handleLogout" class="auth-btn logout">登出</button>
         </div>
       </div>
 
       <!-- 通知铃铛 -->
       <a href="/user/notification" class="bell-icon">
-        <svg viewBox="0 0 448 512" width="20" height="20">
-          <path fill="currentColor" d="M224 0c-13.3 0-24 10.7-24 24l0 9.7C118.6 45.3 56 115.4 56 200l0 14.5c0 37.7-10 74.7-29 107.3L5.1 359.2C1.8 365 0 371.5 0 378.2 0 399.1 16.9 416 37.8 416l372.4 0c20.9 0 37.8-16.9 37.8-37.8 0-6.7-1.8-13.3-5.1-19L421 321.7c-19-32.6-29-69.6-29-107.3l0-14.5c0-84.6-62.6-154.7-144-166.3l0-9.7c0-13.3-10.7-24-24-24zM392.4 368l-336.9 0 12.9-22.1C91.7 306 104 260.6 104 214.5l0-14.5c0-66.3 53.7-120 120-120s120 53.7 120 120l0 14.5c0 46.2 12.3 91.5 35.5 131.4L392.4 368zM156.1 464c9.9 28 36.6 48 67.9 48s58-20 67.9-48l-135.8 0z"></path>
-        </svg>
+        <i class='fa-solid fa-bell'></i>
         <sup v-if="unreadCount > 0" class="bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</sup>
       </a>
 
@@ -200,7 +198,7 @@ onUnmounted(() => {
         to="/admin/user"
         class="admin-gear"
         title="进入管理后台"
-      >⚙️</router-link>
+      ><i class='fa-solid fa-gear'></i></router-link>
     </div>
   </div>
 </template>
@@ -217,7 +215,7 @@ onUnmounted(() => {
   position: sticky;
   top: 0;
   z-index: 200;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: inherit;
 }
 
 .logo {
