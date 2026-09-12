@@ -162,7 +162,7 @@ const goToLogin = () => {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: inherit;
 }
 
 /* 卡片容器 */
