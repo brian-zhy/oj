@@ -577,9 +577,12 @@ onUnmounted(() => {
         <div class="lg-punch">
           <!-- 广告轮播位（暂无广告数据） -->
           <div class="ad-col">
+            <img src="/welcome.png">
+            <!--
             <div class="ad-placeholder">
               <span>没有更多广告了</span>
             </div>
+          -->
           </div>
 
           <!-- 打卡/运势面板 -->
