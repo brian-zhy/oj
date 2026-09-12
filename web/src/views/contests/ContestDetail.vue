@@ -125,9 +125,9 @@ const userColor = (u: Record<string, any>) => userNameColor(u)
           </div>
           <div v-if="contest.description" class="c-desc">{{ contest.description }}</div>
           <div class="c-meta">
-            <span>⏱ {{ fmt(contest.start_time) }} ~ {{ fmt(contest.end_time) }}</span>
-            <span>📋 {{ contest.problem_count }} 题</span>
-            <span>👥 {{ contest.participant_count }} 人报名</span>
+            <span><i class="fa-solid fa-stopwatch"></i> {{ fmt(contest.start_time) }} ~ {{ fmt(contest.end_time) }}</span>
+            <span><i class="fa-solid fa-clipboard-list"></i> {{ contest.problem_count }} 题</span>
+            <span><i class="fa-solid fa-user-group"></i> {{ contest.participant_count }} 人报名</span>
             <span>发起人：<b>{{ contest.owner.username }}</b></span>
             <span>赛制：ACM（通过数优先，罚时其次）</span>
           </div>
