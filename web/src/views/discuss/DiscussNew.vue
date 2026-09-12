@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -97,13 +98,11 @@ const submit = async () => {
       >
 
       <div class="section-label">正文 <span class="required">*</span></div>
-      <textarea
+      <MarkdownSplitEditor
         v-model="content"
-        class="content-input"
-        rows="10"
-        placeholder="支持简单 Markdown：**粗体**、*斜体*、```代码块```、@提及"
-        maxlength="20000"
-      ></textarea>
+        height="360px"
+        placeholder="支持 Markdown：**粗体**、*斜体*、```代码块```、@提及 等"
+      />
 
       <div v-if="error" class="error-tip">❌ {{ error }}</div>
 
