@@ -289,6 +289,44 @@ async def leave_team(
     return {"success": True}
 
 
+@router.post("/{team_id}/transfer/{user_id}", summary="转让团队（仅团主）")
+async def transfer_team(
+    team_id: int,
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """把团队所有权转给指定成员。
+
+    数据模型约束：owner 不在 team_members 表（成员列表渲染时拼入），
+    因此转让 = 新团主从成员表移出 + 原团主以普通成员身份写入成员表。
+    """
+    team = await _load_team(db, team_id)
+    if team is None:
+        raise HTTPException(status_code=404, detail="团队不存在")
+    if team.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="仅团队主可以转让团队")
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="不能转让给自己")
+    target = (await db.execute(
+        select(TeamMember).where(
+            TeamMember.team_id == team_id, TeamMember.user_id == user_id)
+    )).scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=400, detail="对方不是团队成员")
+
+    old_owner_id = team.owner_id
+    team.owner_id = user_id
+    # 新团主移出成员表（owner 不在成员表）；原团主降为普通成员
+    await db.delete(target)
+    db.add(TeamMember(team_id=team_id, user_id=old_owner_id, role="member"))
+    _notify(db, user_id,
+            f"{current_user.username} 已将团队「{team.name}」转让给你，你现在是团队主",
+            actor_id=current_user.id)
+    await db.commit()
+    return {"success": True}
+
+
 @router.delete("/{team_id}", summary="解散团队")
 async def dissolve_team(
     team_id: int,
