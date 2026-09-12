@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import Boolean, ForeignKey, Integer, JSON, String, Text, text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 
@@ -67,8 +67,17 @@ class Problem(Base, TimestampMixin):
         Integer, ForeignKey("teams.id", ondelete="CASCADE"),
         index=True, nullable=True,
     )
-    # 团队题全局序号（跨团队共用 team_problem_tno_seq 序列，如 T1、T10）
+    # 团队题全局序号（跨团队共用序列，如 T1、T10）
     t_no: Mapped[int | None] = mapped_column(Integer, nullable=True, unique=True)
+
+    # 出题人（存量题可能为 NULL）
+    author_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"),
+        index=True, nullable=True,
+    )
+    author: Mapped["User | None"] = relationship(  # noqa: F821
+        "User", foreign_keys=[author_id], lazy="joined"
+    )
 
     # 题号不落库：主题库 P1000 风格；团队题 T{n} 风格
     @property

@@ -66,6 +66,22 @@ export interface ProblemSample {
 // 题库列表中当前用户对某题的完成状态：已通过 / 提交过但未通过 / 从未提交
 export type ProblemUserStatus = 'accepted' | 'attempted' | null
 
+// 出题人简要信息（含全站配色判定字段；存量题可能为 null）
+export interface ProblemAuthor {
+  user_id: number
+  username: string
+  user_tag: string
+  is_admin: boolean
+  is_super_admin: boolean
+  is_banned: boolean
+  is_cheater: boolean
+  can_manage_users: boolean
+  can_manage_posts: boolean
+  can_manage_problems: boolean
+  user_number: number | null
+  avatar_url: string
+}
+
 export interface Problem {
   id: number
   problem_number: string
@@ -73,6 +89,7 @@ export interface Problem {
   difficulty: ProblemDifficulty
   source: string | null
   tags: string[]
+  author?: ProblemAuthor | null
   description: string
   background: string
   input_format: string
