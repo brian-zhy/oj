@@ -269,7 +269,7 @@ onMounted(loadProblem)
                 <textarea v-model="s.output" class="md-textarea plain" rows="4" placeholder="样例输出"></textarea>
               </div>
             </div>
-            <button class="btn-ghost add-sample" @click="addSample">＋ 添加样例组</button>
+            <button class="btn-ghost add-sample" @click="addSample"><i class="fa-solid fa-plus"></i> 添加样例组</button>
           </div>
         </div>
 
@@ -295,7 +295,7 @@ onMounted(loadProblem)
                 <textarea v-model="newCase.input_data" class="md-textarea plain" rows="3" placeholder="测试点输入"></textarea>
                 <textarea v-model="newCase.expected_output" class="md-textarea plain" rows="3" placeholder="期望输出"></textarea>
               </div>
-              <button class="btn-ghost add-sample" @click="addCase">＋ 添加测试点</button>
+              <button class="btn-ghost add-sample" @click="addCase"><i class="fa-solid fa-plus"></i> 添加测试点</button>
             </div>
           </template>
           <p v-else class="tc-tip">题目创建后即可在这里添加评测测试点。</p>

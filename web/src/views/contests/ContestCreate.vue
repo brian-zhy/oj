@@ -125,7 +125,7 @@ onMounted(() => {
           <span class="row-label">举办者</span>
           <div class="row-value">
             <span class="owner-name" :style="{ color: userNameColor(me) }">{{ me?.username }}</span>
-            <span class="owner-check">✔</span>
+            <span class="owner-check"><i class="fa-solid fa-circle-check"></i></span>
           </div>
         </div>
 
@@ -205,7 +205,7 @@ onMounted(() => {
                 <span class="picked-title">{{ p.title }}</span>
                 <button class="mini-btn" title="上移" :disabled="i === 0" @click="moveProblem(i, -1)">↑</button>
                 <button class="mini-btn" title="下移" :disabled="i === picked.length - 1" @click="moveProblem(i, 1)">↓</button>
-                <button class="mini-btn danger" title="移除" @click="removeProblem(p.code)">✕</button>
+                <button class="mini-btn danger" title="移除" @click="removeProblem(p.code)"><i class="fa-solid fa-xmark"></i></button>
               </div>
             </div>
             <div class="hint">按顺序作为比赛内的 A / B / C / D…（当前 {{ picked.length }} 道）</div>

@@ -114,7 +114,7 @@ onMounted(async () => {
           <div class="p-limits">
             <span>时间限制：<b>{{ problem.time_limit }} ms</b></span>
             <span>内存限制：<b>{{ problem.memory_limit }} MB</b></span>
-            <span v-if="contestId" class="contest-tag">🏆 比赛模式：本次提交计入比赛成绩</span>
+            <span v-if="contestId" class="contest-tag"><i class="fa-solid fa-trophy"></i> 比赛模式：本次提交计入比赛成绩</span>
           </div>
         </div>
 

@@ -306,7 +306,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
                 v-if="team.is_team_admin"
                 class="btn-primary"
                 @click="router.push(`/problems/new?team_id=${team.id}`)"
-              >＋ 创建题目</button>
+              ><i class="fa-solid fa-plus"></i> 创建题目</button>
             </div>
           </div>
           <div v-if="problemsLoading" class="empty small">加载中...</div>
@@ -337,7 +337,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
           <div class="modal-box">
             <div class="modal-header">
               <h3>入队申请（{{ requestItems.length }}）</h3>
-              <button class="modal-close" @click="showRequests = false">✕</button>
+              <button class="modal-close" @click="showRequests = false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div v-if="requestsLoading" class="empty small">加载中...</div>
             <div v-else-if="requestsError" class="form-error">{{ requestsError }}</div>
@@ -364,7 +364,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
           <div class="modal-box">
             <div class="modal-header">
               <h3>成员信息</h3>
-              <button class="modal-close" @click="showManage = false">✕</button>
+              <button class="modal-close" @click="showManage = false"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body" v-if="manageTarget">
               <div class="field-row">

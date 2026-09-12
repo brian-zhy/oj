@@ -271,7 +271,7 @@ onMounted(() => loadTicket())
 
           <div class="head-meta">
             <span v-if="ticket.is_public">🌐 公开工单（登录用户可见）</span>
-            <span v-else>🔒 私密工单（仅创建者与管理员可见）</span>
+            <span v-else><i class="fa-solid fa-lock"></i> 私密工单（仅创建者与管理员可见）</span>
           </div>
 
         </div>
