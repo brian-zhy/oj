@@ -45,15 +45,16 @@ const onSidebarLeave = () => {
 </script>
 
 <template>
-  <!-- 移动端专用：默认收起菜单，点这个小按钮才展开 -->
+  <!-- 移动端专用：默认收起菜单，点右下角的圆形悬浮按钮展开 -->
   <button
     type="button"
     class="mobile-menu-toggle"
     :aria-expanded="mobileMenuOpen"
+    :aria-label="mobileMenuOpen ? '收起菜单' : '展开菜单'"
+    :title="mobileMenuOpen ? '收起菜单' : '展开菜单'"
     @click="mobileMenuOpen = !mobileMenuOpen"
   >
     <i :class="mobileMenuOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars'"></i>
-    {{ mobileMenuOpen ? '收起菜单' : '展开菜单' }}
   </button>
 
   <div
@@ -552,40 +553,37 @@ const onSidebarLeave = () => {
 
 /* 响应式适配 */
 @media (max-width: 768px) {
-  /* 悬浮开关：水平居中固定在顶栏中部（顶栏中间本就是空的），脱离文档流，
-     展开/收起时始终可点 */
+  /* 右下角圆形悬浮按钮（无文字，仅图标）；脱离文档流，展开/收起时始终可点 */
   .mobile-menu-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
     position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 20px;
+    /* 叠加 iOS 底部安全区，避免被 Home Indicator 压住 */
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     z-index: 410;
-    padding: 7px 14px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid #e5e7eb;
-    border-radius: 20px;
-    color: #2c3e50;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.2;
-    white-space: nowrap;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    background: var(--primary);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 19px;
+    line-height: 1;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-    transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
+    transition: transform 0.18s, box-shadow 0.18s;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .mobile-menu-toggle:hover,
-  .mobile-menu-toggle[aria-expanded='true'] {
-    color: var(--primary);
-    border-color: var(--primary);
+  .mobile-menu-toggle:hover {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
   }
 
   .mobile-menu-toggle:active {
-    transform: translateX(-50%) scale(0.94);
+    transform: scale(0.92);
   }
 
   /* 全屏悬浮菜单：脱离文档流浮在整页之上（不再把正文挤下去），
@@ -598,7 +596,7 @@ const onSidebarLeave = () => {
     bottom: 0;
     width: 100%;
     height: 100%;
-    padding: 58px 0 24px;      /* 顶部留出悬浮按钮的位置 */
+    padding: 24px 0 88px;      /* 底部留出右下角悬浮按钮的位置，避免遮挡最后一项 */
     background: #fff;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
     border-bottom: none;
@@ -679,11 +677,13 @@ const onSidebarLeave = () => {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  /* 窄屏把悬浮开关收得更紧凑，避免与顶栏 logo / 登录按钮挤在一起 */
+  /* 窄屏把悬浮按钮略微收小 */
   .mobile-menu-toggle {
-    gap: 4px;
-    padding: 5px 12px;
-    font-size: 12px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: 48px;
+    height: 48px;
+    font-size: 17px;
   }
 
   .nav-icon {
