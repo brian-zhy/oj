@@ -33,15 +33,23 @@ interface Props {
   language: string
   readonly?: boolean
   height?: string
+  /** 是否显示「载入文件」按钮（只读模式下忽略） */
+  loadable?: boolean
+  /** 载入文件时的字符上限，超出则拒绝载入（0 表示不限制） */
+  maxChars?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   readonly: false,
   height: '400px',
+  loadable: false,
+  maxChars: 0,
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
+  (e: 'load', payload: { name: string; chars: number }): void
+  (e: 'load-error', message: string): void
 }>()
 
 const host = ref<HTMLDivElement | null>(null)
@@ -175,6 +183,70 @@ async function handleCopy() {
   }, 1600)
 }
 
+/* ---------------- 载入本地文件 ---------------- */
+
+const ACCEPT =
+  '.c,.cc,.cpp,.cxx,.h,.hh,.hpp,.hxx,.py,.py3,.java,.js,.ts,.go,.rs,.pas,.txt'
+const MAX_FILE_BYTES = 5 * 1024 * 1024
+
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function pickFile() {
+  fileInput.value?.click()
+}
+
+/**
+ * 解码文件内容。
+ * 浏览器默认按 UTF-8 解码，但 Windows 下保存的 .cpp 常见 GBK/GB2312 编码，
+ * 当 UTF-8 读会变乱码 —— 以替换字符 U+FFFD 作为判定信号，再试中文编码。
+ */
+async function decodeFile(file: File): Promise<string> {
+  const buf = await file.arrayBuffer()
+  const utf8 = new TextDecoder('utf-8').decode(buf)
+  if (!utf8.includes('\uFFFD')) return utf8
+
+  // gb18030 是 GBK/GB2312 的超集，big5 覆盖繁体中文
+  for (const enc of ['gb18030', 'big5']) {
+    try {
+      const text = new TextDecoder(enc).decode(buf)
+      if (!text.includes('\uFFFD')) return text
+    } catch {
+      /* 浏览器不支持该编码标签，继续尝试下一个 */
+    }
+  }
+  return utf8
+}
+
+async function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  // 复位，保证连续选择同一个文件也能再次触发 change
+  input.value = ''
+  if (!file) return
+
+  if (file.size > MAX_FILE_BYTES) {
+    emit('load-error', `文件过大（${(file.size / 1024 / 1024).toFixed(1)} MB），最多 5 MB`)
+    return
+  }
+
+  try {
+    const text = await decodeFile(file)
+    const limit = props.maxChars
+    if (limit > 0 && text.length > limit) {
+      emit('load-error', `文件内容 ${text.length} 字符，超过上限 ${limit} 字符`)
+      return
+    }
+    const v = view.value
+    if (!v) return
+    // 走 dispatch，updateListener 会自动 emit update:modelValue
+    v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: text } })
+    v.focus()
+    emit('load', { name: file.name, chars: text.length })
+  } catch {
+    emit('load-error', '读取文件失败')
+  }
+}
+
 onBeforeUnmount(() => {
   clearTimeout(copiedTimer)
   view.value?.destroy()
@@ -185,17 +257,38 @@ onBeforeUnmount(() => {
 <template>
   <div class="code-editor" :style="{ height }">
     <div ref="host" class="ce-host" />
-    <button
-      v-if="modelValue"
-      type="button"
-      class="ce-copy"
-      :class="{ copied }"
-      :title="copied ? '已复制' : '复制代码'"
-      @click="handleCopy"
-    >
-      <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'" />
-      <span>{{ copied ? '已复制' : '复制' }}</span>
-    </button>
+
+    <div v-if="(loadable && !readonly) || modelValue" class="ce-tools">
+      <button
+        v-if="loadable && !readonly"
+        type="button"
+        class="ce-btn"
+        title="从本地文件载入代码"
+        @click="pickFile"
+      >
+        <i class="fa-solid fa-folder-open" />
+        <span>载入文件</span>
+      </button>
+      <button
+        v-if="modelValue"
+        type="button"
+        class="ce-btn"
+        :class="{ copied }"
+        :title="copied ? '已复制' : '复制代码'"
+        @click="handleCopy"
+      >
+        <i :class="copied ? 'fa-solid fa-check' : 'fa-solid fa-copy'" />
+        <span>{{ copied ? '已复制' : '复制' }}</span>
+      </button>
+    </div>
+
+    <input
+      ref="fileInput"
+      type="file"
+      class="ce-file"
+      :accept="ACCEPT"
+      @change="onFileChange"
+    />
   </div>
 </template>
 
@@ -213,11 +306,18 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-.ce-copy {
+/* 右上角工具组：载入文件 / 复制 */
+.ce-tools {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ce-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -233,15 +333,20 @@ onBeforeUnmount(() => {
   transition: opacity 0.15s, background-color 0.15s, color 0.15s;
 }
 
-.ce-copy:hover {
+.ce-btn:hover {
   opacity: 1;
   color: #fff;
   background-color: rgba(255, 255, 255, 0.18);
 }
 
-.ce-copy.copied {
+.ce-btn.copied {
   opacity: 1;
   color: #98c379;
   border-color: rgba(152, 195, 121, 0.45);
+}
+
+/* 原生 file input 只作为触发器，不显示 */
+.ce-file {
+  display: none;
 }
 </style>
