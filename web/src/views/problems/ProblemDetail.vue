@@ -166,22 +166,22 @@ onMounted(() => {
                 <div class="sample-title">样例 #{{ i + 1 }}</div>
                 <div class="sample-io">
                   <div class="io-box">
-                    <div class="io-label">输入</div>
-                    <div class="code-wrap">
-                      <button type="button" class="code-copy" data-copy>
+                    <div class="io-label">
+                      <span>输入</span>
+                      <button type="button" class="code-copy code-copy-light" data-copy>
                         <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
                       </button>
-                      <pre>{{ s.input }}</pre>
                     </div>
+                    <pre>{{ s.input }}</pre>
                   </div>
                   <div class="io-box">
-                    <div class="io-label">输出</div>
-                    <div class="code-wrap">
-                      <button type="button" class="code-copy" data-copy>
+                    <div class="io-label">
+                      <span>输出</span>
+                      <button type="button" class="code-copy code-copy-light" data-copy>
                         <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
                       </button>
-                      <pre>{{ s.output }}</pre>
                     </div>
+                    <pre>{{ s.output }}</pre>
                   </div>
                 </div>
               </div>
@@ -391,10 +391,14 @@ onMounted(() => {
 }
 
 .io-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   background: #f7fafc;
   color: #8a9aa8;
   font-size: 12px;
-  padding: 5px 12px;
+  padding: 4px 8px 4px 12px;
   border-bottom: 1px solid #edf2f7;
 }
 

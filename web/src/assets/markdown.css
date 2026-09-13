@@ -226,11 +226,6 @@
   background-color: transparent;
 }
 
-/* 独立 <pre>（题面样例、评测错误信息等）的外层容器 */
-.code-wrap {
-  position: relative;
-}
-
 /* ---------- 语言标签与复制按钮 ---------- */
 
 /* 右上角工具组：位置与 CodeEditor 的浮动复制按钮一致 */
@@ -289,19 +284,19 @@
   border-color: rgba(152, 195, 121, 0.45);
 }
 
-/* 浅色代码块（样例 / 错误信息） */
-.code-wrap .code-copy {
+/* 浅色背景上的复制按钮（题面样例 / 评测错误信息）：加 code-copy-light 修饰类 */
+.code-copy-light {
   color: #64748b;
   background-color: rgba(100, 116, 139, 0.12);
   border-color: rgba(100, 116, 139, 0.22);
 }
 
-.code-wrap .code-copy:hover {
+.code-copy-light:hover {
   color: #1e293b;
   background-color: rgba(100, 116, 139, 0.22);
 }
 
-.code-wrap .code-copy.is-copied {
+.code-copy-light.is-copied {
   color: #16a34a;
   opacity: 1;
 }
