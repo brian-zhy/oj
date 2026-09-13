@@ -102,6 +102,15 @@ const fetchUnreadCount = async () => {
 // 供其他组件在产生新通知后手动刷新红点
 defineExpose({ fetchUnreadCount })
 
+// 通知页里点掉一条 / 全部已读之后，角标要立刻跟着掉。
+// 以前只能等下一次 30 秒轮询，于是会出现「消息已经读完了，角标还挂着」的假象。
+// 用 window 事件而不是 ref 层层透传：顶栏和通知页中间隔着 router-view，
+// 事件写法不用改 App.vue，也不影响 30 秒轮询这条兜底路径。
+const handleNotificationsChanged = () => { fetchUnreadCount() }
+
+onMounted(() => window.addEventListener('notifications:changed', handleNotificationsChanged))
+onUnmounted(() => window.removeEventListener('notifications:changed', handleNotificationsChanged))
+
 // 轮询通知
 let notificationTimer: number | null = null
 
