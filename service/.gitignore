@@ -41,9 +41,13 @@ static/uploads/*
 .DS_Store
 Thumbs.db
 
-# Debug/test output
+# Debug/test output（指根目录下的手工调试脚本，如 test_login_api.py）
 debug_*.py
 test_*.py
 check_*.py
 fix_*.py
 show_*.py
+
+# 上面的 test_*.py 是全局模式，会误伤正式的测试套件；
+# tests/ 目录下的测试必须能正常提交。
+!tests/test_*.py

@@ -223,6 +223,12 @@ const routes = [
     // 兼容旧复数链接
     path: '/contests/:id(\\d+)',
     redirect: (to: any) => ({ path: `/contest/${to.params.id}`, hash: to.hash })
+  },
+  {
+    path: '/image',
+    name: 'ImageHost',
+    component: () => import('@/views/ImageHost.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -234,7 +240,6 @@ const comingSoonPaths = [
   '/training',      // 训练题单
   '/articles',      // 文章广场
   '/ranking',       // 排行榜
-  '/image',         // 图片上传
   '/clipboard',     // 云剪贴板
   '/themes',        // 主题商店
   '/help',          // 帮助中心
