@@ -78,6 +78,11 @@ export const teamsApi = {
     return apiClient.get(`/api/teams/${id}/requests`)
   },
 
+  // 我可管理的团队（团主/管理员，办赛下拉用）
+  async myManageable(): Promise<{ items: { id: number; name: string; is_owner: boolean }[] }> {
+    return apiClient.get('/api/teams/my/manageable')
+  },
+
   // 团队私有题库（成员可见；题目为 T 编号系列）
   async problems(id: number): Promise<TeamProblemItem[]> {
     return apiClient.get(`/api/teams/${id}/problems`)

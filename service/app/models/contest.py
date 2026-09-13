@@ -22,12 +22,17 @@ class Contest(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # 公开程度：public 公开庭（自由报名）/ private 邀请赛（报名需邀请码）
+    # 公开程度：public 公开庭 / private 邀请赛 / team 团队内部赛 / team_private 团队邀请赛
     visibility: Mapped[str] = mapped_column(
-        String(10), nullable=False, default="public", server_default="'public'"
+        String(14), nullable=False, default="public", server_default="'public'"
     )
-    # 邀请赛报名邀请码（visibility=private 时必填）
+    # 邀请赛报名邀请码（private / team_private 时必填）
     invite_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # 举办团队（NULL = 站方比赛）；团队解散时其比赛一并删除
+    team_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("teams.id", ondelete="CASCADE"),
+        index=True, nullable=True,
+    )
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # 创建者（可编辑/删除比赛）
@@ -41,6 +46,10 @@ class Contest(Base):
     owner: Mapped["User"] = relationship(  # noqa: F821
         "User", foreign_keys=[owner_id], lazy="joined"
     )
+    # 举办团队（joined：详情/列表序列化需同步访问 team.name）
+    team: Mapped["Team | None"] = relationship(
+        "Team", foreign_keys=[team_id], lazy="joined"
+    )  # noqa: F821
     problems: Mapped[list["ContestProblem"]] = relationship(
         back_populates="contest", cascade="all, delete-orphan",
         order_by="ContestProblem.sort_order", lazy="selectin",

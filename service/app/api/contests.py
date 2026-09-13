@@ -23,6 +23,7 @@ from app.deps import get_current_user, get_current_user_optional
 from app.models.contest import Contest, ContestParticipant, ContestProblem
 from app.models.problem import Problem
 from app.models.submission import Submission
+from app.models.team import Team, TeamMember
 from app.models.user import User
 from app.services.problem import ProblemService
 
@@ -30,9 +31,53 @@ router = APIRouter(prefix="/contests", tags=["contests"])
 
 ALIAS = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # 比赛题别名
 
+# visibility → 展示名；团队赛仅允许 team / team_private
+VISIBILITY_LABELS = {
+    ("public", False): "公开赛",
+    ("private", False): "邀请赛",
+    ("team", True): "团队内部赛",
+    ("team_private", True): "团队邀请赛",
+}
+
 
 def _can_manage_contest(user: User) -> bool:
     return bool(user.is_super_admin or user.is_admin or user.can_manage_problems)
+
+
+async def _is_team_admin(db: AsyncSession, team_id: int, user: User) -> bool:
+    """当前用户是否为该团队的团主/团队管理员。"""
+    if user.is_super_admin:
+        return True
+    is_owner = (await db.execute(
+        select(Team.id).where(Team.id == team_id, Team.owner_id == user.id)
+    )).scalar_one_or_none()
+    if is_owner is not None:
+        return True
+    return (await db.execute(
+        select(TeamMember.id).where(
+            TeamMember.team_id == team_id,
+            TeamMember.user_id == user.id,
+            TeamMember.role == "admin",
+        )
+    )).scalar_one_or_none() is not None
+
+
+async def _is_team_member(db: AsyncSession, team_id: int, user: User) -> bool:
+    """当前用户是否为团队成员（含团主与管理员）。"""
+    if user.is_super_admin or await _is_team_admin(db, team_id, user):
+        return True
+    return (await db.execute(
+        select(TeamMember.id).where(
+            TeamMember.team_id == team_id,
+            TeamMember.user_id == user.id,
+        )
+    )).scalar_one_or_none() is not None
+
+
+def _type_label(visibility: str, has_team: bool) -> str:
+    if has_team:
+        return "团队内部赛" if visibility == "team" else "团队邀请赛"
+    return "邀请赛" if visibility == "private" else "公开赛"
 
 
 def _utcnow() -> datetime:
@@ -56,12 +101,19 @@ def _status(contest: Contest) -> str:
 def _contest_dict(
     contest: Contest, current_user: User | None, *,
     with_problems: bool = False, show_hidden_problems: bool = False,
+    can_view_problems: bool | None = None,
 ) -> dict[str, Any]:
+    visibility = getattr(contest, "visibility", "public") or "public"
+    has_team = contest.team_id is not None
     d: dict[str, Any] = {
         "id": contest.id,
         "title": contest.title,
         "description": contest.description or "",
-        "visibility": getattr(contest, "visibility", "public") or "public",
+        "visibility": visibility,
+        "type_label": _type_label(visibility, has_team),
+        "team_id": contest.team_id,
+        # team relationship 已随查询加载（lazy joined）
+        "team_name": (contest.team.name if has_team and contest.team else None),
         "start_time": contest.start_time.isoformat() if contest.start_time else None,
         "end_time": contest.end_time.isoformat() if contest.end_time else None,
         "status": _status(contest),
@@ -83,13 +135,17 @@ def _contest_dict(
         )
     else:
         d["is_participant"] = False
-    # 题目/排行榜可见性：已结束、或（进行中且已报名）、或创建者/比赛管理员
+    # 题目/排行榜可见性：已结束、或（进行中且已报名）、或创建者/比赛管理员。
+    # 团队赛的成员判断需要查库，由调用端点算好传入（can_view_problems 参数）
     status_ = d["status"]
-    d["can_view_problems"] = (
-        status_ == "ended"
-        or d["is_owner"] or d["can_manage"]
-        or (status_ == "running" and d["is_participant"])
-    )
+    if can_view_problems is not None:
+        d["can_view_problems"] = can_view_problems
+    else:
+        d["can_view_problems"] = (
+            status_ == "ended"
+            or d["is_owner"] or d["can_manage"]
+            or (status_ == "running" and d["is_participant"])
+        )
     if with_problems:
         if not d["can_view_problems"]:
             # 无权查看时不下发任何题目信息（防探测）
@@ -148,15 +204,12 @@ async def list_contests(
     return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
-@router.post("", status_code=201, summary="创建比赛（题目管理权限/站内管理员）")
+@router.post("", status_code=201, summary="创建比赛（站方赛需题目管理权限；团队赛需团队管理权限）")
 async def create_contest(
     payload: dict,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    if not _can_manage_contest(current_user):
-        raise HTTPException(status_code=403, detail="需要比赛管理权限")
-
     title = (payload.get("title") or "").strip()
     if not title:
         raise HTTPException(status_code=400, detail="比赛名称不能为空")
@@ -164,6 +217,41 @@ async def create_contest(
     end_time = _parse_time(payload.get("end_time"))
     if end_time <= start_time:
         raise HTTPException(status_code=400, detail="结束时间必须晚于开始时间")
+
+    # 举办方：团队赛（team_id 非空）由团队管理员创建，类型限团队内部赛/团队邀请赛；
+    # 站方赛由题目管理权限/站内管理员创建，类型限公开赛/邀请赛
+    team_id = payload.get("team_id")
+    visibility = payload.get("visibility") or "public"
+    invite_code = (payload.get("invite_code") or "").strip()
+    if team_id is not None:
+        if not isinstance(team_id, int):
+            raise HTTPException(status_code=400, detail="无效的团队")
+        if not await _is_team_admin(db, team_id, current_user):
+            raise HTTPException(status_code=403, detail="需要团队管理权限")
+        if visibility not in ("team", "team_private"):
+            raise HTTPException(
+                status_code=400,
+                detail="团队比赛仅支持「团队内部赛」或「团队邀请赛」",
+            )
+        team = (await db.execute(
+            select(Team).where(Team.id == team_id)
+        )).scalar_one_or_none()
+        if team is None:
+            raise HTTPException(status_code=400, detail="团队不存在")
+    else:
+        if not _can_manage_contest(current_user):
+            raise HTTPException(status_code=403, detail="需要比赛管理权限")
+        if visibility not in ("public", "private"):
+            raise HTTPException(
+                status_code=400, detail="站方比赛仅支持「公开赛」或「邀请赛」"
+            )
+    if visibility in ("private", "team_private"):
+        if not (3 <= len(invite_code) <= 32):
+            raise HTTPException(
+                status_code=400, detail="邀请赛需设置 3-32 位邀请码"
+            )
+    else:
+        invite_code = ""
 
     # 题目按题号输入（P1001 / T10），顺序即比赛内 A/B/C/D
     raw_codes = payload.get("problem_codes") or []
@@ -192,22 +280,12 @@ async def create_contest(
         seen.add(problem.id)
         unique_ids.append(problem.id)
 
-    # 公开程度：public 公开庭 / private 邀请赛（报名需邀请码）
-    visibility = payload.get("visibility") or "public"
-    if visibility not in ("public", "private"):
-        raise HTTPException(status_code=400, detail="无效的公开程度")
-    invite_code = (payload.get("invite_code") or "").strip()
-    if visibility == "private":
-        if not (3 <= len(invite_code) <= 32):
-            raise HTTPException(
-                status_code=400, detail="邀请赛需设置 3-32 位邀请码"
-            )
-
     contest = Contest(
         title=title,
         description=(payload.get("description") or "").strip() or None,
         visibility=visibility,
-        invite_code=invite_code if visibility == "private" else None,
+        invite_code=invite_code if visibility in ("private", "team_private") else None,
+        team_id=team_id if team_id is not None else None,
         start_time=start_time, end_time=end_time,
         owner_id=current_user.id,
     )
@@ -218,7 +296,7 @@ async def create_contest(
     await db.commit()
     await db.refresh(contest)
     return _contest_dict(contest, current_user, with_problems=True,
-                         show_hidden_problems=True)
+                         show_hidden_problems=True, can_view_problems=True)
 
 
 @router.get("/{contest_id}", summary="比赛详情")
@@ -230,9 +308,28 @@ async def contest_detail(
     contest = await _load_contest(db, contest_id)
     if contest is None:
         raise HTTPException(status_code=404, detail="比赛不存在")
-    show_hidden = bool(current_user and _can_manage_contest(current_user))
+    status_ = _status(contest)
+    is_participant = bool(current_user and any(
+        p.user_id == current_user.id for p in contest.participants))
+    is_owner = bool(current_user and contest.owner_id == current_user.id)
+    is_manager = bool(current_user and _can_manage_contest(current_user))
+    # 团队赛：非团队成员按成员规则处理（can_view 由下方统一判定，
+    # 团队内部赛要求查看者本身是团队成员）
+    team_member = bool(
+        contest.team_id and current_user
+        and await _is_team_member(db, contest.team_id, current_user)
+    )
+    can_view = (
+        status_ == "ended"
+        or is_owner or is_manager
+        or (status_ == "running" and is_participant
+            and (contest.team_id is None
+                 or (contest.visibility or "") != "team" or team_member))
+    )
+    show_hidden = is_owner or is_manager
     return _contest_dict(contest, current_user,
-                         with_problems=True, show_hidden_problems=show_hidden)
+                         with_problems=True, show_hidden_problems=show_hidden,
+                         can_view_problems=can_view)
 
 
 @router.delete("/{contest_id}", summary="删除比赛（创建者或站内管理员）")
@@ -263,7 +360,12 @@ async def register_contest(
         raise HTTPException(status_code=404, detail="比赛不存在")
     if _status(contest) == "ended":
         raise HTTPException(status_code=400, detail="比赛已结束，无法报名")
-    if (contest.visibility or "public") == "private":
+    visibility = contest.visibility or "public"
+    if visibility == "team":
+        # 团队内部赛：仅团队成员可报名
+        if not await _is_team_member(db, contest.team_id, current_user):
+            raise HTTPException(status_code=403, detail="仅团队成员可报名内部赛")
+    elif visibility in ("private", "team_private"):
         code = ((payload or {}).get("invite_code") or "").strip()
         if not code or code != contest.invite_code:
             raise HTTPException(status_code=403, detail="邀请码错误")
@@ -289,7 +391,8 @@ async def contest_rank(
     if contest is None:
         raise HTTPException(status_code=404, detail="比赛不存在")
 
-    # 排行榜可见性：已结束、创建者/比赛管理员、进行中且已报名
+    # 排行榜可见性：已结束、创建者/比赛管理员、进行中且已报名；
+    # 团队内部赛额外要求查看者为团队成员
     status_ = _status(contest)
     is_participant = bool(current_user and any(
         p.user_id == current_user.id for p in contest.participants))
@@ -297,7 +400,11 @@ async def contest_rank(
         status_ == "ended"
         or (current_user and _can_manage_contest(current_user))
         or (current_user and contest.owner_id == current_user.id)
-        or (status_ == "running" and is_participant)
+        or (status_ == "running" and is_participant
+            and (contest.team_id is None
+                 or (contest.visibility or "") != "team"
+                 or (current_user and await _is_team_member(
+                     db, contest.team_id, current_user))))
     )
     if not allowed:
         raise HTTPException(status_code=403, detail="你无权进行此操作")

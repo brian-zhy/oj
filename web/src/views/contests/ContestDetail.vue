@@ -238,7 +238,10 @@ const userColor = (u: Record<string, any>) => userNameColor(u)
                   <router-link :to="`/user/${contest.owner.user_id}`" class="owner-link">{{ contest.owner.username }}</router-link>
                 </div>
                 <div class="side-row"><span>比赛类型</span>
-                  <b>{{ contest.visibility === 'private' ? '邀请赛' : '公开赛' }} · ACM</b>
+                  <b>{{ contest.type_label }} · ACM</b>
+                </div>
+                <div v-if="contest.team_name" class="side-row"><span>举办团队</span>
+                  <b>{{ contest.team_name }}</b>
                 </div>
                 <div class="side-row"><span>开始时间</span><b>{{ fmt(contest.start_time) }}</b></div>
                 <div class="side-row"><span>结束时间</span><b>{{ fmt(contest.end_time) }}</b></div>
