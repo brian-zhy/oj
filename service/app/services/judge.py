@@ -29,13 +29,13 @@ logger = logging.getLogger(__name__)
 LANGUAGES: dict[str, dict[str, Any]] = {
     "cpp": {
         "source": "main.cpp",
-        "compile": ["g++", "-O2", "-std=c++14", "main.cpp", "-o", "main"],
+        "compile": ["g++", "-O2", "-std=c++14", "-fplugin=/usr/local/lib/oj/no_opt_pragma.so", "main.cpp", "-o", "main", "-lm"],
         "run": ["./main"],
         "binary": "main",
     },
     "c": {
         "source": "main.c",
-        "compile": ["gcc", "-O2", "main.c", "-o", "main"],
+        "compile": ["gcc", "-O2", "-fplugin=/usr/local/lib/oj/no_opt_pragma.so", "main.c", "-o", "main", "-lm"],
         "run": ["./main"],
         "binary": "main",
     },
