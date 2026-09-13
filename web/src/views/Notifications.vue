@@ -305,8 +305,10 @@ onMounted(() => {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
+/* 未读底色：主色 #4a4ae0 的浅色调，比已读的白底明显一档。
+   原来那个是旧红色主题的暖奶油色 #fdf6ee，放在蓝紫站里色调不对。 */
 .notification-item.unread {
-  background: #fdf6ee;
+  background: #f0f1fd;
 }
 
 .n-icon {
