@@ -70,12 +70,15 @@ class BenbenService:
         db: AsyncSession,
         limit: int = 20,
         before_id: Optional[int] = None,
+        after_id: Optional[int] = None,
         mode: str = "all",
         user_number: Optional[int] = None,
         author_number: Optional[int] = None
     ) -> list[Benben]:
         """获取犇犇列表。
 
+        ``before_id`` 向下翻页（加载更多），``after_id`` 向上增量拉取
+        （前端自动刷新用：没新动态时返回空数组，很轻）。
         ``user_number`` 是当前登录用户（只给 mode="my" 用）；
         ``author_number`` 是「只看这个作者的」（用户主页的动态标签页用）。
         """
@@ -84,6 +87,10 @@ class BenbenService:
         # 分页查询
         if before_id:
             query = query.where(Benben.id < before_id)
+
+        # 增量拉取：只要比这个 id 新的
+        if after_id is not None:
+            query = query.where(Benben.id > after_id)
 
         # 指定作者的动态（用户主页）
         if author_number is not None:

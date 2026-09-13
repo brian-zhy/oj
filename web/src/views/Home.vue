@@ -343,6 +343,8 @@ const switchTab = (mode: 'all' | 'my') => {
   feedMode.value = mode
   currentReplyingId.value = null
   currentReplyUsername.value = null
+  // 换列表了，攒着的新动态提示作废
+  pendingBenben.value = []
   loadBenbenList(true)
 }
 
@@ -522,8 +524,99 @@ const loadBenbenList = async (reset = true) => {
   }
 }
 
+// ==================== 犇犇自动刷新 ====================
+// 不做「定时全量重拉」，而是拿列表里最新一条的 id 做 after_id 增量拉，
+// 没新动态时后端只返回空数组，很轻。
+const REFRESH_INTERVAL = 20000
+
+const pendingBenben = ref<any[]>([])
+const flashIds = ref<Set<number>>(new Set())
+const benbenListRef = ref<HTMLElement | null>(null)
+let refreshTimer: number | undefined
+let flashTimer: number | undefined
+
+// 最新一条「真实」犇犇的 id（乐观插入的临时项 id 是负数，必须排除）
+const newestRealId = computed(() => {
+  let max = 0
+  for (const item of benbenList.value) {
+    if (typeof item.id === 'number' && item.id > max) max = item.id
+  }
+  return max
+})
+
+// 是否直接插入列表最前面。
+// 只有「用户已经滚进列表内部、正在看旧帖子」时才改用浮动提示 —— 那种情况下
+// 插入新内容会把正在读的帖子顶下去。列表还在视野下方（没滚到）或者页面顶部时
+// 插入根本看不出变化，直接插就行。
+const shouldInsertInline = () => {
+  const el = benbenListRef.value
+  if (!el) return true
+  return el.getBoundingClientRect().top > -24
+}
+
+// 插到列表最前面，并短暂高亮
+const prependBenben = (items: any[]) => {
+  const known = new Set(benbenList.value.map((x) => x.id))
+  const fresh = items.filter((x) => !known.has(x.id))
+  pendingBenben.value = []
+  if (fresh.length === 0) return
+
+  benbenList.value = [...fresh, ...benbenList.value]
+  flashIds.value = new Set(fresh.map((x) => x.id))
+  clearTimeout(flashTimer)
+  flashTimer = setTimeout(() => {
+    flashIds.value = new Set()
+  }, 2600)
+}
+
+const refreshBenben = async () => {
+  if (document.hidden || isLoading.value || posting.value || !isLoggedIn.value) return
+  const topId = newestRealId.value
+  if (!topId) return
+
+  try {
+    let url = `/benben?limit=50&after_id=${topId}`
+    if (feedMode.value === 'my') url += '&mode=my'
+
+    const data = (await apiClient.get(url)) as any[]
+    const fresh = data ?? []
+
+    if (fresh.length === 0) {
+      pendingBenben.value = []
+      return
+    }
+
+    if (shouldInsertInline()) {
+      prependBenben(fresh)
+    } else {
+      // 用户正在下边看别的，先攒着。after_id 固定不变，所以每次拉到的
+      // 都是「比当前已显示的最新一条还新」的全集，直接覆盖即可。
+      pendingBenben.value = fresh
+    }
+  } catch (error) {
+    // 自动刷新失败不打扰用户，静默跳过，下个周期再试
+    console.error('犇犇自动刷新失败:', error)
+  }
+}
+
+// 点「N 条新动态」：插入并滚到列表顶部
+const showPendingBenben = () => {
+  prependBenben(pendingBenben.value)
+  const el = benbenListRef.value
+  if (!el) return
+  // 减掉吸顶导航栏的高度，别把第一条又藏在它后面
+  const y = el.getBoundingClientRect().top + window.pageYOffset - 76
+  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' })
+}
+
+// 切回标签页时立刻刷一次 —— 这往往正是用户想要的时机
+const handleVisibility = () => {
+  if (!document.hidden) void refreshBenben()
+}
+
 // 回到顶部
 const showBackTop = ref(false)
+
 const handleScroll = () => {
   showBackTop.value = window.pageYOffset > 300
 }
@@ -557,6 +650,12 @@ onMounted(async () => {
       }
     }, { threshold: 0.1 })
     if (loadingSentinelRef.value) observer.observe(loadingSentinelRef.value)
+
+    // 犇犇自动刷新（切回标签页也会立刻刷一次）
+    refreshTimer = window.setInterval(() => {
+      void refreshBenben()
+    }, REFRESH_INTERVAL)
+    document.addEventListener('visibilitychange', handleVisibility)
   } else {
     updateSentinel()
   }
@@ -565,6 +664,9 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   if (clockTimer) clearInterval(clockTimer)
+  if (refreshTimer) clearInterval(refreshTimer)
+  clearTimeout(flashTimer)
+  document.removeEventListener('visibilitychange', handleVisibility)
   if (observer) observer.disconnect()
 })
 </script>
@@ -761,7 +863,7 @@ onUnmounted(() => {
           <div class="benben-tab" :class="{ active: feedMode === 'my' }" @click="switchTab('my')">我的</div>
         </div>
 
-        <div class="benben-list">
+        <div class="benben-list" ref="benbenListRef">
           <div v-if="benbenList.length === 0 && !isLoading" class="benben-empty">
             {{ sentinelText === '加载出错，请刷新' ? sentinelText : '没有更多动态了' }}
           </div>
@@ -777,7 +879,7 @@ onUnmounted(() => {
               </router-link>
             </div>
 
-            <div class="benben-content">
+            <div class="benben-content" :class="{ 'is-new': flashIds.has(item.id) }">
               <div class="benben-item-header">
                 <div class="post-author">
                   <span class="benben-user">
@@ -824,6 +926,13 @@ onUnmounted(() => {
 
     <!-- 回到顶部 -->
     <button v-show="showBackTop" class="back-to-top" title="回到顶部" @click="backToTop"><i class='fa-solid fa-arrow-up'></i></button>
+
+    <!-- 有新动态但用户不在列表顶部时的提示（固定在底部居中，不挡内容） -->
+    <Transition name="benben-pill">
+      <button v-if="pendingBenben.length" class="benben-new-pill" @click="showPendingBenben">
+        <i class='fa-solid fa-arrow-up'></i> {{ pendingBenben.length }} 条新动态
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -1440,6 +1549,61 @@ onUnmounted(() => {
   padding: 20px;
   color: #999;
   font-size: 13px;
+}
+
+/* ========== 犇犇新动态提示 ========== */
+.benben-new-pill {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 998;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(42, 142, 255, 0.4);
+  transition: background 0.15s, transform 0.15s;
+}
+
+.benben-new-pill:hover {
+  background: var(--primary-hover);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.benben-pill-enter-active,
+.benben-pill-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.benben-pill-enter-from,
+.benben-pill-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(12px);
+}
+
+/* 自动刷新刚插进来的动态，短暂高亮一下就恢复 */
+.benben-content.is-new {
+  animation: benben-flash 2.6s ease-out;
+}
+
+@keyframes benben-flash {
+  0%,
+  55% {
+    background: #eaf4ff;
+    border-color: #b8dbff;
+  }
+  100% {
+    background: #fff;
+    border-color: #e9ecef;
+  }
 }
 
 /* ========== 回到顶部 ========== */
