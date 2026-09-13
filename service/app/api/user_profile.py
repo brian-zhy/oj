@@ -24,7 +24,8 @@ _MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 async def _require_tag_manager(user: User) -> None:
-    if not (user.is_super_admin or user.is_admin or user.can_manage_tags):
+    # 仅明确授予 Tag 管理权限（或超管）可操作；普通管理员不天然持有
+    if not (user.is_super_admin or user.can_manage_tags):
         raise HTTPException(status_code=403, detail="需要 Tag 管理权限")
 
 
