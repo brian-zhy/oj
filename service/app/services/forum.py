@@ -10,6 +10,12 @@ from sqlalchemy.orm import selectinload
 
 from app.models.forum import ForumComment, ForumPost
 from app.models.user import User
+from app.services.notification import (
+    TITLE_MAX,
+    add_notification,
+    clip,
+    notify_mentions,
+)
 
 VALID_FORUMS = ("siteaffairs", "problem", "academics", "relevantaffairs")
 FORUM_NAMES = {
@@ -149,6 +155,12 @@ class ForumService:
             author_id=author.id,
         )
         db.add(post)
+        await db.flush()
+        # 正文里的 @ → 提及通知（发帖时就要发，否则得等别人点开才看得到）
+        await notify_mentions(
+            db, post.content, actor=author, link=f"/discuss/{post.id}",
+            where=f"帖子「{clip(post.title, TITLE_MAX)}」",
+        )
         await db.commit()
         await db.refresh(post)
         return post
@@ -170,6 +182,25 @@ class ForumService:
             content=content.strip(),
         )
         db.add(comment)
+        await db.flush()
+
+        link = f"/discuss/{post.id}"
+        title = clip(post.title, TITLE_MAX)
+        # 回复楼主 → 「回复」通知（原来帖子被回复是完全没有消息的）
+        add_notification(
+            db,
+            user_id=post.author_id,
+            ntype="reply",
+            actor_id=author.id,
+            link=link,
+            content=f"@{author.username} 回复了你的帖子「{title}」，快来看看吧",
+        )
+        # 正文里的 @ → 「提及」通知。被 @ 不代表被回复，所以单开一类；
+        # 回复某条回复时前端只帮作者 @ 一下对方，靠的就是这里
+        await notify_mentions(
+            db, comment.content, actor=author, link=link,
+            where=f"帖子「{title}」",
+        )
         await db.commit()
         await db.refresh(comment)
         return comment

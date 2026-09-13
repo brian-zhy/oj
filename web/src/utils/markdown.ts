@@ -38,6 +38,72 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+// 用户名规则见 service/app/schemas/user.py：^[A-Za-z0-9_]{3,50}$
+// 前面不能是单词字符、点或斜杠：单词字符/点避开邮箱（a@b.com），
+// 斜杠避开链接路径（https://x.com/@foo）。
+// 后端 app/services/notification.py 用的是同一条规则，两边要保持一致
+const MENTION_G = /(?<![\w./])@([A-Za-z0-9_]{3,50})/g
+const MENTION_T = /(?<![\w./])@[A-Za-z0-9_]{3,50}/
+
+/**
+ * 把 @username 变成指向用户主页的链接。
+ *
+ * 走 DOM 文本节点而不是字符串替换：
+ *   1. 字符串替换会把 `[x](https://a.com/@foo)` 这类链接地址里的 @ 也换掉；
+ *   2. 无法避开 <a> / <code> / <pre> 内部（a 里再套 a 是非法结构）；
+ *   3. 属性值必须原样不动。
+ */
+function linkifyMentions(html: string): string {
+  if (!MENTION_T.test(html)) return html
+  const root = document.createElement('div')
+  root.innerHTML = html
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  const targets: Text[] = []
+  let node = walker.nextNode() as Text | null
+  while (node) {
+    const parent = node.parentElement
+    if (parent && MENTION_T.test(node.nodeValue || '') && !parent.closest('a, code, pre')) {
+      targets.push(node)
+    }
+    node = walker.nextNode() as Text | null
+  }
+
+  for (const textNode of targets) {
+    const text = textNode.nodeValue || ''
+    const frag = document.createDocumentFragment()
+    let last = 0
+    let m: RegExpExecArray | null
+    MENTION_G.lastIndex = 0
+    while ((m = MENTION_G.exec(text)) !== null) {
+      if (m.index > last) {
+        frag.appendChild(document.createTextNode(text.slice(last, m.index)))
+      }
+      const a = document.createElement('a')
+      a.className = 'mention'
+      a.setAttribute('href', `/user/${m[1]}`)
+      a.textContent = '@' + m[1]
+      frag.appendChild(a)
+      last = m.index + m[0].length
+    }
+    if (last < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(last)))
+    }
+    textNode.parentNode?.replaceChild(frag, textNode)
+  }
+
+  return root.innerHTML
+}
+
+/**
+ * 纯文本场景（工单回复、通知文案）的 @提及 渲染：转义后只把 @名字 变成链接。
+ * 通知文案里写的就是 `@solver 回复了你的帖子`，这样用户名也能点。
+ */
+export function renderMentionText(content: string | null | undefined): string {
+  if (!content) return ''
+  return linkifyMentions(escapeHtml(content).replace(/\n/g, '<br>'))
+}
+
 /**
  * 渲染一个围栏代码块：语法高亮 + 右上角复制按钮。
  * 未标注语言或语言不在注册表内时按纯文本处理（不做自动检测，
@@ -130,6 +196,10 @@ export function renderRichText(content: string): string {
 
   // 4. DOMPurify 消毒（随机标记原样保留）
   html = DOMPurify.sanitize(html)
+
+  // 4.5 @提及 → 用户主页链接。放在这一步是为了让代码块/公式
+  //     内部的 @ 还能被占位符保护住（那些占位符要到第 6 步才还原）
+  html = linkifyMentions(html)
 
   // 5. 还原公式占位（KaTeX 输出自身安全）
   html = html.replace(new RegExp(MATH_MARK + '(\\d+)' + MATH_MARK, 'g'), (_, i: string) => displayMath[+i] ?? '')

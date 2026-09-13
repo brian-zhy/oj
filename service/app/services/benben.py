@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from typing import Optional
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from app.models.benben import Benben
 from app.models.user import User
 from app.schemas.benben import BenbenCreate, BenbenResponse
+from app.services.notification import notify_mentions
 
 
 class BenbenService:
@@ -60,6 +60,12 @@ class BenbenService:
             reply_to=reply_to
         )
         db.add(benben)
+        await db.flush()
+        # 正文里的 @ → 提及通知。回复别人的犇犇时，前端也是往正文里插 @，
+        # 所以这里一并覆盖了「回复犇犇」的场景
+        await notify_mentions(
+            db, benben.content, actor=user_obj, link="/", where="犇犇",
+        )
         await db.commit()
         await db.refresh(benben)
 
@@ -128,14 +134,6 @@ class BenbenService:
         await db.commit()
 
         return True
-
-    @staticmethod
-    async def process_mentions(content: str) -> list[str]:
-        """提取@提及的用户名"""
-        pattern = r'@([一-龥a-zA-Z0-9_.-]+)'
-        matches = re.findall(pattern, content)
-        # 去重
-        return list(set(matches))
 
     @staticmethod
     def enrich_benben_with_user_info(benben_list: list[Benben], current_user_number: Optional[int] = None) -> list[dict]:

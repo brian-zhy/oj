@@ -16,6 +16,22 @@ const error = ref('')
 
 const replyContent = ref('')
 const replySubmitting = ref(false)
+const replyEditor = ref<InstanceType<typeof MarkdownSplitEditor> | null>(null)
+const replyBox = ref<HTMLElement | null>(null)
+
+/**
+ * 回复某条回复：只把 `@对方` 填进回复框，不做树状嵌套。
+ * 服务端会从正文里解析 @ 并给被提及者发「提及」通知 ——
+ * 被 @ 只代表提及，跟他有没有被「回复」是两回事。
+ */
+const replyTo = (comment: any) => {
+  const name = comment?.author?.username
+  if (!name) return
+  // 已经有了就替换掉开头的那个 @，避免 @a @b 叠成一串
+  replyContent.value = `@${name} ` + replyContent.value.replace(/^@[A-Za-z0-9_]+\s*/, '')
+  replyBox.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  replyEditor.value?.focus()
+}
 
 // 编辑已发布帖子（仅秩序管理）
 const editingPost = ref(false)
@@ -253,6 +269,12 @@ onMounted(() => loadPost())
                 >{{ c.author.user_tag }}</span>
                 <span class="comment-floor">#{{ Number(i) + 1 }}</span>
                 <span class="comment-time">{{ fmtTime(c.created_at) }}</span>
+                <!-- 回复按钮：点一下只是 @ 对方，回复仍然是扁平的不分层 -->
+                <button
+                  v-if="isLoggedIn && !isMuted && !post.is_locked"
+                  class="comment-reply-btn"
+                  @click="replyTo(c)"
+                >回复</button>
               </div>
               <div class="comment-content prose" v-html="renderContent(c.content)"></div>
             </div>
@@ -261,9 +283,10 @@ onMounted(() => loadPost())
           <!-- 回复框 -->
           <div v-if="isLoggedIn && isMuted" class="state-box"><i class="fa-solid fa-ban"></i> 你已被禁言，无法回复</div>
           <div v-else-if="isLoggedIn && post.is_locked" class="state-box"><i class="fa-solid fa-lock"></i> 该帖子已锁定，无法回复</div>
-          <div v-else-if="isLoggedIn" class="reply-box">
+          <div v-else-if="isLoggedIn" ref="replyBox" class="reply-box">
             <div class="reply-box-head">发表回复</div>
             <MarkdownSplitEditor
+              ref="replyEditor"
               v-model="replyContent"
               height="220px"
               placeholder="支持 Markdown：**粗体**、*斜体*、```代码块```、$公式$"
@@ -728,6 +751,23 @@ onMounted(() => loadPost())
   color: #a0aec0;
   font-size: 12px;
   margin-left: auto;
+}
+
+/* 「回复」按钮：平时低调，hover 才明显，避免每条回复都挂一个醒目按钮 */
+.comment-reply-btn {
+  padding: 2px 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #8a9aa8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.comment-reply-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 .comment-content {

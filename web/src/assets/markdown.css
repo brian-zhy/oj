@@ -121,6 +121,27 @@
   color: #1d4ed8;
 }
 
+/* @提及：指向用户主页。不加下划线，和普通链接区分开，
+   并用 background 做一点高亮，视觉上更像「提及」而不是「链接」 */
+.mention,
+.prose a.mention {
+  display: inline-block;
+  color: var(--primary, #2a8eff);
+  background: rgba(42, 142, 255, 0.1);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 500;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.mention:hover,
+.prose a.mention:hover {
+  background: rgba(42, 142, 255, 0.2);
+  color: var(--primary, #2a8eff);
+  text-decoration: none;
+}
+
 .prose strong {
   font-weight: 700;
   color: #111827;

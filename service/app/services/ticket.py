@@ -19,6 +19,7 @@ from app.models.notification import Notification
 from app.models.ticket import Ticket, TicketReply
 from app.models.user import User
 from app.schemas.ticket import TICKET_STATUSES
+from app.services.notification import TITLE_MAX, clip, notify_mentions
 
 VALID_STATUSES = set(TICKET_STATUSES.keys())
 
@@ -247,6 +248,7 @@ class TicketService:
         ticket_id: int,
         actor_id: int,
         force: bool = False,
+        link: str | None = None,
     ) -> None:
         """写入站内通知（默认操作者本人不通知；force=True 时强制通知，如指派给自己）。"""
         if user_id == actor_id and not force:
@@ -254,9 +256,10 @@ class TicketService:
         db.add(Notification(
             user_id=user_id,
             type=ntype,
-            content=content,
+            content=clip(content),
             ticket_id=ticket_id,
             actor_id=actor_id,
+            link=link or f"/tickets/{ticket_id}",
         ))
 
     @staticmethod
@@ -293,15 +296,22 @@ class TicketService:
         ticket.last_reply_by = "staff" if is_staff else "user"
 
         # 非创建者回复（管理员处理或普通用户评论）→ 通知工单创建者
+        title = clip(ticket.title, TITLE_MAX)
         if not is_creator:
             await TicketService.notify(
                 db,
                 ticket.creator_id,
                 "reply",
-                f"你的「{ticket.title}」工单被 {user.username} 回复了，快来看看吧",
+                f"@{user.username} 回复了你的工单「{title}」，快来看看吧",
                 ticket.id,
                 user.id,
             )
+        # 回复正文里的 @ → 提及通知。与「被回复」分开：
+        # 被 @ 只代表提及，不代表对方回复了你
+        await notify_mentions(
+            db, reply.content, actor=user, link=f"/tickets/{ticket.id}",
+            where=f"工单「{title}」",
+        )
         # 状态流转规则：
         # - 管理员回复：仅当工单处于「待处理」时流转为「待补充」，其他状态保持不变
         # - 用户回复：开放状态下流转回「待处理」

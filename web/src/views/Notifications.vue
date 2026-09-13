@@ -3,47 +3,99 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '@/api/client'
 import { fmtDateTime } from '@/utils/datetime'
+import { renderMentionText } from '@/utils/markdown'
 
 const router = useRouter()
 
 const TYPE: Record<string, { icon: string; color: string }> = {
+  mention: { icon: 'fa-solid fa-at', color: '#2a8eff' },
   reply: { icon: 'fa-solid fa-comment', color: '#3498db' },
   status: { icon: 'fa-solid fa-rotate', color: '#E6A23C' },
   assign: { icon: 'fa-solid fa-user', color: '#9C3DCF' },
   team: { icon: 'fa-solid fa-people-group', color: '#13C2C2' },
 }
 
+// 「被 @」只代表提及，与「被回复」是两回事，所以分成不同标签页。
+// key 与后端 /notifications?group= 的取值一一对应
+const GROUPS = [
+  { key: 'all', label: '全部', empty: '暂无通知' },
+  { key: 'mention', label: '@我的', empty: '暂无提及' },
+  { key: 'reply', label: '回复我的', empty: '暂无回复' },
+  { key: 'system', label: '系统通知', empty: '暂无系统通知' },
+]
+
 const notifications = ref<any[]>([])
 const page = ref(0)
 const loading = ref(false)
 const hasMore = ref(true)
 const error = ref('')
-const unreadCount = computed(() => notifications.value.filter(n => !n.is_read).length)
+const group = ref('all')
+const unreadByGroup = ref<Record<string, number>>({})
+const unreadCount = computed(() => unreadByGroup.value.all || 0)
+
+/// 标签页上的未读数红点（全部/系统通知的不单独显示，只靠大数字说明）
+const groupBadge = (key: string) => (key === 'all' ? 0 : unreadByGroup.value[key] || 0)
+
+const emptyText = computed(() =>
+  GROUPS.find(g => g.key === group.value)?.empty || '暂无通知',
+)
+
+const loadUnread = async () => {
+  try {
+    const data: any = await apiClient.get('/api/notifications/unread-count')
+    unreadByGroup.value = { all: data?.count || 0, ...(data?.by_group || {}) }
+  } catch {
+    /* 顶栏红点失败不影响列表 */
+  }
+}
 
 const loadNotifications = async (append = false) => {
   if (loading.value || !hasMore.value) return
   loading.value = true
   error.value = ''
+  // 切标签时不要把上一个标签的请求结果写进来
+  const requested = group.value
   try {
-    const data: any = await apiClient.get(`/api/notifications?page=${page.value}&page_size=20`)
+    const data: any = await apiClient.get(
+      `/api/notifications?page=${page.value}&page_size=20&group=${encodeURIComponent(requested)}`,
+    )
+    if (group.value !== requested) return
     const list = Array.isArray(data?.notifications) ? data.notifications : []
     notifications.value = append ? [...notifications.value, ...list] : list
     page.value++
     hasMore.value = list.length >= 20
   } catch (err: any) {
+    if (group.value !== requested) return
     error.value = err.response?.data?.detail || err.message || '加载失败'
   } finally {
     loading.value = false
   }
 }
 
+const switchGroup = (key: string) => {
+  if (group.value === key) return
+  group.value = key
+  notifications.value = []
+  page.value = 0
+  hasMore.value = true
+  loadNotifications(false)
+}
+
 const markAllRead = async () => {
   try {
     await apiClient.put('/api/notifications/read-all')
     notifications.value = notifications.value.map(n => ({ ...n, is_read: true }))
+    unreadByGroup.value = {}
   } catch {
     /* 忽略 */
   }
+}
+
+/** 通知的跳转地址：新的通知都带 link，工单类兼容旧的 ticket_id 字段 */
+const notificationTarget = (n: any): string | null => {
+  if (n.link) return n.link
+  if (n.ticket_id) return `/tickets/${n.ticket_id}`
+  return null
 }
 
 const openNotification = async (n: any) => {
@@ -51,14 +103,21 @@ const openNotification = async (n: any) => {
     try {
       await apiClient.put(`/api/notifications/${n.id}/read`)
       n.is_read = true
+      const g = n.type === 'mention' ? 'mention' : n.type === 'reply' ? 'reply' : 'system'
+      if (unreadByGroup.value.all > 0) unreadByGroup.value.all--
+      if (unreadByGroup.value[g] > 0) unreadByGroup.value[g]--
     } catch {
       /* 忽略 */
     }
   }
-  if (n.ticket_id) router.push(`/tickets/${n.ticket_id}`)
+  const target = notificationTarget(n)
+  if (target) router.push(target)
 }
 
-onMounted(() => loadNotifications(false))
+onMounted(() => {
+  loadUnread()
+  loadNotifications(false)
+})
 </script>
 
 <template>
@@ -72,8 +131,25 @@ onMounted(() => loadNotifications(false))
         <button v-if="unreadCount > 0" class="btn-read-all" @click="markAllRead">全部已读</button>
       </div>
 
+      <!-- 分类标签页：「@我的」和「回复我的」是分开的，
+           被 @ 只代表提及，不代表对方回复了你 -->
+      <div class="group-tabs">
+        <button
+          v-for="g in GROUPS"
+          :key="g.key"
+          class="group-tab"
+          :class="{ active: group === g.key }"
+          @click="switchGroup(g.key)"
+        >
+          {{ g.label }}
+          <span v-if="groupBadge(g.key) > 0" class="tab-badge">{{ groupBadge(g.key) }}</span>
+        </button>
+      </div>
+
       <div v-if="error" class="empty">{{ error }}</div>
-      <div v-else-if="!loading && notifications.length === 0" class="empty">暂无通知</div>
+      <div v-else-if="!loading && notifications.length === 0" class="empty">
+        {{ emptyText }}
+      </div>
 
       <div v-else class="notification-list">
         <div
@@ -87,11 +163,12 @@ onMounted(() => loadNotifications(false))
           <div class="n-body">
             <div class="n-content">
               <span v-if="!n.is_read" class="unread-dot"></span>
-              {{ n.content }}
+              <!-- 文案里的 @用户名 渲染成指向用户主页的链接 -->
+              <span v-html="renderMentionText(n.content)"></span>
             </div>
             <div class="n-time">{{ fmtDateTime(n.created_at, '') }}</div>
           </div>
-          <span v-if="n.ticket_id" class="n-go">›</span>
+          <span v-if="notificationTarget(n)" class="n-go">›</span>
         </div>
       </div>
 
@@ -147,6 +224,52 @@ onMounted(() => loadNotifications(false))
 .btn-read-all:hover {
   color: var(--primary);
   border-color: var(--primary);
+}
+
+/* ===== 分类标签页 ===== */
+.group-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.group-tab {
+  position: relative;
+  padding: 7px 18px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #4a5568;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.group-tab:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.group-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.tab-badge {
+  display: inline-block;
+  min-width: 16px;
+  padding: 0 4px;
+  margin-left: 5px;
+  border-radius: 8px;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
 }
 
 .notification-list {
@@ -242,10 +365,15 @@ onMounted(() => loadNotifications(false))
   color: #fff;
 }
 
-/* ===== 手机端：原本无任何媒体查询 ===== */
+/* ===== 手机端 ===== */
 @media (max-width: 600px) {
   .notification-item {
     padding: 12px 14px;
+  }
+
+  /* 四个标签在窄屏上放不下，横向滑动，不要挤压换行 */
+  .group-tab {
+    padding: 7px 14px;
   }
 }
 </style>
