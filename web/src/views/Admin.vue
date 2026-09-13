@@ -415,6 +415,11 @@ const editingValue = ref('')
 function startEdit(field: 'username' | 'user_tag' | 'remark', user: any) {
   if (!canModifyUser(user)) return
   if (field === 'user_tag' && user.is_cheater) return
+  // 授予 Tag 卡需要 Tag 管理权限
+  if (field === 'user_tag' && !currentUser.value?.can_manage_tags) {
+    Swal.fire({ icon: 'info', title: '授予 Tag 卡需要 Tag 管理权限' })
+    return
+  }
   editing.value = { field, userNumber: user.user_number }
   editingValue.value = field === 'username'
     ? (user.username || '未命名')
