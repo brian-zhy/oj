@@ -81,11 +81,21 @@ const switchGroup = (key: string) => {
   loadNotifications(false)
 }
 
+/**
+ * 读掉消息后立刻让顶栏角标跟上。
+ * 不做这件事的话，页面自己的计数已经清了，顶栏却还挂着旧数字，
+ * 最长要 30 秒（下一次轮询）才追上，看起来就像没标记已读。
+ */
+const emitUnreadChanged = () => {
+  window.dispatchEvent(new CustomEvent('notifications:changed'))
+}
+
 const markAllRead = async () => {
   try {
     await apiClient.put('/api/notifications/read-all')
     notifications.value = notifications.value.map(n => ({ ...n, is_read: true }))
     unreadByGroup.value = {}
+    emitUnreadChanged()
   } catch {
     /* 忽略 */
   }
@@ -106,6 +116,7 @@ const openNotification = async (n: any) => {
       const g = n.type === 'mention' ? 'mention' : n.type === 'reply' ? 'reply' : 'system'
       if (unreadByGroup.value.all > 0) unreadByGroup.value.all--
       if (unreadByGroup.value[g] > 0) unreadByGroup.value[g]--
+      emitUnreadChanged()
     } catch {
       /* 忽略 */
     }
