@@ -35,12 +35,26 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+/**
+ * 从按钮向上找最近的、含有 <pre> 的祖先容器，返回其中的 <pre>。
+ * 不同场景结构不同（Markdown 在 .code-block、样例在 .io-box、错误信息在 .error-box），
+ * 逐个枚举 class 既啰嗦又容易漏，这里用通用查找。
+ */
+function findCodeTarget(btn: HTMLElement): HTMLPreElement | null {
+  let el: HTMLElement | null = btn.parentElement
+  while (el) {
+    const pre = el.querySelector('pre')
+    if (pre) return pre
+    el = el.parentElement
+  }
+  return null
+}
+
 const COPIED_RESET_MS = 1600
 
 /**
  * 安装全局复制按钮委托。
- * 约定：任何带 data-copy 的按钮，点击后复制其所在
- * .code-block / .code-wrap 容器内 <pre> 的纯文本。
+ * 约定：任何带 data-copy 的按钮，点击后复制其最近的、含 <pre> 的祖先容器内的纯文本。
  */
 export function installCodeCopy(): void {
   document.addEventListener('click', (e) => {
@@ -48,8 +62,7 @@ export function installCodeCopy(): void {
     const btn = target?.closest?.('[data-copy]') as HTMLElement | null
     if (!btn) return
 
-    const host = btn.closest('.code-block, .code-wrap')
-    const pre = host?.querySelector('pre')
+    const pre = findCodeTarget(btn)
     if (!pre) return
 
     e.preventDefault()

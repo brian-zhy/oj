@@ -109,13 +109,13 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="sub.error_message" class="error-box">
-              <div class="error-title">错误信息</div>
-              <div class="code-wrap">
-                <button type="button" class="code-copy" data-copy>
+              <div class="error-title">
+                <span>错误信息</span>
+                <button type="button" class="code-copy code-copy-light" data-copy>
                   <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
                 </button>
-                <pre>{{ sub.error_message }}</pre>
               </div>
+              <pre>{{ sub.error_message }}</pre>
             </div>
 
             <table v-if="sub.test_results && sub.test_results.length" class="case-table">
@@ -259,6 +259,10 @@ onBeforeUnmount(() => {
 }
 
 .error-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   color: var(--primary);
   font-size: 13px;
   font-weight: 600;
