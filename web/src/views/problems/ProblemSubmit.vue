@@ -61,6 +61,23 @@ const fetchLastSubmission = async (): Promise<Submission | null> => {
   }
 }
 
+// 与后端 schemas/submission.py 的 max_length 保持一致，载入文件时据此校验
+const MAX_CODE_LENGTH = 100_000
+
+const onFileLoaded = ({ name, chars }: { name: string; chars: number }) => {
+  Swal.fire({
+    icon: 'success',
+    title: '已载入代码',
+    text: `${name}（${chars} 字符）`,
+    timer: 1600,
+    showConfirmButton: false,
+  })
+}
+
+const onFileLoadError = (message: string) => {
+  Swal.fire('载入失败', message, 'error')
+}
+
 const submit = async () => {
   if (!code.value.trim()) {
     Swal.fire('请填写代码', '', 'warning')
@@ -138,7 +155,15 @@ onMounted(async () => {
             </div>
           </div>
 
-          <CodeEditor v-model="code" :language="editorLang" height="480px" />
+          <CodeEditor
+            v-model="code"
+            :language="editorLang"
+            height="480px"
+            loadable
+            :max-chars="MAX_CODE_LENGTH"
+            @load="onFileLoaded"
+            @load-error="onFileLoadError"
+          />
 
           <p class="tip"><template v-if="restoredFromLast">已载入你上次提交的代码。<br /></template>支持 C++14 / C / Python 3；评测在隔离沙箱中运行，每个测试点限时 {{ problem.time_limit }} ms。</p>
         </div>
