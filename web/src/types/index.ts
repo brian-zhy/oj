@@ -194,6 +194,8 @@ export interface Submission {
   test_results: SubmissionCaseResult[]
   code?: string
   code_visible?: boolean
+  /** 代码被隐藏的原因（比赛进行中），没有该字段时按「无权查看他人代码」处理 */
+  code_hidden_reason?: string
   judged_at?: string | null
   created_at: string
 }

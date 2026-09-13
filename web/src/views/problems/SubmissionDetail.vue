@@ -143,7 +143,9 @@ onBeforeUnmount(() => {
         </div>
         <div class="card" v-else-if="!sub.code_visible">
           <div class="section-title">源代码</div>
-          <div class="empty small">无权查看他人提交的代码</div>
+          <div class="empty small">
+            {{ sub.code_hidden_reason || '无权查看他人提交的代码' }}
+          </div>
         </div>
 
         <div class="back-row">
