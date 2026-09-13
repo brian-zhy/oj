@@ -26,6 +26,33 @@ const userProfile = ref({
 } as any)
 
 // 编辑模式
+// ===== Tag 卡 =====
+const tagCards = ref<{ id: number; name: string; enabled: boolean }[]>([])
+const tagCardsLoading = ref(false)
+
+const loadTagCards = async () => {
+  tagCardsLoading.value = true
+  try {
+    const data: any = await apiClient.get('/users/me/tag-cards')
+    tagCards.value = data.items
+  } catch {
+    tagCards.value = []
+  } finally {
+    tagCardsLoading.value = false
+  }
+}
+
+const toggleTagCard = async (card: { id: number; name: string; enabled: boolean }) => {
+  try {
+    const updated: any = await apiClient.put(`/users/me/tag-cards/${card.id}/toggle`)
+    // 佩戴制：以服务端为准刷新全部状态
+    await loadTagCards()
+    showMessage(updated.enabled ? `已佩戴「${card.name}」` : `已摘下「${card.name}」`, 'success')
+  } catch (err: any) {
+    showMessage(err.response?.data?.detail || '操作失败', 'error')
+  }
+}
+
 const isEditing = ref(false)
 const editForm = ref({
   bio: ''
@@ -253,6 +280,7 @@ const handleLogout = () => {
 // 组件挂载时加载资料
 onMounted(() => {
   loadProfile()
+  loadTagCards()
 })
 </script>
 
@@ -288,7 +316,7 @@ onMounted(() => {
           </h1>
           <div class="user-meta">
             <span class="uid">UID: {{ userProfile.user_number }}</span>
-            <span v-if="userProfile.user_tag" class="user-tag">{{ userProfile.user_tag }}</span>
+            <span v-if="userProfile.display_tag || userProfile.user_tag" class="user-tag">{{ userProfile.display_tag || userProfile.user_tag }}</span>
           </div>
           <p v-if="userProfile.bio" class="bio">{{ userProfile.bio }}</p>
           <p v-else class="bio empty">这个人很懒，还没有填写个人简介</p>
@@ -309,6 +337,35 @@ onMounted(() => {
           <button @click="handleLogout" class="btn-logout">
             退出登录
           </button>
+        </div>
+      </div>
+
+      <!-- Tag 卡 -->
+      <div class="card tag-cards-card">
+        <div class="tag-cards-head">
+          <h3 class="tag-cards-title">Tag 卡</h3>
+          <span class="tag-cards-sub">点击佩戴显示在用户名旁，同一时间只能佩戴一张</span>
+        </div>
+        <div v-if="tagCardsLoading" class="tag-empty">加载中...</div>
+        <div v-else-if="tagCards.length === 0" class="tag-empty">
+          暂无 Tag 卡——被授予 Tag 后会出现在这里
+        </div>
+        <div v-else class="tag-cards-list">
+          <div
+            v-for="card in tagCards"
+            :key="card.id"
+            class="tag-card-item"
+            :class="{ enabled: card.enabled }"
+          >
+            <span class="tag-card-name" :class="{ enabled: card.enabled }">{{ card.name }}</span>
+            <button
+              class="tag-toggle"
+              :class="{ enabled: card.enabled }"
+              @click="toggleTagCard(card)"
+            >
+              {{ card.enabled ? '摘下' : '佩戴' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -576,6 +633,18 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 500;
 }
+
+.tag-cards-card { margin-bottom: 20px; }
+.tag-cards-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.tag-cards-title { font-size: 16px; font-weight: 700; color: #2c3e50; margin: 0; }
+.tag-cards-sub { font-size: 12px; color: #8a9aa8; }
+.tag-cards-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.tag-card-item { display: flex; align-items: center; gap: 10px; border: 1px solid #e2e8f0; border-radius: 20px; padding: 6px 8px 6px 14px; background: #fafbfc; }
+.tag-card-item.enabled { border-color: var(--primary); background: #f0f6ff; }
+.tag-card-name { font-size: 14px; font-weight: 600; color: #8a9aa8; }
+.tag-card-name.enabled { color: var(--primary); }
+.tag-toggle { border: none; border-radius: 14px; padding: 4px 12px; font-size: 12px; cursor: pointer; background: #e2e8f0; color: #4a5568; }
+.tag-toggle.enabled { background: var(--primary); color: #fff; }
 
 .user-tag {
   background: rgba(255, 255, 255, 0.2);

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 # 权限变更分类（与参考项目 analyzePermissionChanges 逻辑一致）
 # ================================================================
 NORMAL_PERMS = ["can_speak"]
-ADMIN_PERMS = ["is_super_admin", "is_admin", "can_manage_users", "can_manage_posts", "can_manage_problems"]
+ADMIN_PERMS = ["is_super_admin", "is_admin", "can_manage_users", "can_manage_posts", "can_manage_problems", "can_manage_tags"]
 
 
 def analyze_permission_changes(changes: dict) -> dict:

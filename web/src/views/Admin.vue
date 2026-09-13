@@ -278,7 +278,7 @@ function toggleLocalPermission(userNumber: number, field: string, currentValue: 
 // 分析权限变更类型（与目标项目 analyzePermissionChanges 一致）
 function analyzePermissionChanges(changes: any) {
   const normalPerms = ['can_speak']
-  const adminPerms = ['is_super_admin', 'is_admin', 'can_manage_users', 'can_manage_posts', 'can_manage_problems']
+  const adminPerms = ['is_super_admin', 'is_admin', 'can_manage_users', 'can_manage_posts', 'can_manage_problems', 'can_manage_tags']
 
   let normalGrants: any[] = []
   let normalRevokes: any[] = []
@@ -820,7 +820,8 @@ onUnmounted(() => {
                           { name: '进入后台', field: 'is_admin', on: !!user.is_admin },
                           { name: '用户管理', field: 'can_manage_users', on: !!user.can_manage_users },
                           { name: '秩序管理', field: 'can_manage_posts', on: !!user.can_manage_posts },
-                          { name: '题目管理', field: 'can_manage_problems', on: !!user.can_manage_problems }
+                          { name: '题目管理', field: 'can_manage_problems', on: !!user.can_manage_problems },
+                          { name: 'Tag 管理', field: 'can_manage_tags', on: !!user.can_manage_tags }
                         ]" :key="perm.field">
                           <span v-if="idx > 0"> | </span>
                           <span

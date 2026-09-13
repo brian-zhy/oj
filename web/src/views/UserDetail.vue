@@ -19,6 +19,56 @@ const profile = ref<any>(null)
 const loading = ref(true)
 const error = ref('')
 
+// ==================== Tag 卡管理（需 Tag 管理权限） ====================
+const canManageTags = computed(() => !!currentUser.value?.can_manage_tags)
+const tagCards = ref<any[]>([])
+const newTagName = ref('')
+const tagOpLoading = ref(false)
+
+const loadTagCards = async () => {
+  if (!canManageTags.value || !profile.value?.id) return
+  try {
+    // 目标用户的 tag 随 profile 接口返回（UserOut.tag_cards）
+  } catch { /* noop */ }
+}
+
+const loadTargetTagCards = async () => {
+  try {
+    const data: any = await apiClient.get(resolveProfileUrl(route.params.id as string))
+    tagCards.value = data.tag_cards || []
+  } catch {
+    tagCards.value = []
+  }
+}
+
+const grantTag = async () => {
+  const name = newTagName.value.trim()
+  if (!name || !profile.value?.id) return
+  tagOpLoading.value = true
+  try {
+    await apiClient.post(`/users/${profile.value.id}/tag-cards`, { name })
+    newTagName.value = ''
+    await loadTargetTagCards()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '授予失败')
+  } finally {
+    tagOpLoading.value = false
+  }
+}
+
+const removeTagCard = async (cardId: number) => {
+  if (!profile.value?.id) return
+  tagOpLoading.value = true
+  try {
+    await apiClient.delete(`/users/${profile.value.id}/tag-cards/${cardId}`)
+    await loadTargetTagCards()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '删除失败')
+  } finally {
+    tagOpLoading.value = false
+  }
+}
+
 // ==================== 工具 ====================
 const COLOR_RED = 'var(--primary)'
 const COLOR_PURPLE = '#9C3DCF'
@@ -46,7 +96,7 @@ const formatRegDate = (dateStr: string) => {
 }
 
 // ==================== 计算属性 ====================
-const currentUser = computed(() => authStore.currentUser)
+const currentUser = computed<any>(() => authStore.currentUser)
 // 封面URL（当前后端暂无封面字段，固定使用默认封面）
 const coverUrl = ref('')
 const isOwner = computed(() =>
@@ -260,6 +310,7 @@ const loadUserProfile = async () => {
     profile.value = data
     coverUrl.value = data.cover_url || ''
     document.title = `${data.username} 的个人主页 - NLNOJ`
+    if (canManageTags.value) await loadTargetTagCards()
   } catch (err: any) {
     console.error('加载用户信息失败:', err)
     error.value = err.response?.status === 404 ? '用户不存在' : '加载失败: ' + (err.message || '未知错误')
@@ -411,6 +462,27 @@ onMounted(() => {
               <span>注册时间</span>
               <div class="right"><time :datetime="profile.created_at">{{ formatRegDate(profile.created_at) }}</time></div>
             </div>
+            <template v-if="canManageTags">
+              <div class="l-flex-info-row"><span>Tag 卡</span><div class="right" /></div>
+              <div class="tag-manage">
+                <div v-if="tagCards.length === 0" class="tag-manage-empty">该用户暂无 Tag 卡</div>
+                <div v-for="card in tagCards" :key="card.id" class="tag-manage-item">
+                  <span class="tag-manage-name" :class="{ enabled: card.enabled }">{{ card.name }}</span>
+                  <span class="tag-manage-state">{{ card.enabled ? '佩戴中' : '未佩戴' }}</span>
+                  <button class="tag-manage-btn danger" :disabled="tagOpLoading" @click="removeTagCard(card.id)">删除</button>
+                </div>
+                <div class="tag-manage-add">
+                  <input
+                    v-model="newTagName"
+                    class="tag-manage-input"
+                    maxlength="50"
+                    placeholder="输入 Tag 名称授予"
+                    @keydown.enter.prevent="grantTag"
+                  >
+                  <button class="tag-manage-btn" :disabled="tagOpLoading || !newTagName.trim()" @click="grantTag">授予</button>
+                </div>
+              </div>
+            </template>
           </div>
 
           <!-- 动态：TA 发过的犇犇（只读，仅本人的保留删除按钮） -->
@@ -841,6 +913,18 @@ onMounted(() => {
   margin: 0;
 }
 
+.tag-manage { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: #fafbfc; border-radius: 8px; }
+.tag-manage-empty { color: #8a9aa8; font-size: 13px; }
+.tag-manage-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.tag-manage-name { font-weight: 700; color: #2c3e50; }
+.tag-manage-name.enabled { color: var(--primary); }
+.tag-manage-state { color: #8a9aa8; font-size: 12px; flex: 1; }
+.tag-manage-btn { border: none; background: var(--primary); color: #fff; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+.tag-manage-btn.danger { background: #e74c3c; }
+.tag-manage-btn:disabled { opacity: .5; cursor: not-allowed; }
+.tag-manage-add { display: flex; gap: 8px; }
+.tag-manage-input { flex: 1; padding: 6px 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; outline: none; }
+.tag-manage-input:focus { border-color: var(--primary); }
 .l-flex-info-row {
   display: flex;
   justify-content: space-between;

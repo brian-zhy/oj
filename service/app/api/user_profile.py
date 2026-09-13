@@ -7,10 +7,12 @@ import time
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user
+from app.models.tag_card import UserTagCard
 from app.models.user import User
 from app.schemas.user import UserProfileUpdate, PasswordUpdate, UserOut
 from app.services import user_profile as user_service
@@ -19,6 +21,111 @@ router = APIRouter(prefix="/users", tags=["user-profile"])
 
 _ALLOWED_AVATAR_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+async def _require_tag_manager(user: User) -> None:
+    if not (user.is_super_admin or user.is_admin or user.can_manage_tags):
+        raise HTTPException(status_code=403, detail="需要 Tag 管理权限")
+
+
+def _card_dict(card: UserTagCard) -> dict:
+    return {
+        "id": card.id,
+        "name": card.name,
+        "enabled": card.enabled,
+        "created_at": card.created_at.isoformat() if card.created_at else None,
+    }
+
+
+@router.get("/me/tag-cards", summary="我的 Tag 卡列表")
+async def list_my_tag_cards(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    cards = (await db.execute(
+        select(UserTagCard).where(UserTagCard.user_id == current_user.id)
+        .order_by(UserTagCard.id)
+    )).scalars().all()
+    return {"items": [_card_dict(c) for c in cards]}
+
+
+@router.put("/me/tag-cards/{card_id}/toggle", summary="佩戴/摘下 Tag 卡（佩戴制：同时仅一张）")
+async def toggle_my_tag_card(
+    card_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    card = (await db.execute(
+        select(UserTagCard).where(
+            UserTagCard.id == card_id, UserTagCard.user_id == current_user.id)
+    )).scalar_one_or_none()
+    if card is None:
+        raise HTTPException(status_code=404, detail="Tag 卡不存在")
+    if not card.enabled:
+        # 佩戴制：先摘下其他卡
+        others = (await db.execute(
+            select(UserTagCard).where(
+                UserTagCard.user_id == current_user.id,
+                UserTagCard.enabled.is_(True))
+        )).scalars().all()
+        for c in others:
+            c.enabled = False
+        card.enabled = True
+    else:
+        card.enabled = False
+    await db.commit()
+    return _card_dict(card)
+
+
+@router.post("/users/{user_id}/tag-cards", status_code=201,
+             summary="授予 Tag 卡（需 Tag 管理权限）")
+async def grant_tag_card(
+    user_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    await _require_tag_manager(current_user)
+    target = (await db.execute(
+        select(User).where(User.id == user_id)
+    )).scalar_one_or_none()
+    if target is None:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    name = (payload.get("name") or "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Tag 名称不能为空")
+    if len(name) > 50:
+        raise HTTPException(status_code=400, detail="Tag 名称过长（≤50 字）")
+    exists = (await db.execute(
+        select(UserTagCard.id).where(
+            UserTagCard.user_id == user_id, UserTagCard.name == name)
+    )).scalar_one_or_none()
+    if exists is not None:
+        raise HTTPException(status_code=400, detail="该用户已有同名 Tag 卡")
+    card = UserTagCard(user_id=user_id, name=name)
+    db.add(card)
+    await db.commit()
+    await db.refresh(card)
+    return _card_dict(card)
+
+
+@router.delete("/users/{user_id}/tag-cards/{card_id}", status_code=204,
+               summary="删除 Tag 卡（需 Tag 管理权限）")
+async def delete_tag_card(
+    user_id: int,
+    card_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    await _require_tag_manager(current_user)
+    card = (await db.execute(
+        select(UserTagCard).where(
+            UserTagCard.id == card_id, UserTagCard.user_id == user_id)
+    )).scalar_one_or_none()
+    if card is None:
+        raise HTTPException(status_code=404, detail="Tag 卡不存在")
+    await db.delete(card)
+    await db.commit()
 
 
 @router.get("/me", response_model=UserOut, summary="获取当前用户信息")
