@@ -94,6 +94,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    // 经验商店：用经验兑换 Tag 卡
+    path: '/shop',
+    name: 'Shop',
+    component: () => import('@/views/shop/Shop.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/user/notification',
     name: 'Notifications',
     component: () => import('@/views/Notifications.vue'),
