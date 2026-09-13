@@ -13,7 +13,10 @@ export interface ContestItem {
   id: number
   title: string
   description: string
-  visibility: 'public' | 'private'
+  visibility: 'public' | 'private' | 'team' | 'team_private'
+  type_label: string
+  team_id: number | null
+  team_name: string | null
   invite_code?: string | null
   start_time: string | null
   end_time: string | null
@@ -58,7 +61,8 @@ export const contestsApi = {
     start_time: string
     end_time: string
     problem_codes: string[]
-    visibility?: 'public' | 'private'
+    team_id?: number
+    visibility?: 'public' | 'private' | 'team' | 'team_private'
     invite_code?: string
   }): Promise<ContestItem> {
     return apiClient.post('/api/contests', data)

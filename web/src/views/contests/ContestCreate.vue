@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { contestsApi } from '@/api/contests'
+import { teamsApi } from '@/api/teams'
 import { problemsApi } from '@/api/problems'
 import { userNameColor } from '@/utils/userColor'
 import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
@@ -11,9 +12,35 @@ const router = useRouter()
 const authStore = useAuthStore()
 const me = computed(() => authStore.currentUser)
 
-// 未开放选择：当前仅支持公开赛 / 邀请赛，赛制固定 ACM
-const visibility = ref<'public' | 'private'>('public')
+// 举办方：个人（站方赛）或我所管理的团队（团队赛）
+const myTeams = ref<{ id: number; name: string; is_owner: boolean }[]>([])
+const ownerKind = ref<'personal' | 'team'>('personal')
+const teamId = ref<number | null>(null)
+// 公开程度：站方赛 = 公开庭/邀请赛；团队赛 = 团队内部赛/团队邀请赛
+const visibility = ref<'public' | 'private' | 'team' | 'team_private'>('public')
 const inviteCode = ref('')
+
+const onOwnerChange = (value: string) => {
+  if (value === 'personal') {
+    ownerKind.value = 'personal'
+    visibility.value = 'public'
+    return
+  }
+  ownerKind.value = 'team'
+  visibility.value = 'team'
+  const id = parseInt(value, 10)
+  teamId.value = Number.isFinite(id) && id > 0 ? id : (myTeams.value[0]?.id ?? null)
+}
+
+const loadMyTeams = async () => {
+  try {
+    const data = await teamsApi.myManageable()
+    myTeams.value = data.items
+    if (data.items.length === 0) ownerKind.value = 'personal'
+  } catch {
+    myTeams.value = []
+  }
+}
 
 const form = ref({ title: '', description: '', start_date: '', start_time: '', end_date: '', end_time: '' })
 const createError = ref('')
@@ -77,7 +104,8 @@ const doCreate = async () => {
     createError.value = '请选择完整的起止时间'
     return
   }
-  if (visibility.value === 'private' && inviteCode.value.trim().length < 3) {
+  const needCode = visibility.value === 'private' || visibility.value === 'team_private'
+  if (needCode && inviteCode.value.trim().length < 3) {
     createError.value = '邀请赛需设置 3-32 位邀请码'
     return
   }
@@ -91,7 +119,8 @@ const doCreate = async () => {
       end_time: new Date(`${form.value.end_date}T${form.value.end_time}`).toISOString(),
       problem_codes: picked.value.map(p => p.code),
       visibility: visibility.value,
-      invite_code: visibility.value === 'private' ? inviteCode.value.trim() : undefined,
+      team_id: ownerKind.value === 'team' ? (teamId.value ?? undefined) : undefined,
+      invite_code: needCode ? inviteCode.value.trim() : undefined,
     })
     router.push(`/contest/${created.id}`)
   } catch (err: any) {
@@ -101,8 +130,9 @@ const doCreate = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 题目通过题号即时校验添加，无需预拉题库
+  await loadMyTeams()
 })
 </script>
 
@@ -129,17 +159,39 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="form-row">
-          <span class="row-label">公开程度</span>
+        <div v-if="myTeams.length > 0" class="form-row">
+          <span class="row-label">举办方</span>
           <div class="row-value">
-            <select v-model="visibility" class="form-input w-select">
-              <option value="public">公开赛（自由报名）</option>
-              <option value="private">邀请赛（报名需邀请码）</option>
+            <select
+              class="form-input w-select"
+              :value="ownerKind === 'personal' ? 'personal' : String(teamId)"
+              @change="onOwnerChange(($event.target as HTMLSelectElement).value)"
+            >
+              <option value="personal">个人</option>
+              <option v-for="t in myTeams" :key="t.id" :value="String(t.id)">
+                团队：{{ t.name }}
+              </option>
             </select>
           </div>
         </div>
 
-        <div v-if="visibility === 'private'" class="form-row">
+        <div class="form-row">
+          <span class="row-label">公开程度</span>
+          <div class="row-value">
+            <select v-model="visibility" class="form-input w-select">
+              <template v-if="ownerKind === 'team'">
+                <option value="team">团队内部赛（仅团队成员可报名）</option>
+                <option value="team_private">团队邀请赛（凭邀请码报名）</option>
+              </template>
+              <template v-else>
+                <option value="public">公开赛（自由报名）</option>
+                <option value="private">邀请赛（报名需邀请码）</option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="visibility === 'private' || visibility === 'team_private'" class="form-row">
           <span class="row-label">邀请码</span>
           <div class="row-value">
             <input v-model="inviteCode" class="form-input w-title" maxlength="32" placeholder="3-32 位，报名时需填写" />

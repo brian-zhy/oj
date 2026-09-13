@@ -66,6 +66,7 @@ onMounted(load)
             <div class="c-title-row">
               <span class="c-title">{{ c.title }}</span>
               <span class="status-badge" :class="STATUS[c.status].cls">{{ STATUS[c.status].text }}</span>
+              <span class="type-badge">{{ c.type_label }}</span>
             </div>
             <div v-if="c.description" class="c-desc">{{ c.description }}</div>
             <div class="c-meta">
@@ -92,6 +93,7 @@ onMounted(load)
 .contest-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 20px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .contest-card:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.09); }
 .c-title-row { display: flex; align-items: center; gap: 10px; }
+.type-badge { font-size: 12px; padding: 2px 10px; border-radius: 4px; color: #13c2c2; background: #e6fffb; font-weight: 600; }
 .c-title { font-size: 16px; font-weight: 700; color: #2c3e50; }
 .status-badge { font-size: 12px; padding: 2px 12px; border-radius: 20px; font-weight: 600; }
 .status-badge.running { color: #fff; background: #52c41a; }

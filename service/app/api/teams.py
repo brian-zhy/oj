@@ -216,6 +216,31 @@ async def list_my_team_problems(
     }
 
 
+@router.get("/my/manageable", summary="我可管理的团队（团主/管理员，办赛下拉用）")
+async def my_manageable_teams(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    owned = (await db.execute(
+        select(Team).where(Team.owner_id == current_user.id)
+        .order_by(Team.id.desc())
+    )).scalars().unique().all()
+    admin_rows = (await db.execute(
+        select(Team).join(TeamMember, TeamMember.team_id == Team.id).where(
+            TeamMember.user_id == current_user.id,
+            TeamMember.role == "admin")
+        .order_by(Team.id.desc())
+    )).scalars().unique().all()
+    seen: set[int] = set()
+    items = []
+    for t in [*owned, *admin_rows]:
+        if t.id in seen:
+            continue
+        seen.add(t.id)
+        items.append({"id": t.id, "name": t.name, "is_owner": t.owner_id == current_user.id})
+    return {"items": items}
+
+
 @router.get("/{team_id}/problems", summary="团队私有题库（成员可见）")
 async def list_team_problems(
     team_id: int,
