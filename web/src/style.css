@@ -43,7 +43,11 @@ body {
   font-family: "Lato", "Noto Sans SC", system-ui, -apple-system, sans-serif;
 }
 
-body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.monaco-editor):not(.monaco-editor *):not(code):not(pre):not(kbd):not(samp):not(.katex):not(.katex *) {
+/* 正文统一使用无衬线字体。
+   注意排除列表：代码编辑器整棵子树（.cm-editor）与高亮后的代码 token（.hljs）
+   都必须排除 —— 它们不是 code/pre 元素，漏掉就会被强制套上正文字体。
+   （highlight.js 生成的 <span class="hljs-*"> 曾因此变成无衬线字体） */
+body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.cm-editor):not(.cm-editor *):not(.hljs):not(.hljs *):not(code):not(pre):not(kbd):not(samp):not(.katex):not(.katex *) {
   font-family: "Lato", "Noto Sans SC", system-ui, -apple-system, sans-serif;
 }
 

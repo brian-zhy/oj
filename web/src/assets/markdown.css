@@ -63,22 +63,27 @@
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
 }
 
+/* 代码块底色/字体与 CodeEditor（oneDark）保持一致 */
 .prose pre {
-  background-color: #111827;
-  color: white;
+  background-color: #282c34;
+  color: #abb2bf;
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #3a4049;
   overflow-x: auto;
   margin-bottom: 1rem;
 }
 
 .prose pre code {
   background-color: transparent;
-  color: white;
+  color: inherit;
   padding: 0;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .prose blockquote {
@@ -125,76 +130,72 @@
   font-style: italic;
 }
 
-/* 代码高亮基础样式 */
+/* 代码高亮配色：直接采用 CodeEditor 的 oneDark 调色板，保证两处观感一致
+   （色值取自 @codemirror/theme-one-dark） */
 .prose .hljs {
-  background-color: #111827;
-  color: #ffffff;
+  background-color: transparent;
+  color: #abb2bf;
+}
+
+.prose .hljs-comment,
+.prose .hljs-quote,
+.prose .hljs-meta {
+  color: #7d8799;
 }
 
 .prose .hljs-comment,
 .prose .hljs-quote {
-  color: #6b7280;
   font-style: italic;
 }
 
 .prose .hljs-keyword,
 .prose .hljs-selector-tag,
 .prose .hljs-subst {
-  color: #f472b6;
+  color: #c678dd;
 }
 
 .prose .hljs-number,
-.prose .hljs-literal {
-  color: #fbbf24;
+.prose .hljs-type,
+.prose .hljs-class .hljs-title,
+.prose .hljs-selector-class {
+  color: #e5c07b;
+}
+
+.prose .hljs-literal,
+.prose .hljs-symbol,
+.prose .hljs-built_in,
+.prose .hljs-builtin-name {
+  color: #d19a66;
 }
 
 .prose .hljs-string,
-.prose .hljs-doctag {
-  color: #a3e635;
+.prose .hljs-doctag,
+.prose .hljs-addition {
+  color: #98c379;
 }
 
 .prose .hljs-title,
 .prose .hljs-section,
-.prose .hljs-selector-id {
-  color: #60a5fa;
+.prose .hljs-selector-id,
+.prose .hljs-function {
+  color: #61afef;
 }
 
-.prose .hljs-type,
-.prose .hljs-class .hljs-title {
-  color: #c084fc;
-}
-
+.prose .hljs-attr,
+.prose .hljs-attribute,
 .prose .hljs-tag,
 .prose .hljs-name,
-.prose .hljs-attribute {
-  color: #f87171;
+.prose .hljs-selector-attr,
+.prose .hljs-selector-pseudo,
+.prose .hljs-bullet,
+.prose .hljs-deletion {
+  color: #e06c75;
 }
 
 .prose .hljs-regexp,
+.prose .hljs-operator,
 .prose .hljs-link {
-  color: #fb923c;
-}
-
-.prose .hljs-symbol,
-.prose .hljs-bullet {
-  color: #2dd4bf;
-}
-
-.prose .hljs-built_in,
-.prose .hljs-builtin-name {
-  color: #34d399;
-}
-
-.prose .hljs-meta {
-  color: #9ca3af;
-}
-
-.prose .hljs-deletion {
-  background-color: #fecaca;
-}
-
-.prose .hljs-addition {
-  background-color: #bbf7d0;
+  color: #56b6c2;
 }
 
 .prose .hljs-emphasis {
@@ -203,4 +204,104 @@
 
 .prose .hljs-strong {
   font-weight: bold;
+}
+
+/* ---------- 代码块容器 ---------- */
+
+/* Markdown 围栏代码块：底色/圆角/边框与 CodeEditor 对齐 */
+.prose .code-block {
+  position: relative;
+  margin-bottom: 1rem;
+  background-color: #282c34;
+  border: 1px solid #3a4049;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* 外层容器已负责边框与下边距，避免重复 */
+.prose .code-block pre {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+/* 独立 <pre>（题面样例、评测错误信息等）的外层容器 */
+.code-wrap {
+  position: relative;
+}
+
+/* ---------- 语言标签与复制按钮 ---------- */
+
+/* 右上角工具组：位置与 CodeEditor 的浮动复制按钮一致 */
+.prose .code-tools {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prose .code-lang {
+  font-family: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
+  font-size: 11px;
+  line-height: 18px;
+  color: #7d8799;
+  user-select: none;
+}
+
+/* 基础几何：Markdown 代码块与独立 <pre> 共用（配色见下方各自规则） */
+.code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 11px;
+  line-height: 16px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.code-copy:hover,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+/* 深色代码块：与 CodeEditor 的 .ce-copy 同款配色 */
+.prose .code-block .code-copy {
+  color: #abb2bf;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.prose .code-block .code-copy:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+.prose .code-block .code-copy.is-copied {
+  color: #98c379;
+  border-color: rgba(152, 195, 121, 0.45);
+}
+
+/* 浅色代码块（样例 / 错误信息） */
+.code-wrap .code-copy {
+  color: #64748b;
+  background-color: rgba(100, 116, 139, 0.12);
+  border-color: rgba(100, 116, 139, 0.22);
+}
+
+.code-wrap .code-copy:hover {
+  color: #1e293b;
+  background-color: rgba(100, 116, 139, 0.22);
+}
+
+.code-wrap .code-copy.is-copied {
+  color: #16a34a;
+  opacity: 1;
 }

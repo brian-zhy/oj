@@ -24,7 +24,7 @@ const isJudging = computed(() =>
   !!sub.value && (sub.value.status === 'pending' || sub.value.status === 'judging')
 )
 
-const monacoLang = computed(() => {
+const editorLang = computed(() => {
   const l = sub.value?.language
   return l === 'python3' ? 'python' : l ?? 'cpp'
 })
@@ -110,7 +110,12 @@ onBeforeUnmount(() => {
 
             <div v-if="sub.error_message" class="error-box">
               <div class="error-title">错误信息</div>
-              <pre>{{ sub.error_message }}</pre>
+              <div class="code-wrap">
+                <button type="button" class="code-copy" data-copy>
+                  <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
+                </button>
+                <pre>{{ sub.error_message }}</pre>
+              </div>
             </div>
 
             <table v-if="sub.test_results && sub.test_results.length" class="case-table">
@@ -134,7 +139,7 @@ onBeforeUnmount(() => {
         <!-- 源代码 -->
         <div class="card" v-if="sub.code_visible && sub.code !== undefined">
           <div class="section-title">源代码</div>
-          <CodeEditor :model-value="sub.code" :language="monacoLang" readonly height="360px" />
+          <CodeEditor :model-value="sub.code" :language="editorLang" readonly height="360px" />
         </div>
         <div class="card" v-else-if="!sub.code_visible">
           <div class="section-title">源代码</div>

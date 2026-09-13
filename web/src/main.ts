@@ -6,6 +6,7 @@ import './assets/markdown.css'
 import 'sweetalert2/dist/sweetalert2.min.css'
 import App from './App.vue'
 import { useAuthStore } from './stores/auth'
+import { installCodeCopy } from './utils/codeCopy'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -26,5 +27,8 @@ window.addEventListener('focus', () => {
   lastPermissionSync = now
   if (authStore.isAuthenticated) authStore.syncCurrentUser()
 })
+
+// 代码块复制按钮：全局事件委托（v-html 插入的内容无法绑定 Vue 事件）
+installCodeCopy()
 
 app.mount('#app')
