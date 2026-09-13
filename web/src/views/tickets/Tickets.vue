@@ -374,5 +374,73 @@ onMounted(() => loadTickets(false))
     flex-direction: column;
     align-items: flex-start;
   }
+
+  /* 窄屏下 .filter-bar 原来是 flex 一行：两个下拉框固定占掉 204px，
+     把 .tabs 挤到只剩 135px，每个 tab 仅 64px 宽，
+     「我的工单」四个字被压成 4 行（高 94px）。改成上下两行、各占满宽度。 */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tabs {
+    gap: 6px;
+  }
+
+  /* flex:1 让两个 tab 等宽平分，而不是被内容挤扁 */
+  .tab {
+    flex: 1;
+    padding: 7px 8px;
+    white-space: nowrap;
+  }
+
+  .filter-selects {
+    gap: 6px;
+  }
+
+  .status-select {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 8px;
+  }
+
+  /* 6 列表格在 375px 上是 491px 宽，而 .ticket-table-wrap 是 overflow:hidden，
+     右侧 140px（状态 / 最后活动）被直接裁掉且无法查看。
+     改成可横向滑动，并收紧单元格留白把需要滑动的距离压小。 */
+  .ticket-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ticket-table {
+    font-size: 13px;
+  }
+
+  .ticket-table th {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .ticket-table td {
+    padding: 12px 8px;
+  }
+
+  .col-time {
+    font-size: 11px;
+  }
+
+  /* 6 列全部保留的话，其余 5 列会吃掉 325px，标题只剩 26px 被压成竖排字。
+     给标题一个下限，多出来的部分靠 .ticket-table-wrap 横向滑动查看。 */
+  .col-title {
+    min-width: 130px;
+  }
+
+  .status-badge {
+    padding: 2px 8px;
+  }
+
+  .empty {
+    padding: 40px 16px;
+  }
 }
 </style>
