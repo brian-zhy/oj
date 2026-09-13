@@ -41,6 +41,7 @@ from app.services.email_verification import (
     delete_password_reset_token
 )
 from app.services.email_service import email_service
+from app.utils.ratelimit import check
 
 router = APIRouter(prefix="/auth", tags=["extended-auth"])
 
@@ -49,18 +50,41 @@ router = APIRouter(prefix="/auth", tags=["extended-auth"])
 _captcha_store: dict[str, dict[str, Any]] = {}
 
 
+# 发信验证码的限流参数。这个接口无需登录且会把邮件真发出去，不设限等于对外
+# 提供了一个免费的邮件发送工具，SMTP 账号很快会被判定「异常发信」而封禁。
+#
+# 故意**不做按 IP 的限制**：请求经过「宝塔 nginx → 容器 nginx」两层代理，
+# 应用看到的 remote_addr 只是上一层代理的地址；而 nginx 用的
+# $proxy_add_x_forwarded_for 是「追加」语义，客户端可以自己伪造
+# X-Forwarded-For 的最左段来绕过按 IP 的限流。与其加一个能被绕过的假限制，
+# 不如用一个真能生效的全局限额兜底。
+#
+# 注意：这个值必须与前端注册页的倒计时一致（Register.vue 里 countdown = 60），
+# 否则前端倒计时结束、服务端还在冷却，用户会莫名吃 429。
+# 全站/单邮箱的额度在 config.py 里，方便开学注册高峰临时调大。
+_SEND_EMAIL_COOLDOWN_SECONDS = 60
+
+
 def generate_captcha_id() -> str:
     """生成验证码会话ID。"""
     return hashlib.sha256(str(datetime.now().timestamp()).encode()).hexdigest()[:16]
 
 
 @router.get("/email-config-test", summary="测试邮箱配置")
-async def test_email_config() -> dict[str, Any]:
+async def test_email_config(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """测试邮箱配置是否正确。
 
-    Returns:
-        邮箱配置状态和详细信息
+    返回内容包含 SMTP 主机 / 端口 / 发件邮箱，属于服务器配置信息，
+    因此只允许超级管理员查看（曾经是无鉴权的，任何人都能从公网读到）。
     """
+    if not current_user.is_super_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="仅超级管理员可查看邮箱配置"
+        )
+
     from app.services.email_service import email_service
 
     config_info = {
@@ -175,16 +199,16 @@ async def login_with_identifier(
 
 
 @router.post("/send-verification", summary="发送邮箱验证码")
-async def send_verification_code(request: dict[str, str]) -> dict[str, str]:
+async def send_verification_code(payload: dict[str, str]) -> dict[str, str]:
     """发送邮箱验证码。
 
     Args:
-        request: 包含email字段的对象
+        payload: 包含email字段的对象
 
     Returns:
         发送结果和验证令牌
     """
-    email = request.get("email")
+    email = (payload.get("email") or "").strip()
 
     if not email:
         raise HTTPException(
@@ -200,6 +224,24 @@ async def send_verification_code(request: dict[str, str]) -> dict[str, str]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="邮箱格式不正确"
         )
+
+    # 限流。放在格式校验之后，免得垃圾请求白占额度。
+    # 顺序也有讲究：先看邮箱自己的冷却，被自己的冷却拦住时不会消耗全站额度。
+    limit_key = email.lower()
+    for key, max_requests, window_seconds, message in (
+        (f"emailverify:addr:{limit_key}", 1, _SEND_EMAIL_COOLDOWN_SECONDS,
+         "验证码刚刚发送过，请 {wait} 秒后再试"),
+        (f"emailverify:addr-day:{limit_key}", settings.EMAIL_SEND_PER_EMAIL_DAY, 86400,
+         "该邮箱今日发送次数已达上限，请明天再试"),
+        ("emailverify:global", settings.EMAIL_SEND_GLOBAL_PER_HOUR, 3600,
+         "系统发信繁忙，请 {wait} 秒后再试"),
+    ):
+        ok, wait = check(key, max_requests, window_seconds)
+        if not ok:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=message.format(wait=wait),
+            )
 
     try:
         # 生成验证码和令牌

@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     IMAGE_WATERMARK_FONT: str | None = None             # 自定义字体路径，留空自动查找
     IMAGE_WATERMARK_OPACITY: int = 140                  # 水印不透明度 0-255
 
+    # 邮件发信限流（保护 SMTP 账号不被判定「异常发信」而封禁）
+    # 注册开学高峰如果被卡，调大这两个值即可（改 .env 重启容器，不用改代码）
+    EMAIL_SEND_GLOBAL_PER_HOUR: int = 100               # 全站每小时发信上限
+    EMAIL_SEND_PER_EMAIL_DAY: int = 5                   # 同一邮箱每天上限
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
