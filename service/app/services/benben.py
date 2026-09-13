@@ -71,17 +71,25 @@ class BenbenService:
         limit: int = 20,
         before_id: Optional[int] = None,
         mode: str = "all",
-        user_number: Optional[int] = None
+        user_number: Optional[int] = None,
+        author_number: Optional[int] = None
     ) -> list[Benben]:
-        """获取犇犇列表"""
+        """获取犇犇列表。
+
+        ``user_number`` 是当前登录用户（只给 mode="my" 用）；
+        ``author_number`` 是「只看这个作者的」（用户主页的动态标签页用）。
+        """
         query = select(Benben).options(selectinload(Benben.user)).order_by(desc(Benben.created_at))
 
         # 分页查询
         if before_id:
             query = query.where(Benben.id < before_id)
 
+        # 指定作者的动态（用户主页）
+        if author_number is not None:
+            query = query.where(Benben.user_number == author_number)
         # 只看自己的动态
-        if mode == "my" and user_number:
+        elif mode == "my" and user_number:
             query = query.where(Benben.user_number == user_number)
 
         query = query.limit(limit)
