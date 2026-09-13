@@ -215,7 +215,7 @@ const uploadCover = async () => {
   } catch (err: any) {
     // 请求报错时向服务端核实真实结果——请求可能被代理/插件改写，但实际已成功
     try {
-      const me: any = await apiClient.get(`/users/number/${route.params.id}?_t=${Date.now()}`)
+      const me: any = await apiClient.get(`${resolveProfileUrl(route.params.id as string)}?_t=${Date.now()}`)
       if (me?.cover_url && me.cover_url !== previousCover) {
         coverUrl.value = me.cover_url
         success = true
@@ -238,13 +238,25 @@ const uploadCover = async () => {
 }
 
 // ==================== 加载用户信息 ====================
+/**
+ * 路由参数既接受用户编号也接受用户名。
+ * 讨论区/犇犇里的 @提及 只知道用户名，把它们直接链到 /user/{用户名}，
+ * 就不用为了渲染一个链接再去批量换一次用户编号了。
+ */
+const resolveProfileUrl = (raw: string) => {
+  const param = decodeURIComponent(String(raw || ''))
+  return /^\d+$/.test(param)
+    ? `/users/number/${param}`
+    : `/users/by-username/${encodeURIComponent(param)}`
+}
+
 const loadUserProfile = async () => {
   loading.value = true
   error.value = ''
 
   try {
-    // 与原站语义一致：URL 中的数字为用户编号（user_number）
-    const data: any = await apiClient.get(`/users/number/${route.params.id}`)
+    // 与原站语义一致：URL 中的数字为用户编号（user_number），否则按用户名查
+    const data: any = await apiClient.get(resolveProfileUrl(route.params.id as string))
     profile.value = data
     coverUrl.value = data.cover_url || ''
     document.title = `${data.username} 的个人主页 - NLNOJ`

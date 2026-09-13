@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 
@@ -193,6 +194,34 @@ async def get_user_by_number(
         用户信息
     """
     user = await user_service.get_user_by_number(db, user_number)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
+    return user
+
+
+# 用户名规则与外号一致：3-50 位字母、数字或下划线（见 schemas/user.py）
+USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,50}$")
+
+
+@router.get("/by-username/{username}", response_model=UserOut, summary="根据用户名获取用户信息")
+async def get_user_by_username(
+    username: str,
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """根据用户名获取用户信息。
+
+    讨论区/犇犇里的 @提及 需要指向用户主页，而主页路由用的是用户编号，
+    提到的人只给了用户名，所以补上这个入口，避免前端再发一次批量解析请求。
+    """
+    if not USERNAME_RE.match(username):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在"
+        )
+    user = await user_service.get_user_by_username(db, username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

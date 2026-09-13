@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
+import { renderMentionText } from '@/utils/markdown'
 
 const router = useRouter()
 const route = useRoute()
@@ -287,7 +288,7 @@ onMounted(() => loadTicket())
             >编辑</button>
           </div>
           <template v-if="!editingDesc">
-            <div class="desc-content">{{ ticket.description }}</div>
+            <div class="desc-content" v-html="renderMentionText(ticket.description)"></div>
           </template>
           <template v-else>
             <textarea
@@ -384,7 +385,7 @@ onMounted(() => loadTicket())
                 <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
                 <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
               </div>
-              <div class="reply-content">{{ r.content }}</div>
+              <div class="reply-content" v-html="renderMentionText(r.content)"></div>
             </div>
           </template>
         </div>

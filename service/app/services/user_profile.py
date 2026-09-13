@@ -42,6 +42,24 @@ async def get_user_by_number(db: AsyncSession, user_number: int) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def get_user_by_username(db: AsyncSession, username: str) -> User | None:
+    """根据用户名获取用户。
+
+    @提及 渲染出的主页链接只有用户名（没有用户编号），靠这个入口查。
+
+    Args:
+        db: 数据库会话
+        username: 用户名
+
+    Returns:
+        用户对象或 None
+    """
+    result = await db.execute(
+        select(User).where(User.username == username)
+    )
+    return result.scalar_one_or_none()
+
+
 async def update_user_profile(
     db: AsyncSession,
     user_id: int,
