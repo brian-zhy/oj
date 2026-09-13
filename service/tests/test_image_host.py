@@ -326,3 +326,37 @@ def test_watermark_gives_up_on_garbage():
     assert apply_watermark(b"not an image at all", "NLNOJ") is None
     assert apply_watermark(b"", "NLNOJ") is None
     assert apply_watermark(PNG_1X1, "   ") is None
+
+
+def test_watermark_only_covers_bottom_right():
+    """水印只在右下角，其余区域一个像素都不许改。"""
+    import io
+
+    from PIL import Image, ImageChops
+
+    from app.utils.watermark import apply_watermark, available
+
+    if not available():
+        pytest.skip("当前环境没有可用字体，跳过水印测试")
+
+    width, height = 800, 600
+    raw = _plain_png((width, height))
+    out = apply_watermark(raw, "NLNOJ")
+    assert out is not None
+
+    with Image.open(io.BytesIO(raw)) as a, Image.open(io.BytesIO(out)) as b:
+        # 原图没有 alpha，就别凭空加一个（否则 PNG 体积白涨好几倍）
+        assert b.mode == a.mode
+        # 左上 80% 区域（盖住整张图绝大部分）应该原封不动
+        keep = (0, 0, int(width * 0.8), int(height * 0.8))
+        assert ImageChops.difference(a.crop(keep), b.crop(keep)).getbbox() is None
+        # 右下角一定被画上了东西
+        corner = (width // 2, height // 2, width, height)
+        assert ImageChops.difference(a.crop(corner), b.crop(corner)).getbbox() is not None
+
+
+def test_watermark_skips_too_small_image():
+    """太小的图放不下水印，退化为无水印，而不是硬糊一团在角落。"""
+    from app.utils.watermark import apply_watermark
+
+    assert apply_watermark(_plain_png((32, 32)), "NLNOJ") is None
