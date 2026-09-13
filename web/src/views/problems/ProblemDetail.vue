@@ -167,11 +167,21 @@ onMounted(() => {
                 <div class="sample-io">
                   <div class="io-box">
                     <div class="io-label">输入</div>
-                    <pre>{{ s.input }}</pre>
+                    <div class="code-wrap">
+                      <button type="button" class="code-copy" data-copy>
+                        <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
+                      </button>
+                      <pre>{{ s.input }}</pre>
+                    </div>
                   </div>
                   <div class="io-box">
                     <div class="io-label">输出</div>
-                    <pre>{{ s.output }}</pre>
+                    <div class="code-wrap">
+                      <button type="button" class="code-copy" data-copy>
+                        <i class="fa-solid fa-copy" /><span data-copy-label>复制</span>
+                      </button>
+                      <pre>{{ s.output }}</pre>
+                    </div>
                   </div>
                 </div>
               </div>

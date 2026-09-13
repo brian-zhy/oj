@@ -21,13 +21,15 @@ const problem = ref<Problem | null>(null)
 const loading = ref(true)
 
 const LANGUAGES = [
-  { value: 'cpp', label: 'C++ (g++, C++14)', monaco: 'cpp' },
-  { value: 'c', label: 'C (gcc)', monaco: 'c' },
-  { value: 'python3', label: 'Python 3', monaco: 'python' },
+  { value: 'cpp', label: 'C++ (g++, C++14)', editorLang: 'cpp' },
+  { value: 'c', label: 'C (gcc)', editorLang: 'c' },
+  { value: 'python3', label: 'Python 3', editorLang: 'python' },
 ]
 
 const language = ref('cpp')
-const monacoLang = computed(() => LANGUAGES.find((l) => l.value === language.value)?.monaco ?? 'cpp')
+const editorLang = computed(
+  () => LANGUAGES.find((l) => l.value === language.value)?.editorLang ?? 'cpp',
+)
 const code = ref('')
 
 const DEFAULT_CODE: Record<string, string> = {
@@ -136,7 +138,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <CodeEditor v-model="code" :language="monacoLang" height="480px" />
+          <CodeEditor v-model="code" :language="editorLang" height="480px" />
 
           <p class="tip"><template v-if="restoredFromLast">已载入你上次提交的代码。<br /></template>支持 C++14 / C / Python 3；评测在隔离沙箱中运行，每个测试点限时 {{ problem.time_limit }} ms。</p>
         </div>

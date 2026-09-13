@@ -198,11 +198,17 @@ const cmTheme = EditorView.theme(
     '&': { height: '100%', fontSize: '13px', backgroundColor: '#fff', color: '#2d3748' },
     '&.cm-focused': { outline: 'none' },
     '.cm-scroller': {
-      fontFamily: "Consolas, Monaco, 'Courier New', monospace",
       lineHeight: '1.6',
       overflow: 'auto',
+      fontFamily: "Consolas, Monaco, 'Courier New', monospace",
     },
-    '.cm-content': { padding: '10px 12px', caretColor: '#2d3748' },
+    // CodeMirror 基础样式会直接在 .cm-content 上设 font-family，
+    // 仅写在 .cm-scroller 上会被它覆盖，所以这里必须再声明一次。
+    '.cm-content': {
+      padding: '10px 12px',
+      caretColor: '#2d3748',
+      fontFamily: "Consolas, Monaco, 'Courier New', monospace",
+    },
     '.cm-line': { padding: '0' },
     '.cm-placeholder': { color: '#b6c0cd' },
   },
