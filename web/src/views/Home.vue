@@ -526,8 +526,9 @@ const loadBenbenList = async (reset = true) => {
 
 // ==================== 犇犇自动刷新 ====================
 // 不做「定时全量重拉」，而是拿列表里最新一条的 id 做 after_id 增量拉，
-// 没新动态时后端只返回空数组，很轻。
-const REFRESH_INTERVAL = 20000
+// 没新动态时后端只返回空数组（一个索引区间查询），所以可以刷得勤一点。
+// 成本：5 秒一轮 ≈ 单用户每分钟 12 次请求，页面隐藏时直接跳过不刷。
+const REFRESH_INTERVAL = 5000
 
 const pendingBenben = ref<any[]>([])
 const flashIds = ref<Set<number>>(new Set())
