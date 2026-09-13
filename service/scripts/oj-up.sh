@@ -41,20 +41,45 @@ oj-up() {
     fi
 
     echo "▶ 1/4 拉取代码"
+    local head_before head_after
+    head_before=$(git rev-parse HEAD 2>/dev/null)
     echo "   当前 HEAD: $(git log --oneline -1)"
     git pull --ff-only || { echo "❌ git pull 失败（有冲突或历史分叉），先手工处理"; return 1; }
+    head_after=$(git rev-parse HEAD 2>/dev/null)
     echo "   更新后 HEAD: $(git log --oneline -1)"
+    # 把本次要上线的提交列出来。出事时最想知道的第一个问题就是
+    # 「这次到底换了些啥」，这时候再翻 git log 很浪费时间。
+    if [[ -n "$head_before" && -n "$head_after" && "$head_before" != "$head_after" ]]; then
+        echo "   本次上线的提交："
+        git --no-pager log --oneline --no-decorate "$head_before..$head_after" | sed 's/^/     /'
+        # schema 变了就得留个心眼：迁移不可逆的时候能提前有个心理准备
+        if git --no-pager diff --name-only "$head_before..$head_after" | grep -q '^service/alembic/versions/'; then
+            echo "   ⚠ 本次包含数据库迁移，第 3 步会真的改表"
+        fi
+    else
+        echo "   已是最新，没有新提交"
+    fi
 
     echo "▶ 2/4 重建并重启容器"
     docker compose up -d --build \
         || { echo "❌ 构建或启动失败，看日志： docker compose logs --tail=50"; return 1; }
 
-    echo "▶ 3/4 对齐数据库（没有新迁移时会空转，可以无脑跑）"
+    echo "▶ 3/4 对齐数据库"
+    # 把迁移前后的版本打出来。以前只有最后一句 `alembic current`，
+    # 看不出到底有没有真的跑迁移，还是本来就在 head 上。
+    local rev_before rev_after
+    rev_before=$(docker compose exec -T oj-service uv run alembic current 2>/dev/null | tail -1 | tr -d '\r')
+    echo "   迁移前: ${rev_before:-（库中还没有版本记录）}"
     docker compose exec -T oj-service uv run alembic upgrade head \
         || { echo "❌ 迁移失败！先别用站点，把上面的报错发给我"; return 1; }
+    rev_after=$(docker compose exec -T oj-service uv run alembic current 2>/dev/null | tail -1 | tr -d '\r')
+    if [[ "$rev_before" == "$rev_after" ]]; then
+        echo "   迁移后: ${rev_after:-未知}  （没有待应用迁移，空跑）"
+    else
+        echo "   迁移后: ${rev_after:-未知}  ✅ 已升级"
+    fi
 
     echo "▶ 4/4 确认状态"
-    docker compose exec -T oj-service uv run alembic current
     docker compose ps --format 'table {{.Name}}\t{{.Status}}'
     echo "✅ 部署完成 —— 上面 alembic 那行要以 (head) 结尾，容器要是 Up/healthy"
 }
