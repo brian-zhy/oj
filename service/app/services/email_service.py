@@ -13,6 +13,105 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+# ===== 邮件模板 =====
+# 配色跟站内登录/注册页对齐（web/src/style.css 的 --primary）
+PRIMARY = "#2a8eff"
+TEXT = "#5b6e8c"
+MUTED = "#9ca3af"
+BG = "#f5f7fa"
+
+# 邮件客户端（Gmail / Outlook）**不渲染 SVG**，所以这里必须用 PNG，
+# 对应 web/public/logo.png（由 favicon.svg 转出）。
+DEFAULT_LOGO_URL = "https://nlnoj.gr3yph4ntom.cn/logo.png"
+
+
+def _layout(title: str, body: str, logo_url: str) -> str:
+    """两个模板共用的外壳：灰底 + 白卡片 + 站点图标 + 蓝色标题。
+
+    邮件里只能用内联样式（外链 <style> 会被大量客户端剥离），
+    布局也尽量简单 —— 保真度最高的是表格，但这里用 div 已经能覆盖主流客户端。
+    """
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="margin: 0; padding: 20px; background-color: {BG}; font-family: Lato, 'Noto Sans SC', 'Segoe UI', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+
+    <div style="text-align: center; margin: 0 0 24px 0;">
+      <img src="{logo_url}" alt="NLNOJ" width="32" height="31" style="border: 0; outline: none; vertical-align: middle;">
+      <span style="font-size: 26px; font-weight: 700; color: {PRIMARY}; vertical-align: middle;">NLNOJ</span>
+      <div style="color: {MUTED}; font-size: 14px; margin-top: 6px;">{title}</div>
+    </div>
+
+{body}
+    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+    <p style="color: {MUTED}; font-size: 12px; text-align: center; margin: 0;">
+      此邮件由系统自动发送，请勿回复。
+    </p>
+  </div>
+</body>
+</html>
+"""
+
+
+def verification_email_html(code: str, expiry_minutes: int, logo_url: str = DEFAULT_LOGO_URL) -> str:
+    """注册验证码邮件。"""
+    body = f"""    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">您好！</p>
+
+    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">
+      您正在注册 NLNOJ 账户，验证码如下：
+    </p>
+
+    <div style="background-color: {PRIMARY}; padding: 24px; text-align: center; font-size: 32px; font-weight: bold; margin: 24px 0; border-radius: 8px; color: #ffffff; letter-spacing: 4px;">
+      {code}
+    </div>
+
+    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">
+      验证码有效期为 <strong style="color: {PRIMARY};">{expiry_minutes} 分钟</strong>，请及时使用。
+    </p>
+
+    <p style="color: {MUTED}; font-size: 14px; line-height: 1.6; margin: 24px 0 8px 0;">
+      如果这不是您本人操作，请忽略此邮件。
+    </p>
+"""
+    return _layout("邮箱验证", body, logo_url)
+
+
+def password_reset_email_html(reset_link: str, expiry_minutes: int, logo_url: str = DEFAULT_LOGO_URL) -> str:
+    """密码重置邮件。"""
+    body = f"""    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">您好！</p>
+
+    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">
+      我们收到了您的密码重置请求。点击下面的按钮重置您的密码：
+    </p>
+
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="{reset_link}" style="display: inline-block; background-color: {PRIMARY}; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 40px; font-size: 16px; font-weight: 600;">重置密码</a>
+    </div>
+
+    <p style="color: {TEXT}; font-size: 14px; line-height: 1.6;">
+      或者复制以下链接到浏览器中打开：
+    </p>
+
+    <p style="color: {PRIMARY}; font-size: 13px; word-break: break-all; background-color: #f9fafb; padding: 12px; border-radius: 8px; margin: 16px 0;">
+      {reset_link}
+    </p>
+
+    <p style="color: {TEXT}; font-size: 16px; line-height: 1.6;">
+      此链接有效期为 <strong style="color: {PRIMARY};">{expiry_minutes} 分钟</strong>。
+    </p>
+
+    <p style="color: {MUTED}; font-size: 14px; line-height: 1.6; margin: 24px 0 8px 0;">
+      如果这不是您本人操作，请忽略此邮件，您的密码不会被更改。
+    </p>
+"""
+    return _layout("密码重置", body, logo_url)
+
+
 class EmailService:
     """邮件发送服务类。"""
 
@@ -25,6 +124,7 @@ class EmailService:
         self._smtp_email = None
         self._smtp_password = None
         self._from_name = None
+        self._logo_url = None
         self._is_configured = None
         self._config_loaded = False  # 添加配置加载状态标记
 
@@ -42,6 +142,7 @@ class EmailService:
         self._smtp_email = os.getenv("SMTP_EMAIL", "")
         self._smtp_password = os.getenv("SMTP_PASSWORD", "")
         self._from_name = os.getenv("SMTP_FROM_NAME", "NLNOJ")
+        self._logo_url = os.getenv("EMAIL_LOGO_URL", DEFAULT_LOGO_URL)
         self._is_configured = bool(self._smtp_email and self._smtp_password)
         self._config_loaded = True  # 标记配置已加载
 
@@ -79,6 +180,11 @@ class EmailService:
     def is_configured(self):
         self._load_config()
         return self._is_configured
+
+    @property
+    def logo_url(self):
+        self._load_config()
+        return self._logo_url
 
     async def send_verification_email(
         self,
@@ -136,40 +242,9 @@ class EmailService:
             message["To"] = email
             message["Subject"] = "【NLNOJ】邮箱验证码"
 
-            # HTML邮件内容
-            html_content = f"""
-            <html>
-            <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px;">
-                <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ NLNOJ 邮箱验证</h2>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">您好！</p>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">
-                        您正在注册 NLNOJ 账户，验证码如下：
-                    </p>
-
-                    <div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); padding: 24px; text-align: center; font-size: 32px; font-weight: bold; margin: 24px 0; border-radius: 8px; color: white; letter-spacing: 4px;">
-                        {code}
-                    </div>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">
-                        验证码有效期为 <strong style="color: #e74c3c;">{expiry_minutes} 分钟</strong>，请及时使用。
-                    </p>
-
-                    <p style="color: #999; font-size: 14px; line-height: 1.6; margin: 24px 0 8px 0;">
-                        如果这不是您本人操作，请忽略此邮件。
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
-
-                    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                        此邮件由系统自动发送，请勿回复。
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
+            html_content = verification_email_html(
+                code=code, expiry_minutes=expiry_minutes, logo_url=self.logo_url
+            )
 
             message.set_content(html_content, subtype='html')
 
@@ -287,50 +362,11 @@ class EmailService:
             message["To"] = email
             message["Subject"] = "【NLNOJ】密码重置请求"
 
-            # HTML邮件内容
-            html_content = f"""
-            <html>
-            <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f5f7fa; margin: 0; padding: 20px;">
-                <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; padding: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                    <h2 style="color: #e74c3c; margin: 0 0 20px 0; font-size: 24px;">✨ NLNOJ 密码重置</h2>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">您好！</p>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">
-                        我们收到了您的密码重置请求。点击下面的按钮重置您的密码：
-                    </p>
-
-                    <div style="text-align: center; margin: 32px 0;">
-                        <a href="{reset_link}" style="display: inline-block; background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 16px 32px; text-decoration: none; border-radius: 40px; font-size: 16px; font-weight: 600;">
-                            重置密码
-                        </a>
-                    </div>
-
-                    <p style="color: #5b6e8c; font-size: 14px; line-height: 1.6;">
-                        或者复制以下链接到浏览器中打开：
-                    </p>
-
-                    <p style="color: #3b82f6; font-size: 13px; word-break: break-all; background: #f9fafb; padding: 12px; border-radius: 8px; margin: 16px 0;">
-                        {reset_link}
-                    </p>
-
-                    <p style="color: #5b6e8c; font-size: 16px; line-height: 1.6;">
-                        此链接有效期为 <strong style="color: #e74c3c;">{expiry_minutes} 分钟</strong>。
-                    </p>
-
-                    <p style="color: #999; font-size: 14px; line-height: 1.6; margin: 24px 0 8px 0;">
-                        如果这不是您本人操作，请忽略此邮件，您的密码不会被更改。
-                    </p>
-
-                    <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
-
-                    <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
-                        此邮件由系统自动发送，请勿回复。
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
+            html_content = password_reset_email_html(
+                reset_link=reset_link,
+                expiry_minutes=expiry_minutes,
+                logo_url=self.logo_url,
+            )
 
             message.set_content(html_content, subtype='html')
 

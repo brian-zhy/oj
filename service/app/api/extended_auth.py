@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.schemas.user import UserLogin, UserCreate
 from app.schemas.auth import TokenResponse
 from app.services import auth as auth_service
@@ -447,11 +448,8 @@ async def request_password_reset(
     token = generate_password_reset_token(email)
     store_password_reset_token(token, email, expiry_minutes=30)
 
-    # 构建重置链接
-    # 注意：这里假设前端运行在 http://localhost:5173
-    # 生产环境应该从配置文件读取前端URL
-    frontend_url = "http://localhost:5173"
-    reset_link = f"{frontend_url}/reset-password?token={token}"
+    # 构建重置链接（必须是绝对地址，否则用户点开是 localhost）
+    reset_link = f"{settings.FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
 
     # 发送邮件
     success = await email_service.send_password_reset_email(
