@@ -1008,14 +1008,19 @@ onUnmounted(() => {
 
 .fortune-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px 32px;
+  /* 宜 / 忌 必须水平并排：这里不能换行。
+     运势栏只占 lg-punch 的约 1/3 宽（≈290px），
+     若允许 wrap，两块 200px 起步的栏目永远放不下，必然上下堆叠。 */
+  flex-wrap: nowrap;
+  gap: 16px 20px;
   margin: 6px 0 10px;
 }
 
 .fortune-grid .fortune-col-item {
-  flex: 1 1 200px;
-  min-width: 140px;
+  /* 等宽两栏；min-width:0 必需，否则内容会把 flex 子项撑破并溢出容器 */
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fortune-entry {
