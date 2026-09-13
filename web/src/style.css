@@ -40,11 +40,11 @@ body {
 }
 
 body {
-  font-family: "Google Sans Flex", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  font-family: "Lato", "Noto Sans SC", system-ui, -apple-system, sans-serif;
 }
 
 body *:not(i):not(.fa):not(.fas):not(.far):not(.fab):not(.fa-solid):not(.fa-regular):not(.fa-brands):not(.monaco-editor):not(.monaco-editor *):not(code):not(pre):not(kbd):not(samp):not(.katex):not(.katex *) {
-  font-family: "Google Sans Flex", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  font-family: "Lato", "Noto Sans SC", system-ui, -apple-system, sans-serif;
 }
 
 code, pre, kbd, samp {
