@@ -24,6 +24,7 @@ export interface ContestItem {
   is_owner: boolean
   can_manage: boolean
   is_participant: boolean
+  can_view_problems?: boolean
   problems?: ContestProblemItem[]
 }
 

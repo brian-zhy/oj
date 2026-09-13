@@ -93,7 +93,7 @@ const doCreate = async () => {
       visibility: visibility.value,
       invite_code: visibility.value === 'private' ? inviteCode.value.trim() : undefined,
     })
-    router.push(`/contests/${created.id}`)
+    router.push(`/contest/${created.id}`)
   } catch (err: any) {
     createError.value = err.response?.data?.detail || '创建失败'
   } finally {

@@ -83,20 +83,31 @@ def _contest_dict(
         )
     else:
         d["is_participant"] = False
+    # 题目/排行榜可见性：已结束、或（进行中且已报名）、或创建者/比赛管理员
+    status_ = d["status"]
+    d["can_view_problems"] = (
+        status_ == "ended"
+        or d["is_owner"] or d["can_manage"]
+        or (status_ == "running" and d["is_participant"])
+    )
     if with_problems:
-        hide_titles = _status(contest) == "pending" and not show_hidden_problems
-        problems = []
-        for cp in contest.problems:
-            problems.append({
-                "alias": ALIAS[cp.sort_order] if cp.sort_order < len(ALIAS) else str(cp.sort_order),
-                "problem_id": cp.problem_id,
-                "sort_order": cp.sort_order,
-                # 未开始时不暴露题目标题（防提前审题）
-                "title": "※" if hide_titles else cp.problem.title,
-                "difficulty": cp.problem.difficulty,
-                "problem_number": cp.problem.problem_number,
-            })
-        d["problems"] = problems
+        if not d["can_view_problems"]:
+            # 无权查看时不下发任何题目信息（防探测）
+            d["problems"] = []
+        else:
+            hide_titles = status_ == "pending" and not show_hidden_problems
+            problems = []
+            for cp in contest.problems:
+                problems.append({
+                    "alias": ALIAS[cp.sort_order] if cp.sort_order < len(ALIAS) else str(cp.sort_order),
+                    "problem_id": cp.problem_id,
+                    "sort_order": cp.sort_order,
+                    # 未开始时不暴露题目标题（防提前审题）
+                    "title": "※" if hide_titles else cp.problem.title,
+                    "difficulty": cp.problem.difficulty,
+                    "problem_number": cp.problem.problem_number,
+                })
+            d["problems"] = problems
     return d
 
 
@@ -277,6 +288,19 @@ async def contest_rank(
     contest = await _load_contest(db, contest_id)
     if contest is None:
         raise HTTPException(status_code=404, detail="比赛不存在")
+
+    # 排行榜可见性：已结束、创建者/比赛管理员、进行中且已报名
+    status_ = _status(contest)
+    is_participant = bool(current_user and any(
+        p.user_id == current_user.id for p in contest.participants))
+    allowed = (
+        status_ == "ended"
+        or (current_user and _can_manage_contest(current_user))
+        or (current_user and contest.owner_id == current_user.id)
+        or (status_ == "running" and is_participant)
+    )
+    if not allowed:
+        raise HTTPException(status_code=403, detail="你无权进行此操作")
 
     cps = (await db.execute(
         select(ContestProblem).where(ContestProblem.contest_id == contest_id)

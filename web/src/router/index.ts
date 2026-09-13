@@ -213,10 +213,16 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/contests/:id(\\d+)',
+    // 比赛页（单数）：/contest/1 默认比赛说明，#problem 题目，#scoreboard 排行榜
+    path: '/contest/:id(\\d+)',
     name: 'ContestDetail',
     component: () => import('@/views/contests/ContestDetail.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    // 兼容旧复数链接
+    path: '/contests/:id(\\d+)',
+    redirect: (to: any) => ({ path: `/contest/${to.params.id}`, hash: to.hash })
   }
 ]
 
