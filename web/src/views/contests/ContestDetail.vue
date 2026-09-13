@@ -6,6 +6,7 @@ import { contestsApi, type ContestItem, type RankRow } from '@/api/contests'
 import { difficultyColor } from '@/utils/difficulty'
 import { userNameColor } from '@/utils/userColor'
 import { renderRichText } from '@/utils/markdown'
+import { fmtDateTime } from '@/utils/datetime'
 
 const route = useRoute()
 const router = useRouter()
@@ -90,7 +91,8 @@ const STATUS: Record<string, { text: string; cls: string }> = {
   pending: { text: '未开始', cls: 'pending' },
   ended: { text: '已结束', cls: 'ended' },
 }
-const fmt = (iso: string | null) => (iso ? iso.slice(0, 16).replace('T', ' ') : '—')
+// 同 ContestList：必须做时区转换，不能直接切 ISO 字符串
+const fmt = (iso: string | null) => fmtDateTime(iso, '—')
 
 const doRegister = async () => {
   let inviteCode: string | undefined

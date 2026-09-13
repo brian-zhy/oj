@@ -114,8 +114,11 @@ def _contest_dict(
         "team_id": contest.team_id,
         # team relationship 已随查询加载（lazy joined）
         "team_name": (contest.team.name if has_team and contest.team else None),
-        "start_time": contest.start_time.isoformat() if contest.start_time else None,
-        "end_time": contest.end_time.isoformat() if contest.end_time else None,
+        # 一律带上 UTC 偏移量再下发。Postgres 的 timestamptz 读回来本来就是 aware，
+        # 但 SQLite 会丢时区，isoformat() 出来的串没有后缀，前端 new Date() 会当成
+        # 本地时间解析 —— 开发环境和线上表现就不一致了。
+        "start_time": _aware(contest.start_time).isoformat() if contest.start_time else None,
+        "end_time": _aware(contest.end_time).isoformat() if contest.end_time else None,
         "status": _status(contest),
         "owner": {
             "user_id": contest.owner_id,
