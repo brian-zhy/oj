@@ -37,10 +37,10 @@ class Settings(BaseSettings):
     IMAGE_PREMIUM_SIZE_THRESHOLD: int = 500 * 1024      # 超过 500KB 强制占用高级空间
     IMAGE_MAX_FILE_BYTES: int = 10 * 1024 * 1024        # 单张图片上限 10MB
 
-    # 图床水印：纯文字斜向平铺（参照洛谷，用站点名而不是 logo）
+    # 图床水印：在右下角盖一行站点名文字（参照洛谷，用站点名而不是 logo）
     IMAGE_WATERMARK_TEXT: str = "NLNOJ"
     IMAGE_WATERMARK_FONT: str | None = None             # 自定义字体路径，留空自动查找
-    IMAGE_WATERMARK_OPACITY: int = 110                  # 水印不透明度 0-255
+    IMAGE_WATERMARK_OPACITY: int = 140                  # 水印不透明度 0-255
 
     model_config = SettingsConfigDict(
         env_file=".env",

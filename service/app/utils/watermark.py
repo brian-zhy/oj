@@ -1,7 +1,8 @@
-"""图床水印 —— 把站点名斜向平铺盖在图上。
+"""图床水印 —— 在图片右下角盖一行站点名。
 
 参照洛谷的做法：水印不是 logo，就是站点名那几个字，
 所以这里也只画文字、不依赖任何图片素材（省得维护一张 logo 图）。
+只占右下角一行，不铺满全图 —— 铺满会把图毁得没法看。
 
 字体查找顺序：
   1. 配置项 ``IMAGE_WATERMARK_FONT`` 指定的字体文件
@@ -32,14 +33,14 @@ logger = logging.getLogger(__name__)
 # 可叠加水印的格式（与 api/images.py 的 _ALLOWED_EXT 对应）
 _SUPPORTED_FORMATS = ("PNG", "JPEG", "WEBP", "GIF")
 
-# 水印文字旋转角度（度）
-ANGLE = -30
-# 平铺间距 = 平铺块宽/高 × 系数
-GAP_RATIO = 0.6
 # 字号 = 图片短边 × 系数
-FONT_RATIO = 1 / 12
+FONT_RATIO = 1 / 14
 MIN_FONT_SIZE = 14
-MAX_FONT_SIZE = 72
+MAX_FONT_SIZE = 56
+# 水印与图片边缘的间距 = 字号 × 系数
+PAD_RATIO = 0.6
+# 短边小于这个值就别盖了，盖上去也看不清（会退化为无水印）
+MIN_IMAGE_SIDE = 48
 # 动图帧数 / 像素数上限，超了就跳过水印，避免把内存打爆
 MAX_FRAMES = 120
 MAX_PIXELS = 40_000_000
@@ -114,40 +115,51 @@ def _font_size(short_side: int) -> int:
     return max(MIN_FONT_SIZE, min(MAX_FONT_SIZE, int(short_side * FONT_RATIO)))
 
 
-def _make_tile(text: str, font: "FreeTypeFont") -> "PILImage.Image":
-    """把水印文字画到一个带留白的透明块上，再整体旋转。"""
-    Image, ImageDraw, _ = _pillow()
+def _stroke_width(font: "FreeTypeFont") -> int:
+    return max(1, font.size // 16)
+
+
+def _pad(font: "FreeTypeFont") -> int:
+    return max(6, int(font.size * PAD_RATIO))
+
+
+def _fit_font(path: Path, text: str, short_side: int, width: int) -> "FreeTypeFont":
+    """按短边定字号；文字太宽时继续缩，保证右下角放得下。"""
+    size = _font_size(short_side)
+    while size > MIN_FONT_SIZE:
+        font = _load_font(str(path), size)
+        room = width - (_pad(font) + _stroke_width(font)) * 2
+        if font.getbbox(text)[2] <= room:
+            return font
+        size = max(MIN_FONT_SIZE, int(size * 0.85))
+    return _load_font(str(path), MIN_FONT_SIZE)
+
+
+def _stamp(
+    frame: "PILImage.Image", text: str, font: "FreeTypeFont", opacity: int
+) -> "PILImage.Image":
+    """在右下角画一行水印。"""
+    _, ImageDraw, _ = _pillow()
 
     bbox = font.getbbox(text)
-    text_w = max(1, bbox[2] - bbox[0])
-    text_h = max(1, bbox[3] - bbox[1])
-    pad = max(10, font.size // 2)
+    stroke = _stroke_width(font)
+    pad = _pad(font) + stroke
 
-    tile = Image.new("RGBA", (text_w + pad * 2, text_h + pad * 2), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(tile)
+    # getbbox 给的是相对绘制原点的墨迹范围，右/下对齐要减掉右/下边界
+    x = max(pad, frame.width - pad - bbox[2])
+    y = max(pad, frame.height - pad - bbox[3])
+
+    draw = ImageDraw.Draw(frame)
     draw.text(
-        (pad - bbox[0], pad - bbox[1]),
+        (x, y),
         text,
         font=font,
         # 白色字 + 半透明黑描边：浅色底靠描边、深色底靠白字，两边都看得见
-        fill=(255, 255, 255, settings.IMAGE_WATERMARK_OPACITY),
-        stroke_width=max(1, font.size // 16),
-        stroke_fill=(0, 0, 0, settings.IMAGE_WATERMARK_OPACITY // 2),
+        fill=(255, 255, 255, opacity),
+        stroke_width=stroke,
+        stroke_fill=(0, 0, 0, max(1, opacity // 2)),
     )
-    return tile.rotate(ANGLE, expand=True, resample=Image.BICUBIC)
-
-
-def _stamp(frame: "PILImage.Image", tile: "PILImage.Image") -> "PILImage.Image":
-    """把水印块平铺到单帧上。"""
-    Image, _, _ = _pillow()
-
-    layer = Image.new("RGBA", frame.size, (0, 0, 0, 0))
-    step_x = max(1, int(tile.width * (1 + GAP_RATIO)))
-    step_y = max(1, int(tile.height * (1 + GAP_RATIO)))
-    for y in range(-tile.height // 2, frame.height + step_y, step_y):
-        for x in range(-tile.width // 2, frame.width + step_x, step_x):
-            layer.alpha_composite(tile, (x, y))
-    return Image.alpha_composite(frame, layer)
+    return frame
 
 
 def _load_frames(im: "PILImage.Image") -> list["PILImage.Image"] | None:
@@ -161,11 +173,15 @@ def _load_frames(im: "PILImage.Image") -> list["PILImage.Image"] | None:
     return [ImageOps.exif_transpose(frame).convert("RGBA") for frame in ImageSequence.Iterator(im)]
 
 
-def _encode(frames: list["PILImage.Image"], fmt: str, info: dict) -> bytes:
+def _encode(frames: list["PILImage.Image"], fmt: str, info: dict, has_alpha: bool) -> bytes:
     """把加了水印的帧重新编码。"""
     Image, _, _ = _pillow()
 
-    head, tail = frames[0], frames[1:]
+    def plain(im: "PILImage.Image") -> "PILImage.Image":
+        # 原图本来没有透明通道的话，别给它凭空加一条 alpha（PNG 体积能差好几倍）
+        return im if has_alpha else im.convert("RGB")
+
+    head, tail = plain(frames[0]), [plain(f) for f in frames[1:]]
     buf = io.BytesIO()
 
     if fmt == "JPEG":
@@ -178,7 +194,7 @@ def _encode(frames: list["PILImage.Image"], fmt: str, info: dict) -> bytes:
                 buf,
                 "WEBP",
                 save_all=True,
-                append_images=[f.convert("RGB") for f in tail],
+                append_images=tail,
                 quality=95,
                 duration=info.get("duration", 100),
                 loop=info.get("loop", 0),
@@ -239,16 +255,21 @@ def apply_watermark(content: bytes, text: str) -> bytes | None:
             if width * height > MAX_PIXELS:
                 logger.warning("图片 %dx%d 过大，跳过水印", width, height)
                 return None
+            if min(width, height) < MIN_IMAGE_SIDE:
+                logger.warning("图片 %dx%d 太小，放不下水印，跳过", width, height)
+                return None
 
             info = {k: im.info.get(k) for k in ("duration", "loop") if k in im.info}
+            has_alpha = im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
             frames = _load_frames(im)
             if frames is None:
                 return None
 
-            font = _load_font(str(font_path), _font_size(min(width, height)))
-            tile = _make_tile(text.strip(), font)
-            stamped = [_stamp(frame, tile) for frame in frames]
-            return _encode(stamped, fmt, info)
+            label = text.strip()
+            opacity = max(1, min(255, settings.IMAGE_WATERMARK_OPACITY))
+            font = _fit_font(font_path, label, min(width, height), width)
+            stamped = [_stamp(frame, label, font, opacity) for frame in frames]
+            return _encode(stamped, fmt, info, has_alpha)
 
     except Exception:  # noqa: BLE001 - 水印只是锦上添花，绝不能影响上传
         logger.exception("水印生成失败，本次上传按无水印处理")
