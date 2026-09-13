@@ -553,4 +553,11 @@ onMounted(() => {
 .empty-actions {
   margin-top: 16px;
 }
+
+/* ===== 手机端：.card 原本 24px 28px，是全站最大的卡片内边距 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+}
 </style>

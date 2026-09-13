@@ -76,4 +76,15 @@ onMounted(load)
 .diff-badge { color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 4px; font-weight: 600; flex-shrink: 0; }
 
 .empty { text-align: center; color: #999; padding: 48px 0; background: #fff; border-radius: 12px; }
+
+/* ===== 手机端：容器内边距收敛，条目内边距收窄 ===== */
+@media (max-width: 600px) {
+  .team-problems-container {
+    padding: 16px 0;
+  }
+
+  .problem-item {
+    padding: 12px 14px;
+  }
+}
 </style>

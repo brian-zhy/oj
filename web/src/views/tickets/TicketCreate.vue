@@ -401,4 +401,15 @@ const submit = async () => {
   font-size: 14px;
   cursor: pointer;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .rules-card {
+    padding: 12px 14px;
+  }
+
+  .category-card {
+    padding: 12px 10px;
+  }
+}
 </style>

@@ -241,4 +241,11 @@ onMounted(() => loadNotifications(false))
   border-color: var(--primary);
   color: #fff;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .notification-item {
+    padding: 12px 14px;
+  }
+}
 </style>

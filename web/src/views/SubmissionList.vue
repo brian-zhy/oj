@@ -264,4 +264,11 @@ onMounted(fetchData)
   padding: 60px 20px;
   color: #999;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+}
 </style>

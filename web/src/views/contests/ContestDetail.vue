@@ -408,4 +408,20 @@ button:disabled { opacity: .6; cursor: not-allowed; }
 @media (max-width: 860px) {
   .detail-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== 手机端：容器横向内边距归零 + 卡片内边距收窄 ===== */
+@media (max-width: 600px) {
+  .contest-detail-container {
+    padding: 16px 0;
+  }
+
+  .card,
+  .body-card {
+    padding: 14px;
+  }
+
+  .side-card {
+    padding: 14px;
+  }
+}
 </style>

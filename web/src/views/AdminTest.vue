@@ -156,4 +156,11 @@ pre {
   margin: 5px 0;
   font-family: monospace;
 }
+
+/* ===== 手机端：页级 20px 会叠加在 App.vue 的页边距上 ===== */
+@media (max-width: 600px) {
+  .admin-test {
+    padding: 12px 0;
+  }
+}
 </style>

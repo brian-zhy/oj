@@ -1409,4 +1409,11 @@ td.check-col input {
     align-items: stretch;
   }
 }
+
+/* ===== 手机端：后台容器横向内边距归零（避免与 App.vue 页边距叠加）===== */
+@media (max-width: 600px) {
+  .main-layout {
+    padding: 0 0 16px 0;
+  }
+}
 </style>

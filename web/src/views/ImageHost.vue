@@ -793,4 +793,17 @@ onBeforeUnmount(() => {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
+
+/* ===== 手机端：页面内边距收敛（原本 16px 也会叠加在 App.vue 的页边距上）===== */
+@media (max-width: 600px) {
+  .image-page {
+    padding: 12px 0 32px;
+  }
+
+  .drop-card,
+  .quota-card,
+  .list-card {
+    padding: 14px;
+  }
+}
 </style>

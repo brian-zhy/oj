@@ -276,4 +276,15 @@ const submit = async () => {
   font-size: 14px;
   cursor: pointer;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .forum-card {
+    padding: 12px 10px;
+  }
+
+  .mute-tip {
+    padding: 10px 12px;
+  }
+}
 </style>

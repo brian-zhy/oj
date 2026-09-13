@@ -32,4 +32,11 @@ import JudgementLogList from '@/components/JudgementLogList.vue'
   padding-left: 12px;
   margin-bottom: 20px;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+}
 </style>

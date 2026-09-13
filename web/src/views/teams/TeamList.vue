@@ -187,4 +187,15 @@ onMounted(() => load())
 .form-input:focus { border-color: var(--primary); }
 .form-error { color: var(--primary); font-size: 13px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+
+/* ===== 手机端：容器横向内边距归零（避免与 App.vue 页边距叠加）===== */
+@media (max-width: 600px) {
+  .teams-container {
+    padding: 16px 0;
+  }
+
+  .team-card {
+    padding: 14px;
+  }
+}
 </style>
