@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "add_tag_cards"
-down_revision = "add_contest_team"
+down_revision = "notification_link"
 branch_labels = None
 depends_on = None
 
