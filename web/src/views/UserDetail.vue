@@ -275,7 +275,7 @@ onMounted(() => {
           <div class="user-header-bg" :style="coverStyle"></div>
           <div class="user-header-content" style="justify-content:center;text-align:center;">
             <div style="color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.6);">
-              <div style="font-size:48px;margin-bottom:8px;">⛔</div>
+              <div style="font-size:48px;margin-bottom:8px;"><i class="fa-solid fa-ban"></i></div>
               <h1 style="font-size:1.75rem;margin:0;">该用户已被封禁</h1>
             </div>
           </div>
@@ -402,7 +402,7 @@ onMounted(() => {
 
           <!-- 其余标签：功能尚未开发 -->
           <div v-else class="l-card tab-placeholder">
-            <div class="placeholder-icon">🚧</div>
+            <div class="placeholder-icon"><i class='fa-solid fa-person-digging'></i></div>
             <p class="placeholder-title">本功能暂未开放</p>
             <p class="placeholder-sub">「{{ activeTab }}」正在开发中，敬请期待</p>
           </div>
@@ -413,7 +413,7 @@ onMounted(() => {
     <!-- ===== 封面更换浮层 ===== -->
     <div v-show="showCoverOverlay" class="cover-upload-overlay active" @click.self="closeCoverUpload">
       <div class="cover-upload-panel">
-        <h2>🖼️ 更换封面</h2>
+        <h2><i class="fa-solid fa-image"></i> 更换封面</h2>
         <div
           class="upload-area"
           @click="pickFile"
@@ -425,12 +425,12 @@ onMounted(() => {
           <div class="hint">点击选择图片，或拖拽到此处<br><strong>建议尺寸 1800×600px</strong></div>
         </div>
         <div class="lfe-caption">
-          ⚠️ 为了文字可读性，请勿使用浅色背景图。
+          <i class="fa-solid fa-triangle-exclamation"></i> 为了文字可读性，请勿使用浅色背景图。
         </div>
         <div class="panel-actions">
           <button class="btn-cancel-cover" @click="closeCoverUpload">取消</button>
           <button class="btn-upload-cover" :disabled="!selectedFile || uploading" @click="uploadCover">
-            {{ uploading ? '⏳ 上传中…' : '上传' }}
+            {{ uploading ? '上传中…' : '上传' }}
           </button>
         </div>
         <div class="cover-feedback">{{ uploadFeedback }}</div>

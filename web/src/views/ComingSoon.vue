@@ -11,7 +11,7 @@ const path = computed(() => route.path)
 <template>
   <div class="coming-soon-page">
     <div class="soon-card">
-      <div class="soon-icon">🚧</div>
+      <div class="soon-icon"><i class="fa-solid fa-person-digging"></i></div>
       <h2 class="soon-title">本功能暂未开放</h2>
       <p class="soon-sub">该功能正在开发中，敬请期待</p>
       <p class="soon-path">当前路径：{{ path }}</p>
