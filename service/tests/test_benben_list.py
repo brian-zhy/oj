@@ -138,3 +138,66 @@ async def test_benben_incremental_after_id():
             )
         ).json()
         assert [i["content"] for i in only_b] == ["新动态"]
+
+
+async def _seed_benben(user_number: int, content: str) -> int:
+    """直接建库，绕开「每人 10 秒只能发一条」的频率限制。"""
+    from app.core.database import AsyncSessionLocal
+    from app.models.benben import Benben
+
+    async with AsyncSessionLocal() as db:
+        item = Benben(user_number=user_number, content=content)
+        db.add(item)
+        await db.flush()
+        await db.commit()
+        return item.id
+
+
+@pytest.mark.asyncio
+async def test_existing_ids_check_detects_deletion():
+    """自动刷新靠这个接口发现「别人把犇犇删了」。
+
+    增量刷新只按 after_id 拉新增，删除是没有信号的，页面不刷新那条就一直挂着。
+    """
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as ac:
+        headers, number, _ = await _register_and_login(ac)
+        first = await _seed_benben(number, "待会儿要删掉的")
+        second = await _seed_benben(number, "保留的")
+
+        # 两条都还在
+        r = await ac.get("/benben/existing", params={"ids": f"{first},{second}"})
+        assert r.status_code == 200, r.text
+        assert sorted(r.json()["ids"]) == sorted([first, second])
+
+        # 删掉第一条后，核对结果里就不该再有它
+        assert (await ac.delete(f"/benben/{first}", headers=headers)).status_code == 204
+        r = await ac.get("/benben/existing", params={"ids": f"{first},{second}"})
+        assert r.json()["ids"] == [second]
+
+        # 不存在的 id 不会凭空冒出来
+        r = await ac.get("/benben/existing", params={"ids": "999999"})
+        assert r.json()["ids"] == []
+
+
+@pytest.mark.asyncio
+async def test_existing_ids_param_hygiene():
+    """参数里混进垃圾 / 重复 / 空值时不能 500，也不能被超长 URL 拖垮。"""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as ac:
+        _headers, number, _ = await _register_and_login(ac)
+        item = await _seed_benben(number, "拿来当靶子的")
+
+        # 重复 + 空白 + 非法片段：只按去重后的合法 id 查
+        r = await ac.get(
+            "/benben/existing",
+            params={"ids": f" {item}, {item} ,abc,, -3 ,{item}"},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["ids"] == [item]
+
+        # 全是垃圾 → 空结果，不报错
+        assert (await ac.get("/benben/existing", params={"ids": "abc,,"})).json()["ids"] == []
+
+        # 超量输入被截断，不会把查询拖死
+        many = ",".join(str(i) for i in range(1, 500))
+        r = await ac.get("/benben/existing", params={"ids": many})
+        assert r.status_code == 200, r.text
