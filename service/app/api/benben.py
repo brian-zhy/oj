@@ -79,10 +79,8 @@ async def create_benben(
         return response_data
 
     except ValueError as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except PermissionError as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
 
 
@@ -141,8 +139,42 @@ async def get_benben_list(
         return [BenbenResponse(**item) for item in enriched_list]
 
     except Exception as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/existing", summary="批量核对犇犇是否还存在（自动刷新用）")
+async def get_existing_benben_ids(
+    ids: str = Query(..., description="逗号分隔的犇犇 id"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """返回这批 id 里仍然存在的那些。
+
+    自动刷新原来只按 after_id 拉新增，别人把犇犇删掉前端是永远发现不了的 ——
+    页面不刷新就一直挂在那儿。这个接口让前端每个刷新周期核对一次，
+    把已经删掉的从列表里摘掉。
+
+    只回 id 不回内容：正常一轮（没有新增）时这个响应只有几十字节。
+    """
+    from sqlalchemy import select
+
+    parsed: list[int] = []
+    seen: set[int] = set()
+    for raw in ids.split(","):
+        raw = raw.strip()
+        if raw.isdigit():
+            value = int(raw)
+            if value not in seen:
+                seen.add(value)
+                parsed.append(value)
+    # 兜底：避免被塞超长 URL 拖慢查询（前端只会传当前屏幕上的那几十条）
+    parsed = parsed[:200]
+    if not parsed:
+        return {"ids": []}
+
+    rows = (await db.execute(
+        select(Benben.id).where(Benben.id.in_(parsed))
+    )).scalars().all()
+    return {"ids": list(rows)}
 
 
 @router.delete("/{benben_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -162,8 +194,6 @@ async def delete_benben(
         return None
 
     except ValueError as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except PermissionError as e:
-        from fastapi import HTTPException
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))

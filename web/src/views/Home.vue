@@ -570,17 +570,43 @@ const prependBenben = (items: any[]) => {
   }, 2600)
 }
 
+/**
+ * 核对列表里的犇犇是否还在，把被删掉的摘掉。
+ *
+ * 增量刷新只按 after_id 拉「新的」，所以别人删掉一条之后前端根本收不到任何信号，
+ * 那条就一直挂在页面上，非得手动刷新才消失。
+ * 这里每个周期再问一次后端「这些 id 还有几条活着」，只回 id，代价很小。
+ * 乐观插入的临时项 id 是负数，永远保留（它还等着服务端返回真 id）。
+ */
+const dropDeletedBenben = async () => {
+  const ids = [...benbenList.value, ...pendingBenben.value]
+    .map((x) => x.id)
+    .filter((id) => typeof id === 'number' && id > 0)
+  if (ids.length === 0) return
+
+  const data = (await apiClient.get(`/benben/existing?ids=${ids.join(',')}`)) as any
+  const alive = new Set<number>(Array.isArray(data?.ids) ? data.ids : [])
+  const keep = (x: any) => typeof x.id !== 'number' || x.id < 0 || alive.has(x.id)
+
+  benbenList.value = benbenList.value.filter(keep)
+  pendingBenben.value = pendingBenben.value.filter(keep)
+}
+
 const refreshBenben = async () => {
   if (document.hidden || isLoading.value || posting.value || !isLoggedIn.value) return
   const topId = newestRealId.value
-  if (!topId) return
 
   try {
-    let url = `/benben?limit=50&after_id=${topId}`
+    // 列表空的时候没有 after_id 可用（用了就永远拉不到东西），退化成拉最新一页。
+    // 删空 / 本来就一条都没有时全靠这条兜底，否则自动刷新会就此停摆。
+    let url = topId ? `/benben?limit=50&after_id=${topId}` : '/benben?limit=50'
     if (feedMode.value === 'my') url += '&mode=my'
 
     const data = (await apiClient.get(url)) as any[]
     const fresh = data ?? []
+
+    // 先摘掉被删的，再插入新的，免得刚插进来的又被误判
+    await dropDeletedBenben()
 
     if (fresh.length === 0) {
       pendingBenben.value = []
