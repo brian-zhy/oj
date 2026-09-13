@@ -67,6 +67,10 @@ class User(Base, TimestampMixin):
     can_manage_problems: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
+    # Tag 管理权限：可授予/删除他人的 Tag 卡
+    can_manage_tags: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
 
     # 经验值：首次 AC 题目按难度获得（每题每用户仅一次）
     experience: Mapped[int] = mapped_column(
@@ -118,3 +122,31 @@ class User(Base, TimestampMixin):
     benben_posts: Mapped[list["Benben"]] = relationship(
         "Benben", back_populates="user", cascade="all, delete-orphan"
     )
+
+    # Tag 卡（joined：序列化 display_tag 时需同步访问）
+    tag_cards: Mapped[list["UserTagCard"]] = relationship(
+        "UserTagCard",
+        foreign_keys="UserTagCard.user_id",
+        cascade="all, delete-orphan",
+        lazy="joined",
+    )
+
+    @property
+    def display_tag(self) -> str:
+        """全站统一显示的称号。
+
+        优先级：佩戴中的 Tag 卡 > 管理后台设置的 user_tag >
+        管理员默认「管理员」。作弊者（非管理员）强制显示「作弊者」，
+        不会被 Tag 卡掩盖（作弊管理员沿用其 tag 或「管理员」）。
+        """
+        cards = self.tag_cards or []
+        enabled = [c.name for c in cards if c.enabled]
+        if enabled:
+            return enabled[0]
+        if self.is_cheater:
+            return self.user_tag or ("管理员" if self.is_admin else "作弊者")
+        if self.user_tag:
+            return self.user_tag
+        if self.is_admin or self.is_super_admin:
+            return "管理员"
+        return ""

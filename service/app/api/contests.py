@@ -470,7 +470,7 @@ async def contest_rank(
                 "user_id": p.user_id,
                 "username": p.user.username if p.user else "未知",
                 "avatar_url": (p.user.avatar_url or "") if p.user else "",
-                "user_tag": (p.user.user_tag or "") if p.user else "",
+                "user_tag": (p.user.display_tag if p.user else "") if p.user else "",
                 "is_admin": bool(p.user.is_admin) if p.user else False,
                 "is_super_admin": bool(p.user.is_super_admin) if p.user else False,
                 "is_cheater": bool(p.user.is_cheater) if p.user else False,

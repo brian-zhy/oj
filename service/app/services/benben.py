@@ -161,7 +161,7 @@ class BenbenService:
                 "can_manage_posts": user.can_manage_posts if user else False,
                 "can_manage_problems": user.can_manage_problems if user else False,
                 "username_color": user.username_color if user else None,
-                "user_tag": user.user_tag if user else None,
+                "user_tag": user.display_tag if user else None,
                 "is_owner": current_user_number == benben.user_number if current_user_number else False
             }
 

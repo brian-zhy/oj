@@ -37,6 +37,14 @@ class UserLogin(BaseModel):
     captcha_id: str = Field(description="验证码ID")
 
 
+class UserTagCardOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(description="卡 ID")
+    name: str = Field(description="Tag 名称")
+    enabled: bool = Field(description="是否佩戴中")
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -61,6 +69,9 @@ class UserOut(BaseModel):
     can_manage_posts: bool = Field(description="帖子管理权限")
     can_manage_problems: bool = Field(description="题目管理权限")
     can_assign_admin: bool = Field(description="授予管理员权限")
+    can_manage_tags: bool = Field(False, description="Tag 管理权限")
+    tag_cards: list[UserTagCardOut] = Field(default_factory=list, description="Tag 卡")
+    display_tag: str = Field("", description="全站统一显示的称号")
     experience: int = Field(description="经验值")
     avatar_url: str | None = Field(None, description="头像URL")
     cover_url: str | None = Field(None, description="个人主页封面URL")
@@ -130,6 +141,9 @@ class UserAdminResponse(BaseModel):
     can_manage_posts: bool = Field(description="帖子管理权限")
     can_manage_problems: bool = Field(description="题目管理权限")
     can_assign_admin: bool = Field(description="授予管理员权限")
+    can_manage_tags: bool = Field(False, description="Tag 管理权限")
+    tag_cards: list[UserTagCardOut] = Field(default_factory=list, description="Tag 卡")
+    display_tag: str = Field("", description="全站统一显示的称号")
     experience: int = Field(description="经验值")
     avatar_url: str | None = Field(None, description="头像URL")
     cover_url: str | None = Field(None, description="个人主页封面URL")

@@ -47,7 +47,7 @@ class ForumService:
         return {
             "user_id": user.id,
             "username": user.username,
-            "user_tag": user.user_tag or "",
+            "user_tag": user.display_tag,
             "is_admin": bool(user.is_admin),
             "is_super_admin": bool(user.is_super_admin),
             "is_banned": bool(user.is_banned),

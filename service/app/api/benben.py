@@ -68,7 +68,7 @@ async def create_benben(
             can_manage_posts=current_user.can_manage_posts,
             can_manage_problems=current_user.can_manage_problems,
             username_color=current_user.username_color,
-            user_tag=current_user.user_tag,
+            user_tag=current_user.display_tag,
             content=benben.content,
             reply_to=benben.reply_to,
             reply_to_username=reply_to_username,
