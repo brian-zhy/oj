@@ -105,6 +105,81 @@ def _is_staff(user: User) -> bool:
     return bool(user.can_manage_users or user.is_admin or user.is_super_admin)
 
 
+def _aware(dt: Optional[datetime]) -> Optional[datetime]:
+    """SQLite 读回的是 naive datetime，统一按 UTC 处理。"""
+    if dt is None:
+        return None
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+async def _running_contest_for_problem(
+    db: AsyncSession, problem_id: int
+) -> Optional[Contest]:
+    """该题目此刻是否正处在某场「进行中」的比赛里。
+
+    比赛题目都取自题库，而题库里那些赛前写好的题解、AC 代码本身就是公开可见的。
+    所以只要题目在比赛中，这段时间内的代码就按比赛规则收紧。
+    一场以上比赛同时包含该题时取开始最早的那场。
+    """
+    now = datetime.now(timezone.utc)
+    rows = (await db.execute(
+        select(Contest)
+        .join(ContestProblem, ContestProblem.contest_id == Contest.id)
+        .where(ContestProblem.problem_id == problem_id)
+        .order_by(Contest.start_time.asc())
+    )).scalars().all()
+    for c in rows:
+        start, end = _aware(c.start_time), _aware(c.end_time)
+        if start and end and start <= now <= end:
+            return c
+    return None
+
+
+def _code_visible_to(
+    sub: Submission, viewer: User, running: Optional[Contest]
+) -> bool:
+    """这条提交的代码能不能给 viewer 看。
+
+    - 站务（原有行为）：不受限
+    - 别人的代码：一律不给（原有行为）
+    - 比赛进行中：**本人的代码也只有「属于这场比赛的提交」才给看**。
+      否则选手只要打开提交页，赛前写好的题解就被回填到编辑器里了。
+    """
+    if _is_staff(viewer):
+        return True
+    if sub.user_id != viewer.id:
+        return False
+    if running is not None and sub.contest_id != running.id:
+        return False
+    return True
+
+
+def _code_hidden_reason(
+    sub: Submission, viewer: User, running: Optional[Contest]
+) -> Optional[str]:
+    """代码被藏起来时给前端的说明，免得用户以为是 bug。"""
+    if running is None:
+        return None
+    if sub.user_id == viewer.id:
+        return "比赛进行中，赛前提交的代码暂不公开"
+    return "比赛进行中，其他人的代码暂不公开"
+
+
+def _apply_code_visibility(
+    d: dict, sub: Submission, viewer: User, running: Optional[Contest]
+) -> dict:
+    """把「给不给代码」和「为什么不给」写进响应体。"""
+    visible = _code_visible_to(sub, viewer, running)
+    d["code_visible"] = visible
+    if visible:
+        d["code"] = sub.code
+    else:
+        reason = _code_hidden_reason(sub, viewer, running)
+        if reason:
+            d["code_hidden_reason"] = reason
+    return d
+
+
 def _user_brief(user: User | None) -> dict:
     if user is None:
         return {
@@ -274,14 +349,11 @@ async def list_problem_submissions(
     )).scalars().all()
 
     problem = await _load_problem(db, problem_id)
-    staff = _is_staff(current_user)
+    running = await _running_contest_for_problem(db, problem_id)
     items = []
     for sub in rows:
         d = _dict(sub, problem=problem)
-        d["code_visible"] = staff or sub.user_id == current_user.id
-        if d["code_visible"]:
-            d["code"] = sub.code
-        items.append(d)
+        items.append(_apply_code_visibility(d, sub, current_user, running))
     return {"total": total, "page": page, "page_size": page_size, "items": items}
 
 
@@ -316,6 +388,11 @@ async def get_my_last_submission(
         .limit(1)
     )).scalar_one_or_none()
     if sub is None:
+        return None
+    # 比赛进行中不要用赛前的提交回填编辑器 ——
+    # 那等于把选手赛前写好的题解直接送到他眼前。返回 null 让前端用默认模板。
+    running = await _running_contest_for_problem(db, problem_id)
+    if not _code_visible_to(sub, current_user, running):
         return None
     return _dict(sub, problem=problem, with_code=True)
 
@@ -362,9 +439,16 @@ async def get_submission(
     ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="提交不存在")
 
-    code_visible = sub.user_id == current_user.id or _is_staff(current_user)
+    code_visible = _code_visible_to(
+        sub, current_user, await _running_contest_for_problem(db, sub.problem_id)
+    )
     d = _dict(sub, problem=problem, with_code=code_visible)
     d["code_visible"] = code_visible
+    if not code_visible:
+        running = await _running_contest_for_problem(db, sub.problem_id)
+        reason = _code_hidden_reason(sub, current_user, running)
+        if reason:
+            d["code_hidden_reason"] = reason
     return d
 
 
