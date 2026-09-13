@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
+import BenbenFeed from '@/components/BenbenFeed.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -398,6 +399,11 @@ onMounted(() => {
               <span>注册时间</span>
               <div class="right"><time :datetime="profile.created_at">{{ formatRegDate(profile.created_at) }}</time></div>
             </div>
+          </div>
+
+          <!-- 动态：TA 发过的犇犇（只读，仅本人的保留删除按钮） -->
+          <div v-else-if="activeTab === '动态'" class="benben-pane">
+            <BenbenFeed :user-number="profile.user_number" />
           </div>
 
           <!-- 其余标签：功能尚未开发 -->
@@ -797,6 +803,11 @@ onMounted(() => {
 .tab-placeholder {
   text-align: center;
   padding: 48px 24px;
+}
+
+/* 「动态」标签页：犇犇气泡自带白底描边，不需要再套一层卡片 */
+.benben-pane {
+  padding: 4px 0 0;
 }
 
 .placeholder-icon {
