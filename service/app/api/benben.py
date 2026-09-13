@@ -90,6 +90,7 @@ async def create_benben(
 async def get_benben_list(
     limit: int = Query(20, ge=1, le=100),
     before_id: Optional[int] = Query(None),
+    after_id: Optional[int] = Query(None, description="只要比该 id 新的（自动刷新增量拉取）"),
     mode: str = Query("all", pattern="^(all|my)$"),
     user_number: Optional[int] = Query(None, description="只看该用户的动态（用户主页用）"),
     db: AsyncSession = Depends(get_db),
@@ -101,6 +102,7 @@ async def get_benben_list(
             db=db,
             limit=limit,
             before_id=before_id,
+            after_id=after_id,
             mode=mode,
             user_number=current_user.user_number if current_user else None,
             author_number=user_number

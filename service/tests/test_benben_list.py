@@ -102,3 +102,39 @@ async def test_benben_filter_paginates():
             )
         ).json()
         assert page == []
+
+
+@pytest.mark.asyncio
+async def test_benben_incremental_after_id():
+    """自动刷新用的增量拉取：只回比 after_id 新的，没有新的就回空数组。"""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as ac:
+        headers_a, number_a, _ = await _register_and_login(ac)
+        headers_b, number_b, _ = await _register_and_login(ac)
+
+        old = await _post(ac, headers_a, "旧动态")
+
+        # 拿最新的 id 当游标：此刻没有更新的东西
+        assert (await ac.get("/benben", params={"after_id": old["id"]})).json() == []
+
+        # 别人发了新的 → 只回这一条
+        new = await _post(ac, headers_b, "新动态")
+        fresh = (await ac.get("/benben", params={"after_id": old["id"]})).json()
+        assert [i["content"] for i in fresh] == ["新动态"]
+        assert [i["id"] for i in fresh] == [new["id"]]
+
+        # 游标推到最新 → 又空了（前端每轮轮询就是这样判「没有新内容」的）
+        assert (await ac.get("/benben", params={"after_id": new["id"]})).json() == []
+
+        # 增量拉取也能跟作者筛选叠加
+        only_a = (
+            await ac.get(
+                "/benben", params={"after_id": old["id"], "user_number": number_a}
+            )
+        ).json()
+        assert only_a == []
+        only_b = (
+            await ac.get(
+                "/benben", params={"after_id": old["id"], "user_number": number_b}
+            )
+        ).json()
+        assert [i["content"] for i in only_b] == ["新动态"]
