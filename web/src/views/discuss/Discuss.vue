@@ -291,14 +291,18 @@ onMounted(() => loadPosts(false))
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
+/* 置顶样式：底色/边框都是主色 #4a4ae0 的浅色调。
+   原来是旧红色主题的 #fffdf5 + #f5deb3（暖奶油/小麦色），
+   放在蓝紫色站里怎么看都违和。 */
 .post-card.pinned {
-  background: #fffdf5;
-  border: 1px solid #f5deb3;
+  background: #f6f6fd;
+  border: 1px solid #dcdcfa;
 }
 
+/* 与 DiscussPost / Home 的置顶徽章保持一致（之前这里漏改，还是旧的红色主题色） */
 .pin-badge {
   display: inline-block;
-  background: #E74C3C;
+  background: var(--primary);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
