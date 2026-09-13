@@ -20,12 +20,14 @@ from app.api.admin_upload import router as admin_upload_router
 from app.api.problems import router as problems_router
 from app.api.submissions import router as submissions_router
 from app.api.images import router as images_router
+from app.api.shop import router as shop_router
 
 api_router = APIRouter()
 api_router.include_router(users_router)
 api_router.include_router(checkin_router)
 api_router.include_router(teams_router)
 api_router.include_router(contests_router)
+api_router.include_router(shop_router)
 api_router.include_router(tokens_router)
 api_router.include_router(extended_auth_router)
 api_router.include_router(user_profile_router)
