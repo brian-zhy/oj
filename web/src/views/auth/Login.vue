@@ -269,9 +269,11 @@ watch(currentCaptcha, () => {
         </div>
 
         <!-- 调试信息 -->
+        <!--
         <div v-if="currentCaptcha" class="debug-info" style="font-size: 11px; color: #999; text-align: center; margin-top: 8px;">
           验证码已加载 (调试: {{ currentCaptcha.length }} 位)
         </div>
+      -->
 
         <!-- 登录按钮 -->
         <button
