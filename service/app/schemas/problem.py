@@ -74,6 +74,8 @@ class ProblemUpdate(BaseModel):
     time_limit: int | None = Field(None, ge=100, le=60_000, description="时间限制 (ms)")
     memory_limit: int | None = Field(None, ge=16, le=1024, description="内存限制 (MB)")
     is_public: bool | None = Field(None, description="是否公开（草稿为 false）")
+    # 指派出题人：用户名或 UID；置空字符串 = 清除出题人
+    author: str | None = Field(None, max_length=50, description="出题人（用户名或 UID）")
 
     @field_validator("tags")
     @classmethod

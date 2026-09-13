@@ -32,6 +32,7 @@ const form = reactive({
   time_limit: 1000,
   memory_limit: 128,
   is_public: false,
+  author: '',
   background: '',
   description: '',
   input_format: '',
@@ -69,6 +70,7 @@ const loadProblem = async () => {
     form.time_limit = p.time_limit
     form.memory_limit = p.memory_limit
     form.is_public = p.is_public
+    form.author = p.author?.username || ''
     form.background = p.background || ''
     form.description = p.description || ''
     form.input_format = p.input_format || ''
@@ -158,12 +160,16 @@ const save = async () => {
   try {
     if (editingId.value === null) {
       // 团队私有题模式：携带 team_id，编号自动分配 T 系列
-      const body = teamId.value ? { ...payload, team_id: teamId.value } : payload
-      const created = await problemsApi.create(body)
+      const body: Record<string, unknown> = teamId.value
+        ? { ...payload, team_id: teamId.value }
+        : { ...payload }
+      const created = await problemsApi.create(body as never)
       await Swal.fire({ icon: 'success', title: '创建成功', timer: 1200, showConfirmButton: false })
       router.push(teamId.value ? `/teams/${teamId.value}` : `/problems/${created.id}`)
     } else {
-      await problemsApi.update(editingId.value, payload)
+      // 编辑模式附带指派出题人（后端按用户名/UID 解析）
+      const body: Record<string, unknown> = { ...payload, author: form.author.trim() }
+      await problemsApi.update(editingId.value, body as never)
       await Swal.fire({ icon: 'success', title: '保存成功', timer: 1200, showConfirmButton: false })
       router.push(`/problems/${editingId.value}`)
     }
@@ -227,6 +233,10 @@ onMounted(loadProblem)
             <label class="form-item">
               <span class="form-label">内存限制 (MB)</span>
               <input v-model.number="form.memory_limit" type="number" class="form-input" min="16" max="1024" />
+            </label>
+            <label v-if="editingId !== null" class="form-item">
+              <span class="form-label">出题人</span>
+              <input v-model="form.author" class="form-input" maxlength="50" placeholder="用户名或 UID，留空清除" />
             </label>
             <label class="form-item">
               <span class="form-label">题目状态</span>
