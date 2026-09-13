@@ -128,7 +128,7 @@ class User(Base, TimestampMixin):
         "UserTagCard",
         foreign_keys="UserTagCard.user_id",
         cascade="all, delete-orphan",
-        lazy="joined",
+        lazy="selectin",
     )
 
     @property
