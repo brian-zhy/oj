@@ -122,19 +122,18 @@
 }
 
 /* @提及：指向用户主页。
-   样式刻意和普通链接（.prose a）保持一致 —— 之前用过胶囊底色 + 内边距，
-   在正文里显得太抢眼，一条回复里 @ 两个人就很花。
+   颜色与普通链接一致，但不加下划线 —— 一条回复里 @ 几个人时下划线太碎。
    裸 .mention 那条是给通知文案、工单回复这类不套 .prose 的场景用的。 */
 .mention,
 .prose a.mention {
   color: #2563eb;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .mention:hover,
 .prose a.mention:hover {
   color: #1d4ed8;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .prose strong {
