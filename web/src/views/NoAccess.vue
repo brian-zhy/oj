@@ -11,7 +11,7 @@ const from = computed(() => (route.query.from as string) || '')
 <template>
   <div class="no-access-page">
     <div class="no-access-card">
-      <div class="no-access-icon">⛔</div>
+      <div class="no-access-icon"><i class='fa-solid fa-ban'></i></div>
       <h2 class="no-access-title">你无权访问此页面</h2>
       <p class="no-access-sub">
         {{ from ? `该页面的功能需要相应的管理权限` : '该页面需要相应的管理权限' }}
