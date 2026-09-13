@@ -5,8 +5,10 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # 安装系统依赖
+# fonts-wqy-microhei：图床水印要用中文字体（纯文字水印，无需 logo 素材）
 RUN apt-get update && apt-get install -y \
     curl \
+    fonts-wqy-microhei \
     && rm -rf /var/lib/apt/lists/*
 
 # 安装 uv (更快的 Python 包管理器)

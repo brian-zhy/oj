@@ -29,6 +29,19 @@ class Settings(BaseSettings):
     # go-judge 评测沙箱地址（宿主机 systemd 服务）
     GO_JUDGE_URL: str = "http://host.docker.internal:5050"
 
+    # 图床（/images）
+    # 「高级空间」与「普通空间」双配额，规则参照洛谷：
+    #   无水印 或 体积超过阈值的图 → 占用高级空间；带水印且不超阈值 → 普通空间
+    IMAGE_PREMIUM_QUOTA_BYTES: int = 10 * 1024 * 1024   # 高级空间 10MB
+    IMAGE_BASIC_QUOTA_BYTES: int = 50 * 1024 * 1024     # 普通空间 50MB
+    IMAGE_PREMIUM_SIZE_THRESHOLD: int = 500 * 1024      # 超过 500KB 强制占用高级空间
+    IMAGE_MAX_FILE_BYTES: int = 10 * 1024 * 1024        # 单张图片上限 10MB
+
+    # 图床水印：纯文字斜向平铺（参照洛谷，用站点名而不是 logo）
+    IMAGE_WATERMARK_TEXT: str = "NLNOJ"
+    IMAGE_WATERMARK_FONT: str | None = None             # 自定义字体路径，留空自动查找
+    IMAGE_WATERMARK_OPACITY: int = 110                  # 水印不透明度 0-255
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

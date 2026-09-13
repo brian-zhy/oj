@@ -29,6 +29,41 @@ export interface LoginCredentials {
   password: string
 }
 
+/* ===== 图床 ===== */
+/** 水印模式：none = 无水印（占高级空间）；text = 站点文字水印（占普通空间） */
+export type WatermarkMode = 'none' | 'text'
+
+export interface HostedImage {
+  id: number
+  url: string
+  original_name: string | null
+  size_bytes: number
+  content_type: string | null
+  /** none / text */
+  watermark: string
+  /** 是否占用「高级空间」 */
+  is_premium: boolean
+  is_locked: boolean
+  created_at: string
+}
+
+export interface ImageListResponse {
+  items: HostedImage[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface ImageQuota {
+  total_count: number
+  premium_used: number
+  premium_quota: number
+  basic_used: number
+  basic_quota: number
+  /** 超过该体积的图片强制占用高级空间 */
+  premium_threshold: number
+}
+
 export interface RegisterData {
   username: string
   email?: string
