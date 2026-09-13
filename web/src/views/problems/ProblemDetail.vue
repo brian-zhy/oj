@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { problemsApi } from '@/api/problems'
+import { contestsApi, type ContestItem } from '@/api/contests'
 import { renderRichText } from '@/utils/markdown'
 import { difficultyColor } from '@/utils/difficulty'
 import { userNameColor } from '@/utils/userColor'
@@ -22,6 +23,46 @@ const error = ref('')
 const problemId = computed(() => parseInt(route.params.id as string, 10))
 // 统一题号入口：/problem/P1001 或 /problem/T10（团队私有题）
 const problemCode = computed(() => (route.params.code as string || '').toUpperCase())
+
+// ==================== 比赛上下文 ====================
+// 从比赛页点题目进来时 URL 上带着 ?contest=N，**这个参数必须一路传到提交页**：
+// 后端靠它把提交归到某场比赛，丢了就不会计分（排行榜会全员 0 分）。
+// 曾经这个页面既不读、也不往下传，导致从比赛里提交永远不计成绩。
+const contestId = computed(() => {
+  const v = parseInt(route.query.contest as string, 10)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
+
+// 仅用于展示横幅；取不到（未报名 / 已删除等）就静默不显示，不影响做题
+const contest = ref<ContestItem | null>(null)
+
+const loadContest = async () => {
+  if (contestId.value === null) {
+    contest.value = null
+    return
+  }
+  try {
+    contest.value = await contestsApi.get(contestId.value)
+  } catch {
+    contest.value = null
+  }
+}
+
+// 提交页靠 ?contest= 判断是否计分，这里提前把状态说清楚
+// （比赛未开始/已结束时后端会直接拒收，不如先提醒）
+const contestHint = computed(() => {
+  const c = contest.value
+  if (!c) return ''
+  if (c.status === 'running') return '本次提交将计入比赛成绩'
+  if (c.status === 'pending') return '比赛尚未开始，现在提交不计成绩'
+  return '比赛已结束，提交不计成绩'
+})
+
+// 把整个 query 原样带过去（不只 contest，以后加新上下文参数也不用再改这里）
+const openSubmit = () => {
+  if (!problem.value) return
+  router.push({ path: `/problems/${problem.value.id}/submit`, query: route.query })
+}
 
 const loadProblemByCode = async (code: string) => {
   try {
@@ -75,9 +116,11 @@ const loadProblem = async () => {
 
 watch(problemId, loadProblem)
 watch(problemCode, (code) => { if (code) loadProblemByCode(code) })
+watch(contestId, loadContest)
 onMounted(() => {
   if (problemCode.value) loadProblemByCode(problemCode.value)
   else loadProblem()
+  loadContest()
 })
 </script>
 
@@ -93,6 +136,18 @@ onMounted(() => {
       </div>
 
       <template v-else-if="problem">
+        <!-- 比赛模式横幅：提醒当前提交会计入哪场比赛（以前这个状态完全不可见） -->
+        <div
+          v-if="contest"
+          class="contest-banner"
+          :class="{ 'is-warn': contest.status !== 'running' }"
+        >
+          <i class="fa-solid fa-trophy" />
+          <span>比赛模式</span>
+          <router-link :to="`/contest/${contest.id}`" class="cb-link">{{ contest.title }}</router-link>
+          <span class="cb-text">{{ contestHint }}</span>
+        </div>
+
         <div class="card">
           <!-- 题头 -->
           <div class="p-head">
@@ -109,7 +164,7 @@ onMounted(() => {
 
           <!-- 操作行 -->
           <div class="p-actions">
-            <button class="btn-primary" @click="router.push(`/problems/${problem.id}/submit`)">提交代码</button>
+            <button class="btn-primary" @click="openSubmit">提交代码</button>
             <button class="btn-op" @click="router.push(`/submissions?problem_id=${problem.id}`)">提交记录</button>
           </div>
 
@@ -219,6 +274,54 @@ onMounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 24px 28px;
   margin-bottom: 16px;
+}
+
+/* ===== 比赛模式横幅 ===== */
+.contest-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #eef5ff;
+  border: 1px solid #cfe3ff;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #3a5a80;
+}
+
+.contest-banner i {
+  color: var(--primary);
+}
+
+/* 比赛未开始 / 已结束时换成暖色，和「会计分」区分开 */
+.contest-banner.is-warn {
+  background: #fdf3f1;
+  border-color: #f6d5cd;
+  color: #a1432f;
+}
+
+.contest-banner.is-warn i {
+  color: #c0392b;
+}
+
+.cb-link {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.cb-link:hover {
+  text-decoration: underline;
+}
+
+.is-warn .cb-link {
+  color: #a1432f;
+}
+
+.cb-text {
+  color: #7b8aa0;
 }
 
 .p-head {
