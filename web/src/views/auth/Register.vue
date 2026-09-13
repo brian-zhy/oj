@@ -458,7 +458,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
+  box-shadow: 0 0 0 2px rgba(42, 142, 255, 0.1);
   background: white;
 }
 
@@ -568,7 +568,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 02s;
+  transition: background 0.2s;
 }
 
 .register-btn:hover:not(:disabled) {
