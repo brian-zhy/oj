@@ -139,14 +139,13 @@ class User(Base, TimestampMixin):
         管理员默认「管理员」。作弊者（非管理员）强制显示「作弊者」，
         不会被 Tag 卡掩盖（作弊管理员沿用其 tag 或「管理员」）。
         """
+        # 作弊者（非管理员）强制显示「作弊者」，不被卡掩盖
+        if self.is_cheater and not self.is_admin:
+            return "作弊者"
         cards = self.tag_cards or []
         enabled = [c.name for c in cards if c.enabled]
         if enabled:
             return enabled[0]
-        if self.is_cheater:
-            return self.user_tag or ("管理员" if self.is_admin else "作弊者")
-        if self.user_tag:
-            return self.user_tag
         if self.is_admin or self.is_super_admin:
             return "管理员"
         return ""

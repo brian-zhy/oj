@@ -261,12 +261,7 @@ onMounted(() => {
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">用户标签</label>
-              <input
-                v-model="profileForm.user_tag"
-                type="text"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="比如：算法爱好者、Python开发者..."
-              />
+              <p class="text-sm text-gray-400">用户标签由 Tag 卡决定——请在下方 Tag 卡区佩戴；Tag 卡由持有 Tag 管理权限的管理员授予</p>
             </div>
 
             <div>
