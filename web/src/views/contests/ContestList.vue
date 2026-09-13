@@ -60,7 +60,7 @@ onMounted(load)
           v-for="c in contests"
           :key="c.id"
           class="contest-card"
-          @click="router.push(`/contests/${c.id}`)"
+          @click="router.push(`/contest/${c.id}`)"
         >
           <div class="c-main">
             <div class="c-title-row">
