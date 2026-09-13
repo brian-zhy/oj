@@ -259,6 +259,7 @@ onMounted(loadProblem)
                 v-model="form[s.key]"
                 height="220px"
                 :placeholder="s.placeholder"
+                :preview="false"
               />
               <div class="md-preview">
                 <div class="prose preview-body" v-html="previewOf(s.key)"></div>
@@ -480,10 +481,7 @@ onMounted(loadProblem)
 .md-editor {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  overflow: hidden;
+  gap: 10px;
 }
 
 .md-textarea {
@@ -507,7 +505,8 @@ onMounted(loadProblem)
 }
 
 .md-preview {
-  border-left: 1px solid #e2e8f0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   background: #fff;
   padding: 10px 14px;
   min-height: 120px;
@@ -607,11 +606,6 @@ onMounted(loadProblem)
 
   .span-2 {
     grid-column: span 1;
-  }
-
-  .md-preview {
-    border-left: none;
-    border-top: 1px solid #e2e8f0;
   }
 }
 </style>
