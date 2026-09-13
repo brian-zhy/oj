@@ -234,8 +234,29 @@ async def update_problem(
                 status_code=status.HTTP_403_FORBIDDEN, detail="需要团队管理权限"
             )
     old_difficulty = problem.difficulty
+    data = payload.model_dump(exclude_unset=True)
+
+    # 指派出题人：按用户名或 UID 解析；空串 = 清除出题人
+    author_identifier = data.pop("author", None)
+    if author_identifier is not None:
+        ident = str(author_identifier).strip()
+        author_user: User | None = None
+        if ident:
+            author_user = (await db.execute(
+                select(User).where(User.username == ident)
+            )).scalar_one_or_none()
+            if author_user is None and ident.isdigit():
+                author_user = (await db.execute(
+                    select(User).where(User.user_number == int(ident))
+                )).scalar_one_or_none()
+            if author_user is None:
+                raise HTTPException(
+                    status_code=400, detail=f"用户「{ident}」不存在"
+                )
+        data["author_id"] = author_user.id if author_user else None
+
     problem = await ProblemService.update(
-        db, problem, payload.model_dump(exclude_unset=True)
+        db, problem, data
     )
     # 难度变更：重算所有首次 AC 该题用户的经验（delta 增减）
     if (payload.difficulty is not None

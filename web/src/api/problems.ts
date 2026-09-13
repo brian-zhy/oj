@@ -43,7 +43,10 @@ export const problemsApi = {
     return apiClient.post('/api/problems', data)
   },
 
-  async update(id: number, data: Partial<Problem>): Promise<Problem> {
+  async update(
+    id: number,
+    data: Partial<Problem> & { author?: string }
+  ): Promise<Problem> {
     return apiClient.put(`/api/problems/${id}`, data)
   },
 }
