@@ -47,6 +47,8 @@ const toggleTagCard = async (card: { id: number; name: string; enabled: boolean 
     const updated: any = await apiClient.put(`/users/me/tag-cards/${card.id}/toggle`)
     // 佩戴制：以服务端为准刷新全部状态
     await loadTagCards()
+    // 同步 authStore 缓存的用户信息（全站用户名旁的 tag 数据源），否则要等下次整页刷新才生效
+    await authStore.syncCurrentUser()
     showMessage(updated.enabled ? `已佩戴「${card.name}」` : `已摘下「${card.name}」`, 'success')
   } catch (err: any) {
     showMessage(err.response?.data?.detail || '操作失败', 'error')
