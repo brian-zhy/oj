@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # Runtime mode
     ENV: Literal["dev", "prod"] = "dev"
 
+    # 前端地址：邮件里的链接必须是绝对地址（密码重置等）。
+    # 本地开发默认指向前端 dev server；**生产必须改成真实域名**，
+    # 否则用户收到的重置链接会指向 localhost（启动时会直接报错拦下）。
+    FRONTEND_URL: str = "http://localhost:5173"
+
     # go-judge 评测沙箱地址（宿主机 systemd 服务）
     GO_JUDGE_URL: str = "http://host.docker.internal:5050"
 
@@ -58,6 +63,12 @@ class Settings(BaseSettings):
             if self.DATABASE_URL.startswith("sqlite"):
                 raise RuntimeError(
                     "DATABASE_URL must point to PostgreSQL when ENV=prod"
+                )
+            if "localhost" in self.FRONTEND_URL or "127.0.0.1" in self.FRONTEND_URL:
+                raise RuntimeError(
+                    "FRONTEND_URL must be the public site URL when ENV=prod, "
+                    "otherwise password-reset emails point users at localhost. "
+                    "e.g. FRONTEND_URL=https://nlnoj.gr3yph4ntom.cn"
                 )
             return self
         # dev: if no secret is provided, generate a stable per-process one
