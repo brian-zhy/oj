@@ -419,7 +419,7 @@ function startEdit(field: 'username' | 'user_tag' | 'remark', user: any) {
   editingValue.value = field === 'username'
     ? (user.username || '未命名')
     : field === 'user_tag'
-      ? (user.user_tag || '')
+      ? ''
       : (user.remark || '')
   nextTick(() => {
     const input = document.querySelector('.editable-field-input') as HTMLInputElement | null
@@ -442,9 +442,19 @@ async function saveEdit(user: any) {
       ? (user.user_tag || '')
       : (user.remark || '')
   cancelEdit()
+  if (field === 'user_tag') {
+    // 标签语义已改为「授予 Tag 卡」：输入名字保存即授予（user_tag 字段已退役）
+    if (!val) { Swal.fire({ icon: 'info', title: '请输入要授予的 Tag 名称' }); return }
+    try {
+      await apiClient.post(`/api/users/${user.id}/tag-cards`, { name: val })
+      Swal.fire({ icon: 'success', title: `已授予 Tag 卡「${val}」`, timer: 1500, showConfirmButton: false })
+      await loadUsers()
+    } catch (err: any) {
+      Swal.fire({ icon: 'error', title: '授予失败', text: err.response?.data?.detail || '未知错误' })
+    }
+    return
+  }
   if (val === original) return
-  // 标签：管理员留空时默认"管理员"（与目标项目一致）
-  if (field === 'user_tag' && user.is_admin && val === '') val = '管理员'
   try {
     await updateUserProfile(user.user_number, { [field]: val || null })
     await loadUsers()
@@ -729,6 +739,7 @@ onUnmounted(() => {
                       <input
                         v-if="editing && editing.field === 'user_tag' && editing.userNumber === user.user_number"
                         v-model="editingValue"
+                        placeholder="输入要授予的 Tag 名称"
                         class="editable-field-input"
                         @blur="saveEdit(user)"
                         @keydown.enter.prevent="($event.target as HTMLInputElement).blur()"
@@ -739,10 +750,10 @@ onUnmounted(() => {
                         @dblclick="startEdit('user_tag', user)"
                       >
                         <span
-                          v-if="(user.is_admin ? (user.user_tag || '管理员') : (user.is_cheater ? '作弊者' : (user.user_tag || '')))"
+                          v-if="user.display_tag"
                           class="user-tag-display"
                           :style="{ backgroundColor: getUserDisplayColor(user) }"
-                        >{{ user.is_cheater ? '作弊者' : (user.is_admin ? (user.user_tag || '管理员') : user.user_tag) }}</span>
+                        >{{ user.display_tag }}</span>
                         <span v-else class="editable-field">-</span>
                       </span>
                     </td>

@@ -46,6 +46,7 @@ def format_user_for_original(user: User) -> Dict[str, Any]:
         "experience": getattr(user, 'experience', 0),
         "avatar_url": user.avatar_url,
         "user_tag": user.user_tag,
+        "display_tag": user.display_tag,
         "username_color": user.username_color,
         "bio": user.bio,
         "created_at": user.created_at.isoformat() if user.created_at else None,
