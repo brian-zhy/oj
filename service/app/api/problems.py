@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user
+from app.models.contest import Contest, ContestParticipant, ContestProblem
 from app.models.problem import Problem
 from app.models.team import Team, TeamMember
 from app.models.user import User
@@ -73,6 +75,56 @@ async def _resolve_team_problem_access(
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
     )
+
+
+def _aware(dt: datetime) -> datetime:
+    """SQLite 读回 naive datetime，统一按 UTC 处理（Postgres 返回 aware）。"""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+def _can_view_contest_problems(user: User) -> bool:
+    """站内管理员 / 比赛管理员直接放行（与 contests.py 的 can_manage 对齐）。"""
+    return bool(user.is_super_admin or user.is_admin or user.can_manage_problems)
+
+
+async def _resolve_contest_problem_access(
+    db: AsyncSession, problem: Problem, user: User
+) -> None:
+    """比赛期间的题目：未报名者不可读题面。
+
+    比赛详情页自己会隐藏题目列表，但比赛题目往往同时公开在题库里，
+    直接访问 /problems/{id}（或 /problem/{code}）就能读到题面，
+    那把锁就形同虚设。这里把同一条规则补到题库入口上。
+
+    只约束「未开始 / 进行中」的比赛；已结束的比赛题目回归普通题库内容。
+    """
+    if _can_view_contest_problems(user):
+        return
+    now = datetime.now(timezone.utc)
+    rows = (await db.execute(
+        select(Contest.id, Contest.end_time, Contest.owner_id)
+        .join(ContestProblem, ContestProblem.contest_id == Contest.id)
+        .where(ContestProblem.problem_id == problem.id)
+    )).all()
+    # 未结束（end_time 还没到）的比赛才算「比赛期间」
+    live = [(cid, en, owner_id) for cid, en, owner_id in rows
+            if _aware(en) >= now]
+    if not live:
+        return
+    if any(owner_id == user.id for _, _, owner_id in live):
+        return
+    # 只要报名了其中任意一场，就能看到该题（报名时就已校验过团队资格）
+    registered = (await db.execute(
+        select(ContestParticipant.id).where(
+            ContestParticipant.user_id == user.id,
+            ContestParticipant.contest_id.in_([cid for cid, _, _ in live]),
+        )
+    )).first()
+    if registered is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="该题属于进行中的比赛，报名后才能查看题目内容",
+        )
 
 
 @router.get("", summary="题目列表")
@@ -140,6 +192,7 @@ async def get_problem_by_code(
             status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
         )
     await _resolve_team_problem_access(db, problem, current_user)
+    await _resolve_contest_problem_access(db, problem, current_user)
     return ProblemService._dict(problem, with_description=True)
 
 
@@ -160,6 +213,7 @@ async def get_problem(
             status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在"
         )
     await _resolve_team_problem_access(db, problem, current_user)
+    await _resolve_contest_problem_access(db, problem, current_user)
     return ProblemService._dict(problem, with_description=True)
 
 
