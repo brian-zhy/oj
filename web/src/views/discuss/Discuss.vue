@@ -429,4 +429,15 @@ onMounted(() => loadPosts(false))
   border-color: var(--primary);
   color: #fff;
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .post-card {
+    padding: 14px;
+  }
+
+  .empty {
+    padding: 40px 14px;
+  }
+}
 </style>

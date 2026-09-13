@@ -123,4 +123,17 @@ onMounted(load)
 .hint { font-size: 13px; color: #8e9aaf; }
 .form-error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+
+/* ===== 手机端：容器横向内边距归零 =====
+   这些页面的 .xxx-container 自己写了 padding，会和 App.vue 的 .main-content
+   页边距叠加（手机上变成 16+20=36px/侧）。容器不再重复留白。 */
+@media (max-width: 600px) {
+  .contests-container {
+    padding: 16px 0;
+  }
+
+  .contest-card {
+    padding: 14px;
+  }
+}
 </style>

@@ -1660,7 +1660,12 @@ onUnmounted(() => {
   }
 
   .card {
-    padding: 16px 18px;
+    padding: 14px;
+  }
+
+  /* 空状态盒子原本左右各 40px，手机上只剩 243px */
+  .benben-empty {
+    padding: 28px 16px;
   }
 
   .benben-item {

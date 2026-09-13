@@ -308,6 +308,13 @@ watch(currentCaptcha, () => {
   align-items: center;
   padding: 20px;
   font-family: inherit;
+  /* 这里是 flex 项（.main-content 是 display:flex），
+     min-width:auto 默认会撑到内容的 max-content（400px + padding = 440px），
+     结果 .login-card 的 max-width:90% 反向按 400px 解析成 360px，
+     在 375px 屏上溢出 33px。改成占满可用行宽即可。 */
+  flex: 1;
+  width: 100%;
+  min-width: 0;
 }
 
 /* 登录卡片 */
@@ -471,12 +478,16 @@ watch(currentCaptcha, () => {
 
 .footer-link:hover {
   color: var(--primary-hover);
-  textext-decoration: underline;
+  text-decoration: underline;
 }
 
 /* 响应式适配 */
 @media (max-width: 480px) {
+  /* 卡片只有 max-width:90%，窄屏上会缩到 280px（内容仅 240px），
+     直接占满可用宽度更合理 */
   .login-card {
+    width: 100%;
+    max-width: 100%;
     padding: 24px 20px;
   }
 

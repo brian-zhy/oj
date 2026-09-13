@@ -324,4 +324,16 @@ textarea.form-input { width: 100%; box-sizing: border-box; resize: vertical; }
   .form-row { flex-direction: column; align-items: stretch; gap: 6px; }
   .row-label { width: auto; text-align: left; }
 }
+
+/* ===== 手机端：容器横向内边距归零 + 表单卡片收窄 =====
+   .form-card 原本 26px 30px，是全场最大的表单内边距，手机上只剩 240px 左右。 */
+@media (max-width: 600px) {
+  .contest-create-container {
+    padding: 16px 0;
+  }
+
+  .card.form-card {
+    padding: 16px 14px;
+  }
+}
 </style>

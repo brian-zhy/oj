@@ -329,4 +329,18 @@ onBeforeUnmount(() => {
   border-color: var(--primary);
   color: #fff;
 }
+
+/* ===== 手机端 =====
+   除了卡片内边距，还修了 .result-summary 缺 flex-wrap 的问题
+   （得分/耗时/内存三个指标挤在一行会撑破容器）。===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+
+  .result-summary {
+    flex-wrap: wrap;
+    gap: 12px 24px;
+  }
+}
 </style>

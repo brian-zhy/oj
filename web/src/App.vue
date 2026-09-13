@@ -181,6 +181,14 @@ input, textarea, select {
 
 /* 响应式页脚 */
 @media (max-width: 600px) {
+  /* 手机端整页留白收紧。
+     这里是「第一层」：各页面自己的 *-container / .card 还在下面叠加，
+     三层加起来才是用户看到的留白，改一层不管另外两层等于白干。 */
+  .main-content,
+  .main-content.with-sidebar {
+    padding: 12px;
+  }
+
   .page-footer {
     padding: 16px;
   }

@@ -364,6 +364,11 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   align-items: center;
   padding: 20px;
   font-family: inherit;
+  /* 同 Login.vue：flex 项 + max-width:90% 会形成循环，
+     在 375px 屏上溢出 63px。占满可用行宽后才能正确收缩。 */
+  flex: 1;
+  width: 100%;
+  min-width: 0;
 }
 
 /* 注册卡片 */
@@ -597,7 +602,11 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 
 /* 响应式适配 */
 @media (max-width: 480px) {
+  /* 卡片只有 max-width:90%，窄屏上会缩到 280px（内容仅 240px），
+     直接占满可用宽度更合理 */
   .register-card {
+    width: 100%;
+    max-width: 100%;
     padding: 24px 20px;
   }
 

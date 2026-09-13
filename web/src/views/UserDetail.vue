@@ -1074,4 +1074,11 @@ onMounted(() => {
     padding: 0 12px 8px;
   }
 }
+
+/* ===== 手机端：主内容卡片内边距收窄（.l-card 原本 24px）===== */
+@media (max-width: 600px) {
+  .l-card {
+    padding: 14px;
+  }
+}
 </style>

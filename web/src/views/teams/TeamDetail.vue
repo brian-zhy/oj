@@ -507,4 +507,15 @@ button:disabled { opacity: .6; cursor: not-allowed; }
   .team-stats { grid-template-columns: 1fr; text-align: left; }
   .title-row h1 { font-size: 20px; }
 }
+
+/* ===== 手机端：容器横向内边距归零 + 卡片内边距收窄 ===== */
+@media (max-width: 600px) {
+  .team-detail-container {
+    padding: 16px 0;
+  }
+
+  .card {
+    padding: 14px;
+  }
+}
 </style>

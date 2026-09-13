@@ -962,4 +962,31 @@ onMounted(() => {
     text-align: center;
   }
 }
+
+/* ===== 手机端 =====
+   页级 768px 断点只改了 .profile-page 和 .profile-header，
+   下面这几个 32px 内边距的区块一直没被覆盖。===== */
+@media (max-width: 600px) {
+  .profile-page {
+    padding: 12px;
+  }
+
+  .edit-form,
+  .stats-section,
+  .account-section,
+  .permissions-section {
+    padding: 18px 14px;
+  }
+
+  .profile-header {
+    padding: 16px 14px;
+  }
+
+  /* 这些卡中卡原本还有一层 20px，叠加后内容只剩 260px */
+  .stat-card,
+  .info-item,
+  .session-item {
+    padding: 14px;
+  }
+}
 </style>

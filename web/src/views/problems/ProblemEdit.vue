@@ -608,4 +608,15 @@ onMounted(loadProblem)
     grid-column: span 1;
   }
 }
+
+/* ===== 手机端：卡片内边距收窄 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+
+  .head-card {
+    padding: 14px;
+  }
+}
 </style>

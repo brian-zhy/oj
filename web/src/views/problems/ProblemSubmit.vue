@@ -317,4 +317,11 @@ onMounted(async () => {
   background: #fff;
   border-radius: 16px;
 }
+
+/* ===== 手机端：卡片内边距收窄 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+}
 </style>

@@ -103,4 +103,12 @@ const from = computed(() => (route.query.from as string) || '')
 .btn-back:hover {
   background: #e5e7eb;
 }
+
+/* ===== 手机端：原本 48px 60px 的内边距在手机上过宽 ===== */
+@media (max-width: 600px) {
+  .no-access-card {
+    padding: 32px 20px;
+    width: 100%;
+  }
+}
 </style>

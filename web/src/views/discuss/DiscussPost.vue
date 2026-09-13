@@ -822,4 +822,18 @@ onMounted(() => loadPost())
     position: static;
   }
 }
+
+/* ===== 手机端：帖子内容占比大，内边距收窄收益明显 ===== */
+@media (max-width: 600px) {
+  .post-head-card,
+  .content-card,
+  .edit-card {
+    padding: 16px 14px;
+  }
+
+  .comment-item,
+  .info-card {
+    padding: 12px 14px;
+  }
+}
 </style>

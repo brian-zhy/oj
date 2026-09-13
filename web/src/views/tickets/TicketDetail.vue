@@ -860,4 +860,16 @@ onMounted(() => loadTicket())
   color: var(--primary);
   border-color: var(--primary);
 }
+
+/* ===== 手机端：原本无任何媒体查询 ===== */
+@media (max-width: 600px) {
+  .card {
+    padding: 16px 14px;
+  }
+
+  .reply-item,
+  .action-record {
+    padding: 12px 14px;
+  }
+}
 </style>

@@ -101,4 +101,13 @@ const path = computed(() => route.path)
 .btn-back:hover {
   background: #e5e7eb;
 }
+
+/* ===== 手机端：原本 48px 60px 的内边距在 375px 屏上占掉一半宽度。
+   这个组件是 404 兑底路由 + 9 个未开放入口，影响面比看上去大。===== */
+@media (max-width: 600px) {
+  .soon-card {
+    padding: 32px 20px;
+    width: 100%;
+  }
+}
 </style>
