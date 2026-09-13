@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { contestsApi, type ContestItem } from '@/api/contests'
+import { fmtDateTime } from '@/utils/datetime'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -33,8 +34,11 @@ const STATUS: Record<string, { text: string; cls: string }> = {
   pending: { text: '未开始', cls: 'pending' },
   ended: { text: '已结束', cls: 'ended' },
 }
-const fmt = (iso: string | null) =>
-  iso ? iso.slice(0, 16).replace('T', ' ') : '—'
+// 比赛时间要按用户本地时区展示。
+// 以前这里是 iso.slice(0, 16)，把后端带回的 UTC 时刻直接当本地时间显示，
+// 于是「显示 14:00 结束」实际是 UTC 14:00（北京时间 22:00）——
+// 状态判定用的是真实 UTC，两边就对不上了，看着像比赛结束时间没生效。
+const fmt = (iso: string | null) => fmtDateTime(iso, '—')
 
 
 

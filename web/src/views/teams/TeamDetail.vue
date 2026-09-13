@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { teamsApi, type TeamDetailItem, type TeamMemberItem, type TeamJoinRequestItem, type TeamProblemItem } from '@/api/teams'
 import { difficultyColor } from '@/utils/difficulty'
 import { userNameColor } from '@/utils/userColor'
+import { fmtDateTime } from '@/utils/datetime'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,7 +54,9 @@ const userTag = (u: TeamMemberItem['user']) => {
   if (u.is_cheater) return u.is_admin ? (u.user_tag || '管理员') : '作弊者'
   return u.user_tag || ''
 }
-const fmtDate = (iso: string | null) => (iso ? iso.slice(0, 10) : '未知')
+// 后端给的是 UTC 时刻，直接切前 10 位等于显示 UTC 日期，
+// 北京时间 0~8 点会差一天，所以走同一套时区转换再取日期
+const fmtDate = (iso: string | null) => (iso ? fmtDateTime(iso, '未知').slice(0, 10) : '未知')
 
 // 选项卡切换：进入「题目」tab 时加载团队题列表
 const switchTab = (t: string) => {
