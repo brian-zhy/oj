@@ -11,6 +11,129 @@ const authStore = useAuthStore()
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 const currentUser = computed(() => authStore.currentUser)
 
+// ==================== 首页广告轮播（管理员右键可配） ====================
+
+type CarouselAd = {
+  image: string
+  link: string
+}
+
+const MAX_ADS = 6
+const DEFAULT_ADS: CarouselAd[] = [{ image: '/welcome.png', link: '/' }]
+
+const adItems = ref<CarouselAd[]>([...DEFAULT_ADS])
+const currentAdIndex = ref(0)
+const showAdManager = ref(false)
+const adManagerItems = ref<CarouselAd[]>([])
+const adForm = ref<CarouselAd>({ image: '', link: '' })
+const editingAdIndex = ref(-1)
+const adManagerError = ref('')
+
+async function loadHomeAds(): Promise<void> {
+  try {
+    const data: any = await apiClient.get('/api/home-ads')
+    const ads = Array.isArray(data?.ads) ? data.ads : []
+    adItems.value = ads.length
+      ? ads.map((item: any) => ({ image: item.image, link: item.link }))
+      : [...DEFAULT_ADS]
+    currentAdIndex.value = 0
+  } catch {
+    adItems.value = [...DEFAULT_ADS]
+  }
+}
+
+async function persistHomeAds(items: CarouselAd[]) {
+  try {
+    await apiClient.put('/api/home-ads', items.map(item => ({ image: item.image, link: item.link })))
+    await loadHomeAds()
+  } catch (err: any) {
+    adManagerError.value = err?.response?.data?.detail || '保存失败'
+  }
+}
+
+const isAdmin = computed(() => Boolean(currentUser.value?.is_admin))
+
+const cycleAdForward = () => {
+  if (adItems.value.length <= 1) return
+  currentAdIndex.value = (currentAdIndex.value + 1) % adItems.value.length
+}
+
+const cycleAdBackward = () => {
+  if (adItems.value.length <= 1) return
+  currentAdIndex.value = (currentAdIndex.value - 1 + adItems.value.length) % adItems.value.length
+}
+
+const openAdManager = (event: MouseEvent) => {
+  if (!isAdmin.value) return
+  event.preventDefault()
+  adManagerItems.value = adItems.value.map(item => ({ ...item }))
+  adForm.value = { image: '', link: '' }
+  editingAdIndex.value = -1
+  adManagerError.value = ''
+  showAdManager.value = true
+}
+
+const closeAdManager = () => {
+  showAdManager.value = false
+  adManagerError.value = ''
+}
+
+const addAdSlot = () => {
+  if (adManagerItems.value.length >= MAX_ADS) {
+    adManagerError.value = '最多只能添加 6 个广告'
+    return
+  }
+  adManagerItems.value.push({ image: '', link: '/' })
+  editingAdIndex.value = adManagerItems.value.length - 1
+  adForm.value = { image: '', link: '/' }
+}
+
+const editAdSlot = (index: number) => {
+  editingAdIndex.value = index
+  adForm.value = { ...adManagerItems.value[index] }
+}
+
+const removeAdSlot = (index: number) => {
+  if (index < 0 || index >= adManagerItems.value.length) return
+  adManagerItems.value.splice(index, 1)
+  if (editingAdIndex.value === index) {
+    editingAdIndex.value = -1
+    adForm.value = { image: '', link: '/' }
+  }
+}
+
+const saveAdForm = async () => {
+  if (!adForm.value.image.trim()) {
+    adManagerError.value = '请填写广告图像地址'
+    return
+  }
+  if (!adForm.value.link.trim()) {
+    adManagerError.value = '请填写跳转链接'
+    return
+  }
+  if (editingAdIndex.value >= 0 && editingAdIndex.value < adManagerItems.value.length) {
+    adManagerItems.value[editingAdIndex.value] = { ...adForm.value, image: adForm.value.image.trim(), link: adForm.value.link.trim() }
+  } else {
+    adManagerItems.value.push({ image: adForm.value.image.trim(), link: adForm.value.link.trim() })
+  }
+  if (adManagerItems.value.length > MAX_ADS) {
+    adManagerItems.value = adManagerItems.value.slice(0, MAX_ADS)
+  }
+  adItems.value = adManagerItems.value.map(item => ({ ...item }))
+  await persistHomeAds(adItems.value)
+  currentAdIndex.value = 0
+  closeAdManager()
+}
+
+const goAd = (target: string) => {
+  if (!target) return
+  if (/^https?:\/\//.test(target)) {
+    window.open(target, '_blank', 'noopener,noreferrer')
+    return
+  }
+  router.push(target)
+}
+
 // ==================== 通用工具 ====================
 
 const COLOR_RED = 'var(--primary)'
@@ -535,6 +658,7 @@ const flashIds = ref<Set<number>>(new Set())
 const benbenListRef = ref<HTMLElement | null>(null)
 let refreshTimer: number | undefined
 let flashTimer: number | undefined
+let adTimer: number | undefined
 
 // 最新一条「真实」犇犇的 id（乐观插入的临时项 id 是负数，必须排除）
 const newestRealId = computed(() => {
@@ -666,6 +790,7 @@ onMounted(async () => {
   }, 60000)
   loadRecentPosts()
   loadCheckin()
+  await loadHomeAds()
 
   if (isLoggedIn.value) {
     await loadBenbenList(true)
@@ -686,12 +811,15 @@ onMounted(async () => {
   } else {
     updateSentinel()
   }
+
+  adTimer = window.setInterval(cycleAdForward, 3500)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   if (clockTimer) clearInterval(clockTimer)
   if (refreshTimer) clearInterval(refreshTimer)
+  if (adTimer) clearInterval(adTimer)
   clearTimeout(flashTimer)
   document.removeEventListener('visibilitychange', handleVisibility)
   if (observer) observer.disconnect()
@@ -704,14 +832,23 @@ onUnmounted(() => {
       <!-- ===== 打卡卡片 ===== -->
       <div class="card punch-card">
         <div class="lg-punch">
-          <!-- 广告轮播位（暂无广告数据） -->
-          <div class="ad-col">
-            <img src="/welcome.png">
-            <!--
-            <div class="ad-placeholder">
+          <div class="ad-col" @contextmenu.prevent="openAdManager">
+            <div v-if="adItems.length" class="ad-carousel">
+              <div class="ad-frame">
+                <a class="ad-slide" :href="adItems[currentAdIndex].link" @click.prevent="goAd(adItems[currentAdIndex].link)">
+                  <img :src="adItems[currentAdIndex].image" class="ad-image">
+                </a>
+                <button class="ad-arrow ad-arrow-left" @click.stop="cycleAdBackward" aria-label="上一张">‹</button>
+                <button class="ad-arrow ad-arrow-right" @click.stop="cycleAdForward" aria-label="下一张">›</button>
+              </div>
+              <div class="ad-ctrl">
+                <span v-for="(ad, idx) in adItems" :key="idx" class="ad-dot" :class="{ active: idx === currentAdIndex }" @click="currentAdIndex = idx"></span>
+              </div>
+              <div v-if="isAdmin" class="ad-admin-tip">右键配置广告</div>
+            </div>
+            <div v-else class="ad-placeholder">
               <span>没有更多广告了</span>
             </div>
-          -->
           </div>
 
           <!-- 打卡/运势面板 -->
@@ -1009,6 +1146,312 @@ onUnmounted(() => {
   min-width: 0;
   display: flex;
   align-items: stretch;
+}
+
+.ad-carousel {
+  width: 100%;
+  position: relative;
+}
+
+.ad-frame {
+  position: relative;
+  width: 100%;
+  min-height: 210px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #eef2ff;
+  border: 1px solid #dde2f7;
+}
+
+.ad-slide {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ad-image {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  display: block;
+}
+
+.ad-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ad-arrow:hover {
+  background: var(--primary);
+}
+
+.ad-arrow-left {
+  left: 12px;
+}
+
+.ad-arrow-right {
+  right: 12px;
+}
+
+.ad-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ad-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccd1dc;
+  cursor: pointer;
+}
+
+.ad-dot.active {
+  width: 24px;
+  border-radius: 99px;
+  background: var(--primary);
+}
+
+.ad-admin-tip {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--primary);
+  font-size: 12px;
+  border-radius: 12px;
+  padding: 4px 10px;
+  border: 1px solid #d9ddff;
+}
+
+.ad-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cad2e4;
+}
+
+.ad-manager-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(25, 35, 50, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.ad-manager-window {
+  width: min(780px, calc(100vw - 32px));
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.24);
+  padding: 0;
+}
+
+.ad-manager-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.ad-manager-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.ad-manager-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #718096;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.ad-manager-content {
+  padding: 16px 20px 20px;
+}
+
+.ad-manager-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ad-manager-count {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ad-add-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.ad-manager-error {
+  margin-top: 12px;
+  color: #c0392b;
+  font-size: 12px;
+}
+
+.ad-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ad-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #eaf0f8;
+}
+
+.ad-manager-row-no {
+  font-weight: 700;
+  color: var(--primary);
+  width: 24px;
+}
+
+.ad-manager-thumb {
+  width: 96px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #dde4f1;
+  background: #fff;
+}
+
+.ad-manager-meta {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ad-manager-label {
+  font-size: 11px;
+  color: #718096;
+}
+
+.ad-manager-input,
+.ad-manager-form-grid input {
+  min-width: 160px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccd7ea;
+  background: #fff;
+}
+
+.ad-manager-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ad-manager-edit,
+.ad-manager-remove {
+  padding: 7px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 1px solid #dde4f1;
+}
+
+.ad-manager-edit {
+  color: var(--primary);
+}
+
+.ad-manager-remove {
+  color: #c0392b;
+}
+
+.ad-manager-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+.ad-manager-form-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #344154;
+  margin-bottom: 10px;
+}
+
+.ad-manager-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.ad-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: #526073;
+}
+
+.ad-manager-save-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ad-save-btn,
+.ad-cancel-btn {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--primary);
+  cursor: pointer;
+}
+
+.ad-save-btn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.ad-cancel-btn {
+  background: #fff;
+  color: var(--primary);
 }
 
 .punch-card .fortune-col {

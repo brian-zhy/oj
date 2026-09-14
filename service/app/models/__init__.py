@@ -18,5 +18,6 @@ from app.models.team import Team, TeamMember, TeamJoinRequest
 from app.models.contest import Contest, ContestProblem, ContestParticipant
 from app.models.image import UserImage
 from app.models.tag_card import UserTagCard
+from app.models.home_ad import HomeAd
 
-__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog", "Ticket", "TicketReply", "ForumPost", "ForumComment", "Notification", "Problem", "Submission", "TestCase", "Team", "TeamMember", "TeamJoinRequest", "Contest", "ContestProblem", "ContestParticipant", "UserImage", "UserTagCard"]
+__all__ = ["Base", "User", "RefreshToken", "Benben", "JudgementLog", "Ticket", "TicketReply", "ForumPost", "ForumComment", "Notification", "Problem", "Submission", "TestCase", "Team", "TeamMember", "TeamJoinRequest", "Contest", "ContestProblem", "ContestParticipant", "UserImage", "UserTagCard", "HomeAd"]

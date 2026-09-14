@@ -21,6 +21,7 @@ from app.api.problems import router as problems_router
 from app.api.submissions import router as submissions_router
 from app.api.images import router as images_router
 from app.api.shop import router as shop_router
+from app.api.home_ads import router as home_ads_router
 
 api_router = APIRouter()
 api_router.include_router(users_router)
@@ -42,3 +43,5 @@ api_router.include_router(admin_upload_router)
 api_router.include_router(problems_router)
 api_router.include_router(submissions_router)
 api_router.include_router(images_router)
+api_router.include_router(home_ads_router)
+api_router.include_router(home_ads_router)
