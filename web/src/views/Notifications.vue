@@ -32,6 +32,7 @@ const error = ref('')
 const group = ref('all')
 const unreadByGroup = ref<Record<string, number>>({})
 const unreadCount = computed(() => unreadByGroup.value.all || 0)
+const forceUnread = new Set<number>()
 
 /// 标签页上的未读数红点（全部/系统通知的不单独显示，只靠大数字说明）
 const groupBadge = (key: string) => (key === 'all' ? 0 : unreadByGroup.value[key] || 0)
@@ -61,7 +62,13 @@ const loadNotifications = async (append = false) => {
     )
     if (group.value !== requested) return
     const list = Array.isArray(data?.notifications) ? data.notifications : []
-    notifications.value = append ? [...notifications.value, ...list] : list
+    const listWithLocalHighlight = list.map((n: any) => ({
+      ...n,
+      forceUnread: forceUnread.has(n.id),
+    }))
+    notifications.value = append
+      ? [...notifications.value, ...listWithLocalHighlight]
+      : listWithLocalHighlight
     page.value++
     hasMore.value = list.length >= 20
   } catch (err: any) {
@@ -91,9 +98,16 @@ const emitUnreadChanged = () => {
 }
 
 const markAllRead = async () => {
+  const unreadIds = notifications.value.filter(n => !n.is_read).map(n => n.id)
+  unreadIds.forEach(id => forceUnread.add(id))
+
   try {
     await apiClient.put('/api/notifications/read-all')
-    notifications.value = notifications.value.map(n => ({ ...n, is_read: true }))
+    notifications.value = notifications.value.map(n => ({
+      ...n,
+      is_read: true,
+      forceUnread: forceUnread.has(n.id),
+    }))
     unreadByGroup.value = {}
     emitUnreadChanged()
   } catch {
@@ -109,10 +123,12 @@ const notificationTarget = (n: any): string | null => {
 }
 
 const openNotification = async (n: any) => {
-  if (!n.is_read) {
+  if (!n.is_read || n.forceUnread) {
     try {
       await apiClient.put(`/api/notifications/${n.id}/read`)
       n.is_read = true
+      n.forceUnread = false
+      forceUnread.delete(n.id)
       const g = n.type === 'mention' ? 'mention' : n.type === 'reply' ? 'reply' : 'system'
       if (unreadByGroup.value.all > 0) unreadByGroup.value.all--
       if (unreadByGroup.value[g] > 0) unreadByGroup.value[g]--
@@ -125,9 +141,10 @@ const openNotification = async (n: any) => {
   if (target) router.push(target)
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadUnread()
-  loadNotifications(false)
+  await loadNotifications(false)
+  await markAllRead()
 })
 </script>
 
@@ -139,7 +156,6 @@ onMounted(() => {
           <h2 class="page-title">消息通知</h2>
           <p v-if="unreadCount > 0" class="page-sub">{{ unreadCount }} 条未读</p>
         </div>
-        <button v-if="unreadCount > 0" class="btn-read-all" @click="markAllRead">全部已读</button>
       </div>
 
       <!-- 分类标签页：「@我的」和「回复我的」是分开的，
@@ -167,13 +183,13 @@ onMounted(() => {
           v-for="n in notifications"
           :key="n.id"
           class="notification-item"
-          :class="{ unread: !n.is_read }"
+          :class="{ unread: !n.is_read || n.forceUnread }"
           @click="openNotification(n)"
         >
           <span class="n-icon" :style="{ color: TYPE[n.type]?.color }"><i :class="TYPE[n.type]?.icon || 'fa-solid fa-bell'"></i></span>
           <div class="n-body">
             <div class="n-content">
-              <span v-if="!n.is_read" class="unread-dot"></span>
+              <span v-if="!n.is_read || n.forceUnread" class="unread-dot"></span>
               <!-- 文案里的 @用户名 渲染成指向用户主页的链接 -->
               <span v-html="renderMentionText(n.content)"></span>
             </div>
