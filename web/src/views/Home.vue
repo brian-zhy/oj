@@ -51,7 +51,7 @@ async function persistHomeAds(items: CarouselAd[]) {
   }
 }
 
-const isAdmin = computed(() => Boolean(currentUser.value?.is_admin))
+const isAdmin = computed(() => Boolean(currentUser.value?.is_admin || currentUser.value?.is_super_admin))
 
 const cycleAdForward = () => {
   if (adItems.value.length <= 1) return
