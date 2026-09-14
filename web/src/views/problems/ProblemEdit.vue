@@ -12,6 +12,31 @@ import type { ProblemDifficulty, ProblemSample, TestCaseItem } from '@/types'
 const route = useRoute()
 const router = useRouter()
 
+const zipInputRef = ref<HTMLInputElement | null>(null)
+const zipUploading = ref(false)
+
+const uploadZip = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!editingId.value) {
+    Swal.fire('请先保存题目', '创建题目后才能上传测试点', 'warning')
+    input.value = ''
+    return
+  }
+  zipUploading.value = true
+  try {
+    const res = await testCasesApi.uploadZip(editingId.value, file)
+    await Swal.fire({ icon: 'success', title: `成功导入 ${res.imported} 个测试点`, timer: 1500, showConfirmButton: false })
+    loadTestCases()
+  } catch (err: any) {
+    Swal.fire('导入失败', err.response?.data?.detail || '请重试', 'error')
+  } finally {
+    zipUploading.value = false
+    input.value = ''
+  }
+}
+
 const editingId = computed(() => {
   const id = parseInt(route.params.id as string, 10)
   return Number.isFinite(id) ? id : null
@@ -306,6 +331,16 @@ onMounted(loadProblem)
                 <textarea v-model="newCase.input_data" class="md-textarea plain" rows="3" placeholder="测试点输入"></textarea>
                 <textarea v-model="newCase.expected_output" class="md-textarea plain" rows="3" placeholder="期望输出"></textarea>
               </div>
+              <input
+                ref="zipInputRef"
+                type="file"
+                accept=".zip"
+                style="display: none"
+                @change="uploadZip"
+              />
+              <button class="btn-ghost add-sample" :disabled="zipUploading" @click="zipInputRef?.click()">
+                <i class="fa-solid fa-file-zipper"></i> {{ zipUploading ? '上传中...' : '上传 zip 压缩包' }}
+              </button>
               <button class="btn-ghost add-sample" @click="addCase"><i class="fa-solid fa-plus"></i> 添加测试点</button>
             </div>
           </template>

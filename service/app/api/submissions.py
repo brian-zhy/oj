@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, status, UploadFile
 from sqlalchemy import func as sa_func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -535,3 +536,113 @@ async def delete_test_case(
     await db.delete(tc)
     await db.commit()
     return {"success": True}
+
+
+# ==================== 测试点批量导入（zip 压缩包） ====================
+
+_ZIP_MAX_UPLOAD = 50 * 1024 * 1024       # 压缩包上限 50MB
+_ZIP_MAX_TOTAL = 100 * 1024 * 1024       # 解压后上限 100MB
+_NAME_RE = re.compile(r"^([^0-9]*)([0-9]+)$")  # 前缀 + 连续一段数字
+
+
+@router.post("/problems/{problem_id}/test-cases/upload-zip",
+             summary="上传 zip 压缩包批量导入测试点（.in/.out 成对）")
+async def upload_test_cases_zip(
+    problem_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """压缩包要求：仅 zip 格式；.in/.out 成对；无文件夹与无关文件；
+    包 ≤50MB、解压后 ≤100MB；文件名只能含连续一段数字（如 game001.in）。"""
+    import io
+    import zipfile as zf
+
+    problem = await _load_problem(db, problem_id)
+    if problem is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="题目不存在")
+    await _require_manage_for_problem(db, problem, current_user)
+
+    if not file.filename or not file.filename.lower().endswith(".zip"):
+        raise HTTPException(status_code=400, detail="仅支持 zip 压缩包（rar 等其他格式不支持）")
+    content = await file.read()
+    if len(content) > _ZIP_MAX_UPLOAD:
+        raise HTTPException(status_code=400, detail="压缩包大小不能超过 50MB")
+
+    try:
+        archive = zf.ZipFile(io.BytesIO(content))
+    except zf.BadZipFile:
+        raise HTTPException(status_code=400, detail="无法解析压缩包（rar 等其他格式不支持，请使用 zip）")
+
+    infos = archive.infolist()
+    if sum(i.file_size for i in infos) > _ZIP_MAX_TOTAL:
+        raise HTTPException(status_code=400, detail="解压后总大小不能超过 100MB")
+
+    # 收集 (前缀, 数字) → {in/out 内容}；逐项校验格式
+    entries: dict[tuple[str, int], dict[str, str]] = {}
+    for info in infos:
+        name = info.filename
+        if info.is_dir() or "/" in name or "\\" in name:
+            raise HTTPException(status_code=400, detail=f"压缩包内不允许有文件夹: {name}")
+        if not name.lower().endswith((".in", ".out")):
+            raise HTTPException(status_code=400, detail=f"压缩包内存在无关文件: {name}（仅允许 .in/.out）")
+        stem = name.rsplit(".", 1)[0]
+        m = _NAME_RE.fullmatch(stem)
+        if m is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"文件名 {name} 不合法：文件名中只允许有连续的一段数字（如 game001.in）",
+            )
+        key = (m.group(1), int(m.group(2)))
+        ext = name.rsplit(".", 1)[1].lower()
+        try:
+            data = archive.read(info).decode("utf-8", errors="replace")
+        except Exception:
+            raise HTTPException(status_code=400, detail=f"文件 {name} 无法读取")
+        entries.setdefault(key, {})[ext] = data
+
+    # 成对校验
+    unpaired = [f"{p}{n}.in/.out" for (p, n), v in entries.items()
+                if "in" not in v or "out" not in v]
+    if unpaired:
+        raise HTTPException(
+            status_code=400, detail="以下测试点缺少配对的输入/输出文件: " + ", ".join(unpaired[:5])
+        )
+    if not entries:
+        raise HTTPException(status_code=400, detail="压缩包内没有有效的测试点")
+
+    existing = (await db.execute(
+        select(sa_func.count()).select_from(TestCase).where(
+            TestCase.problem_id == problem_id)
+    )).scalar() or 0
+    if existing + len(entries) > 100:
+        raise HTTPException(
+            status_code=400,
+            detail=f"测试点最多 100 个（现有 {existing} 个，本次尝试导入 {len(entries)} 个）",
+        )
+
+    # 按前缀、编号排序入库
+    keys = sorted(entries.keys())
+    created = []
+    for offset, key in enumerate(keys):
+        tc = TestCase(
+            problem_id=problem_id,
+            input_data=entries[key]["in"],
+            expected_output=entries[key]["out"],
+            sort_order=existing + offset,
+        )
+        db.add(tc)
+        created.append(tc)
+    await db.commit()
+    for tc in created:
+        await db.refresh(tc)
+    return {
+        "success": True,
+        "imported": len(created),
+        "items": [{
+            "id": tc.id,
+            "input_data": tc.input_data,
+            "expected_output": tc.expected_output,
+            "sort_order": tc.sort_order,
+        } for tc in created],
+    }

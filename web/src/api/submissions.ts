@@ -48,6 +48,18 @@ export const submissionsApi = {
 
 // 测试点管理（题目管理权限）
 export const testCasesApi = {
+  // 上传 zip 压缩包批量导入测试点（.in/.out 成对，包≤50M 解压≤100M）
+  async uploadZip(
+    problemId: number,
+    file: File
+  ): Promise<{ success: boolean; imported: number }> {
+    const fd = new FormData()
+    fd.append('file', file)
+    return apiClient.post(`/api/problems/${problemId}/test-cases/upload-zip`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
+
   async list(problemId: number): Promise<TestCaseItem[]> {
     return apiClient.get(`/api/problems/${problemId}/test-cases`)
   },
