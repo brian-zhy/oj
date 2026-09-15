@@ -1100,6 +1100,72 @@ onUnmounted(() => {
       </button>
     </Transition>
   </div>
+
+  <Teleport to="body">
+    <div v-if="showAdManager" class="ad-manager-backdrop" @click.self="closeAdManager">
+      <section class="ad-manager-window" role="dialog" aria-modal="true" aria-labelledby="ad-manager-title">
+        <header class="ad-manager-head">
+          <h2 id="ad-manager-title" class="ad-manager-title">首页广告管理</h2>
+          <button class="ad-manager-close" aria-label="关闭广告管理" @click="closeAdManager">×</button>
+        </header>
+
+        <div class="ad-manager-content">
+          <div class="ad-manager-toolbar">
+            <span class="ad-manager-count">已配置 {{ adManagerItems.length }}/{{ MAX_ADS }} 个广告</span>
+            <button
+              class="ad-add-btn"
+              :disabled="adManagerItems.length >= MAX_ADS"
+              @click="addAdSlot"
+            >
+              <i class="fa-solid fa-plus"></i> 添加广告
+            </button>
+          </div>
+
+          <p v-if="adManagerError" class="ad-manager-error">{{ adManagerError }}</p>
+
+          <div v-if="adManagerItems.length" class="ad-manager-list">
+            <article v-for="(ad, index) in adManagerItems" :key="index" class="ad-manager-row">
+              <span class="ad-manager-row-no">{{ index + 1 }}</span>
+              <img
+                class="ad-manager-thumb"
+                :src="ad.image || '/welcome.png'"
+                alt="广告预览"
+                @error="($event.target as HTMLImageElement).src = '/welcome.png'"
+              >
+              <div class="ad-manager-meta">
+                <span class="ad-manager-label">{{ ad.image || '未填写图片地址' }}</span>
+                <span class="ad-manager-label">{{ ad.link || '未填写跳转链接' }}</span>
+              </div>
+              <div class="ad-manager-actions">
+                <button class="ad-manager-edit" @click="editAdSlot(index)">编辑</button>
+                <button class="ad-manager-remove" @click="removeAdSlot(index)">删除</button>
+              </div>
+            </article>
+          </div>
+          <div v-else class="ad-manager-empty">还没有广告，请添加第一张。</div>
+
+          <div class="ad-manager-form">
+            <h3 class="ad-manager-form-title">{{ editingAdIndex >= 0 ? '编辑广告' : '新增广告' }}</h3>
+            <div class="ad-manager-form-grid">
+              <label class="ad-field">
+                <span>广告图像地址</span>
+                <input v-model="adForm.image" type="url" placeholder="https://... 或 /uploads/banner.png">
+              </label>
+              <label class="ad-field">
+                <span>跳转链接</span>
+                <input v-model="adForm.link" type="text" placeholder="/contest/1 或 https://...">
+              </label>
+            </div>
+            <div class="ad-manager-save-row">
+              <button class="ad-save-btn" @click="saveAdForm">
+                {{ editingAdIndex >= 0 ? '保存修改' : '添加到列表' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -1260,6 +1326,8 @@ onUnmounted(() => {
 
 .ad-manager-window {
   width: min(780px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+  overflow: auto;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 20px 80px rgba(0, 0, 0, 0.24);
@@ -1316,6 +1384,11 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.ad-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .ad-manager-error {
   margin-top: 12px;
   color: #c0392b;
@@ -1327,6 +1400,16 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 12px;
   margin-top: 14px;
+}
+
+.ad-manager-empty {
+  margin-top: 14px;
+  padding: 24px 12px;
+  border: 1px dashed #d8e0ed;
+  border-radius: 10px;
+  color: #718096;
+  font-size: 13px;
+  text-align: center;
 }
 
 .ad-manager-row {
