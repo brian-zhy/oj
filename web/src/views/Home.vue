@@ -11,7 +11,7 @@ const authStore = useAuthStore()
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 const currentUser = computed(() => authStore.currentUser)
 
-// ==================== 首页广告轮播（管理员右键可配） ====================
+// ==================== 首页广告轮播 ====================
 
 type CarouselAd = {
   image: string
@@ -63,15 +63,16 @@ const cycleAdBackward = () => {
   currentAdIndex.value = (currentAdIndex.value - 1 + adItems.value.length) % adItems.value.length
 }
 
-const openAdManager = (event: MouseEvent) => {
+const openAdManager = () => {
   if (!isAdmin.value) return
-  event.preventDefault()
   adManagerItems.value = adItems.value.map(item => ({ ...item }))
   adForm.value = { image: '', link: '' }
   editingAdIndex.value = -1
   adManagerError.value = ''
   showAdManager.value = true
 }
+
+const handleAdManagerOpen = () => openAdManager()
 
 const closeAdManager = () => {
   showAdManager.value = false
@@ -777,6 +778,7 @@ const backToTop = () => {
 
 // 生命周期
 onMounted(async () => {
+  window.addEventListener('home-ad-manager-open', handleAdManagerOpen)
   window.addEventListener('scroll', handleScroll, { passive: true })
   let lastDayStr = getTodayDateStr()
   clockTimer = window.setInterval(() => {
@@ -816,6 +818,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  window.removeEventListener('home-ad-manager-open', handleAdManagerOpen)
   window.removeEventListener('scroll', handleScroll)
   if (clockTimer) clearInterval(clockTimer)
   if (refreshTimer) clearInterval(refreshTimer)
@@ -832,7 +835,7 @@ onUnmounted(() => {
       <!-- ===== 打卡卡片 ===== -->
       <div class="card punch-card">
         <div class="lg-punch">
-          <div class="ad-col" @contextmenu.prevent="openAdManager">
+          <div class="ad-col">
             <div v-if="adItems.length" class="ad-carousel">
               <div class="ad-frame">
                 <a class="ad-slide" :href="adItems[currentAdIndex].link" @click.prevent="goAd(adItems[currentAdIndex].link)">
@@ -844,7 +847,6 @@ onUnmounted(() => {
               <div class="ad-ctrl">
                 <span v-for="(ad, idx) in adItems" :key="idx" class="ad-dot" :class="{ active: idx === currentAdIndex }" @click="currentAdIndex = idx"></span>
               </div>
-              <div v-if="isAdmin" class="ad-admin-tip">右键配置广告</div>
             </div>
             <div v-else class="ad-placeholder">
               <span>没有更多广告了</span>
@@ -1151,12 +1153,17 @@ onUnmounted(() => {
 .ad-carousel {
   width: 100%;
   position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 320px;
 }
 
 .ad-frame {
   position: relative;
   width: 100%;
-  min-height: 210px;
+  flex: 1;
+  min-height: 320px;
   border-radius: 14px;
   overflow: hidden;
   background: #eef2ff;
@@ -1171,7 +1178,8 @@ onUnmounted(() => {
 
 .ad-image {
   width: 100%;
-  height: 210px;
+  height: 100%;
+  min-height: 320px;
   object-fit: cover;
   display: block;
 }
@@ -1226,22 +1234,9 @@ onUnmounted(() => {
   background: var(--primary);
 }
 
-.ad-admin-tip {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--primary);
-  font-size: 12px;
-  border-radius: 12px;
-  padding: 4px 10px;
-  border: 1px solid #d9ddff;
-}
-
 .ad-placeholder {
   width: 100%;
-  height: 100%;
-  min-height: 210px;
+  min-height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;

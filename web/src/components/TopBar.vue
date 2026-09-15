@@ -136,6 +136,11 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
+const openHomeAdManager = () => {
+  window.dispatchEvent(new CustomEvent('home-ad-manager-open'))
+  showAdminMenu.value = false
+}
+
 // 生命周期
 onMounted(() => {
   if (authStore.isAuthenticated) {
@@ -151,7 +156,7 @@ onUnmounted(() => {
 // 点击外部关闭菜单
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement
-  if (!target.closest('.top-avatar-wrap') && !target.closest('.admin-gear')) {
+  if (!target.closest('.top-avatar-wrap') && !target.closest('.admin-menu-wrap')) {
     showAvatarMenu.value = false
     showAdminMenu.value = false
   }
@@ -201,13 +206,26 @@ onUnmounted(() => {
         <sup v-if="unreadCount > 0" class="bell-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</sup>
       </a>
 
-      <!-- 管理后台入口（仅管理员可见，与原站一致的齿轮按钮） -->
-      <router-link
-        v-if="authStore.currentUser?.is_admin"
-        to="/admin/user"
-        class="admin-gear"
-        title="进入管理后台"
-      ><i class='fa-solid fa-gear'></i></router-link>
+      <!-- 管理菜单（仅管理员可见） -->
+      <div
+        v-if="authStore.currentUser?.is_admin || authStore.currentUser?.is_super_admin"
+        class="admin-menu-wrap"
+      >
+        <button
+          class="admin-gear"
+          title="管理菜单"
+          aria-label="管理菜单"
+          @click.stop="showAdminMenu = !showAdminMenu"
+        ><i class='fa-solid fa-gear'></i></button>
+        <div v-if="showAdminMenu" class="admin-menu">
+          <router-link to="/admin/user" class="admin-menu-item" @click="showAdminMenu = false">
+            <i class="fa-solid fa-users"></i> 用户管理
+          </router-link>
+          <button class="admin-menu-item" @click="openHomeAdManager">
+            <i class="fa-solid fa-rectangle-ad"></i> 广告管理
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -374,6 +392,8 @@ onUnmounted(() => {
   height: 20px;
   margin-left: 8px;
   color: #666;
+  border: 0;
+  background: transparent;
   text-decoration: none;
   font-size: 18px;
   cursor: pointer;
@@ -382,6 +402,52 @@ onUnmounted(() => {
 
 .admin-gear:hover {
   color: var(--primary);
+}
+
+.admin-menu-wrap {
+  position: relative;
+  margin-left: 8px;
+}
+
+.admin-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 142px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid #e6ebf2;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(31, 41, 55, 0.14);
+  z-index: 210;
+}
+
+.admin-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #374151;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.admin-menu-item:hover {
+  background: #f2f5ff;
+  color: var(--primary);
+}
+
+.admin-menu-item i {
+  width: 16px;
+  text-align: center;
 }
 
 @media (max-width: 600px) {
