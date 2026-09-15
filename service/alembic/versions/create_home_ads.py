@@ -1,7 +1,7 @@
 """create home carousel ads
 
 Revision ID: create_home_ads
-Revises: perf_indexes
+Revises: add_tag_cards
 Create Date: 2026-09-15
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 revision = "create_home_ads"
-down_revision = "perf_indexes"
+down_revision = "add_tag_cards"
 branch_labels = None
 depends_on = None
 
