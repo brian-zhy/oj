@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import TopBar from './components/TopBar.vue'
@@ -8,6 +8,17 @@ import SideBar from './components/SideBar.vue'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const isNavigating = ref(false)
+
+router.beforeEach(() => {
+  isNavigating.value = true
+})
+router.afterEach(() => {
+  isNavigating.value = false
+})
+router.onError(() => {
+  isNavigating.value = false
+})
 
 // 判断是否显示导航栏
 const showNav = computed(() => {
@@ -44,6 +55,7 @@ const handleLogout = async () => {
 
 <template>
   <div id="app">
+    <div class="route-loading-bar" :class="{ active: isNavigating }" aria-hidden="true"></div>
     <!-- 顶部导航栏 -->
     <TopBar v-if="showNav" />
 
@@ -52,7 +64,19 @@ const handleLogout = async () => {
 
     <!-- 主内容区域 -->
     <main :class="['main-content', { 'with-sidebar': showSidebar }]">
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <Transition name="route" mode="out-in">
+          <Suspense timeout="0">
+            <component :is="Component" :key="route.fullPath" />
+            <template #fallback>
+              <div class="route-loading-screen" role="status" aria-live="polite">
+                <span class="loading-spinner"></span>
+                <span>页面加载中...</span>
+              </div>
+            </template>
+          </Suspense>
+        </Transition>
+      </router-view>
     </main>
 
     <!-- 页脚 -->
@@ -82,6 +106,66 @@ body {
 #app {
   min-height: 100vh;
   background: #f5f7fa;
+}
+
+.route-loading-bar {
+  position: fixed;
+  z-index: 3000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+  background-size: 200% 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: opacity 0.18s ease, transform 0.2s ease;
+}
+
+.route-loading-bar.active {
+  opacity: 1;
+  transform: scaleX(0.82);
+  animation: loading-bar-sweep 1.15s ease-in-out infinite;
+}
+
+.route-loading-screen {
+  min-height: calc(100vh - 180px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #7d8aa0;
+  font-size: 13px;
+}
+
+.loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #dce3f2;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.72s linear infinite;
+}
+
+@keyframes loading-bar-sweep {
+  0% { background-position: 100% 0; transform: scaleX(0.2); }
+  55% { transform: scaleX(0.78); }
+  100% { background-position: -100% 0; transform: scaleX(0.94); }
+}
+
+@keyframes spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
 }
 
 /* 链接样式 */
@@ -134,6 +218,32 @@ input, textarea, select {
   min-height: calc(100vh - 60px - 80px); /* 减去顶部导航和页脚高度 */
   padding: 20px;
   transition: all 0.3s ease;
+}
+
+.route-enter-active,
+.route-leave-active {
+  transition: opacity 0.24s ease, transform 0.24s ease;
+}
+
+.route-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.route-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .main-content.with-sidebar {
