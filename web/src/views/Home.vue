@@ -18,16 +18,10 @@ type CarouselAd = {
   link: string
 }
 
-const MAX_ADS = 6
 const DEFAULT_ADS: CarouselAd[] = [{ image: '/welcome.png', link: '/' }]
 
 const adItems = ref<CarouselAd[]>([...DEFAULT_ADS])
 const currentAdIndex = ref(0)
-const showAdManager = ref(false)
-const adManagerItems = ref<CarouselAd[]>([])
-const adForm = ref<CarouselAd>({ image: '', link: '' })
-const editingAdIndex = ref(-1)
-const adManagerError = ref('')
 
 async function loadHomeAds(): Promise<void> {
   try {
@@ -42,17 +36,6 @@ async function loadHomeAds(): Promise<void> {
   }
 }
 
-async function persistHomeAds(items: CarouselAd[]) {
-  try {
-    await apiClient.put('/api/home-ads', items.map(item => ({ image: item.image, link: item.link })))
-    await loadHomeAds()
-  } catch (err: any) {
-    adManagerError.value = err?.response?.data?.detail || '保存失败'
-  }
-}
-
-const isAdmin = computed(() => Boolean(currentUser.value?.is_admin || currentUser.value?.is_super_admin))
-
 const cycleAdForward = () => {
   if (adItems.value.length <= 1) return
   currentAdIndex.value = (currentAdIndex.value + 1) % adItems.value.length
@@ -61,69 +44,6 @@ const cycleAdForward = () => {
 const cycleAdBackward = () => {
   if (adItems.value.length <= 1) return
   currentAdIndex.value = (currentAdIndex.value - 1 + adItems.value.length) % adItems.value.length
-}
-
-const openAdManager = () => {
-  if (!isAdmin.value) return
-  adManagerItems.value = adItems.value.map(item => ({ ...item }))
-  adForm.value = { image: '', link: '' }
-  editingAdIndex.value = -1
-  adManagerError.value = ''
-  showAdManager.value = true
-}
-
-const handleAdManagerOpen = () => openAdManager()
-
-const closeAdManager = () => {
-  showAdManager.value = false
-  adManagerError.value = ''
-}
-
-const addAdSlot = () => {
-  if (adManagerItems.value.length >= MAX_ADS) {
-    adManagerError.value = '最多只能添加 6 个广告'
-    return
-  }
-  adManagerItems.value.push({ image: '', link: '/' })
-  editingAdIndex.value = adManagerItems.value.length - 1
-  adForm.value = { image: '', link: '/' }
-}
-
-const editAdSlot = (index: number) => {
-  editingAdIndex.value = index
-  adForm.value = { ...adManagerItems.value[index] }
-}
-
-const removeAdSlot = (index: number) => {
-  if (index < 0 || index >= adManagerItems.value.length) return
-  adManagerItems.value.splice(index, 1)
-  if (editingAdIndex.value === index) {
-    editingAdIndex.value = -1
-    adForm.value = { image: '', link: '/' }
-  }
-}
-
-const saveAdForm = async () => {
-  if (!adForm.value.image.trim()) {
-    adManagerError.value = '请填写广告图像地址'
-    return
-  }
-  if (!adForm.value.link.trim()) {
-    adManagerError.value = '请填写跳转链接'
-    return
-  }
-  if (editingAdIndex.value >= 0 && editingAdIndex.value < adManagerItems.value.length) {
-    adManagerItems.value[editingAdIndex.value] = { ...adForm.value, image: adForm.value.image.trim(), link: adForm.value.link.trim() }
-  } else {
-    adManagerItems.value.push({ image: adForm.value.image.trim(), link: adForm.value.link.trim() })
-  }
-  if (adManagerItems.value.length > MAX_ADS) {
-    adManagerItems.value = adManagerItems.value.slice(0, MAX_ADS)
-  }
-  adItems.value = adManagerItems.value.map(item => ({ ...item }))
-  await persistHomeAds(adItems.value)
-  currentAdIndex.value = 0
-  closeAdManager()
 }
 
 const goAd = (target: string) => {
@@ -778,7 +698,6 @@ const backToTop = () => {
 
 // 生命周期
 onMounted(async () => {
-  window.addEventListener('home-ad-manager-open', handleAdManagerOpen)
   window.addEventListener('scroll', handleScroll, { passive: true })
   let lastDayStr = getTodayDateStr()
   clockTimer = window.setInterval(() => {
@@ -818,7 +737,6 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('home-ad-manager-open', handleAdManagerOpen)
   window.removeEventListener('scroll', handleScroll)
   if (clockTimer) clearInterval(clockTimer)
   if (refreshTimer) clearInterval(refreshTimer)
@@ -838,9 +756,16 @@ onUnmounted(() => {
           <div class="ad-col">
             <div v-if="adItems.length" class="ad-carousel">
               <div class="ad-frame">
-                <a class="ad-slide" :href="adItems[currentAdIndex].link" @click.prevent="goAd(adItems[currentAdIndex].link)">
-                  <img :src="adItems[currentAdIndex].image" class="ad-image">
-                </a>
+                <Transition name="ad-fade" mode="out-in">
+                  <a
+                    :key="adItems[currentAdIndex].image + adItems[currentAdIndex].link"
+                    class="ad-slide"
+                    :href="adItems[currentAdIndex].link"
+                    @click.prevent="goAd(adItems[currentAdIndex].link)"
+                  >
+                    <img :src="adItems[currentAdIndex].image" class="ad-image">
+                  </a>
+                </Transition>
                 <button class="ad-arrow ad-arrow-left" @click.stop="cycleAdBackward" aria-label="上一张">‹</button>
                 <button class="ad-arrow ad-arrow-right" @click.stop="cycleAdForward" aria-label="下一张">›</button>
               </div>
@@ -1101,71 +1026,6 @@ onUnmounted(() => {
     </Transition>
   </div>
 
-  <Teleport to="body">
-    <div v-if="showAdManager" class="ad-manager-backdrop" @click.self="closeAdManager">
-      <section class="ad-manager-window" role="dialog" aria-modal="true" aria-labelledby="ad-manager-title">
-        <header class="ad-manager-head">
-          <h2 id="ad-manager-title" class="ad-manager-title">首页广告管理</h2>
-          <button class="ad-manager-close" aria-label="关闭广告管理" @click="closeAdManager">×</button>
-        </header>
-
-        <div class="ad-manager-content">
-          <div class="ad-manager-toolbar">
-            <span class="ad-manager-count">已配置 {{ adManagerItems.length }}/{{ MAX_ADS }} 个广告</span>
-            <button
-              class="ad-add-btn"
-              :disabled="adManagerItems.length >= MAX_ADS"
-              @click="addAdSlot"
-            >
-              <i class="fa-solid fa-plus"></i> 添加广告
-            </button>
-          </div>
-
-          <p v-if="adManagerError" class="ad-manager-error">{{ adManagerError }}</p>
-
-          <div v-if="adManagerItems.length" class="ad-manager-list">
-            <article v-for="(ad, index) in adManagerItems" :key="index" class="ad-manager-row">
-              <span class="ad-manager-row-no">{{ index + 1 }}</span>
-              <img
-                class="ad-manager-thumb"
-                :src="ad.image || '/welcome.png'"
-                alt="广告预览"
-                @error="($event.target as HTMLImageElement).src = '/welcome.png'"
-              >
-              <div class="ad-manager-meta">
-                <span class="ad-manager-label">{{ ad.image || '未填写图片地址' }}</span>
-                <span class="ad-manager-label">{{ ad.link || '未填写跳转链接' }}</span>
-              </div>
-              <div class="ad-manager-actions">
-                <button class="ad-manager-edit" @click="editAdSlot(index)">编辑</button>
-                <button class="ad-manager-remove" @click="removeAdSlot(index)">删除</button>
-              </div>
-            </article>
-          </div>
-          <div v-else class="ad-manager-empty">还没有广告，请添加第一张。</div>
-
-          <div class="ad-manager-form">
-            <h3 class="ad-manager-form-title">{{ editingAdIndex >= 0 ? '编辑广告' : '新增广告' }}</h3>
-            <div class="ad-manager-form-grid">
-              <label class="ad-field">
-                <span>广告图像地址</span>
-                <input v-model="adForm.image" type="url" placeholder="https://... 或 /uploads/banner.png">
-              </label>
-              <label class="ad-field">
-                <span>跳转链接</span>
-                <input v-model="adForm.link" type="text" placeholder="/contest/1 或 https://...">
-              </label>
-            </div>
-            <div class="ad-manager-save-row">
-              <button class="ad-save-btn" @click="saveAdForm">
-                {{ editingAdIndex >= 0 ? '保存修改' : '添加到列表' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -1213,23 +1073,23 @@ onUnmounted(() => {
   flex: 2;
   min-width: 0;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
 }
 
 .ad-carousel {
   width: 100%;
   position: relative;
   display: flex;
-  flex: 1;
+  flex: 0 0 auto;
   flex-direction: column;
-  min-height: 320px;
+  height: 344px;
 }
 
 .ad-frame {
   position: relative;
   width: 100%;
-  flex: 1;
-  min-height: 320px;
+  flex: 0 0 320px;
+  height: 320px;
   border-radius: 14px;
   overflow: hidden;
   background: #eef2ff;
@@ -1240,6 +1100,21 @@ onUnmounted(() => {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.ad-fade-enter-active,
+.ad-fade-leave-active {
+  transition: opacity 0.42s ease, transform 0.42s ease;
+}
+
+.ad-fade-enter-from {
+  opacity: 0;
+  transform: translateX(18px);
+}
+
+.ad-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-18px);
 }
 
 .ad-image {
@@ -1300,238 +1175,6 @@ onUnmounted(() => {
   background: var(--primary);
 }
 
-.ad-placeholder {
-  width: 100%;
-  min-height: 320px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  color: #999;
-  font-size: 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px dashed #cad2e4;
-}
-
-.ad-manager-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(25, 35, 50, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.ad-manager-window {
-  width: min(780px, calc(100vw - 32px));
-  max-height: min(760px, calc(100vh - 32px));
-  overflow: auto;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.24);
-  padding: 0;
-}
-
-.ad-manager-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #edf2f7;
-}
-
-.ad-manager-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #2d3748;
-}
-
-.ad-manager-close {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #718096;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.ad-manager-content {
-  padding: 16px 20px 20px;
-}
-
-.ad-manager-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.ad-manager-count {
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.ad-add-btn {
-  padding: 7px 14px;
-  border-radius: 20px;
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  cursor: pointer;
-}
-
-.ad-add-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.ad-manager-error {
-  margin-top: 12px;
-  color: #c0392b;
-  font-size: 12px;
-}
-
-.ad-manager-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.ad-manager-empty {
-  margin-top: 14px;
-  padding: 24px 12px;
-  border: 1px dashed #d8e0ed;
-  border-radius: 10px;
-  color: #718096;
-  font-size: 13px;
-  text-align: center;
-}
-
-.ad-manager-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #eaf0f8;
-}
-
-.ad-manager-row-no {
-  font-weight: 700;
-  color: var(--primary);
-  width: 24px;
-}
-
-.ad-manager-thumb {
-  width: 96px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #dde4f1;
-  background: #fff;
-}
-
-.ad-manager-meta {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.ad-manager-label {
-  font-size: 11px;
-  color: #718096;
-}
-
-.ad-manager-input,
-.ad-manager-form-grid input {
-  min-width: 160px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid #ccd7ea;
-  background: #fff;
-}
-
-.ad-manager-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.ad-manager-edit,
-.ad-manager-remove {
-  padding: 7px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid #dde4f1;
-}
-
-.ad-manager-edit {
-  color: var(--primary);
-}
-
-.ad-manager-remove {
-  color: #c0392b;
-}
-
-.ad-manager-form {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #edf2f7;
-}
-
-.ad-manager-form-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #344154;
-  margin-bottom: 10px;
-}
-
-.ad-manager-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.ad-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 12px;
-  color: #526073;
-}
-
-.ad-manager-save-row {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.ad-save-btn,
-.ad-cancel-btn {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--primary);
-  cursor: pointer;
-}
-
-.ad-save-btn {
-  background: var(--primary);
-  color: #fff;
-}
-
-.ad-cancel-btn {
-  background: #fff;
-  color: var(--primary);
-}
-
 .punch-card .fortune-col {
   flex: 1;
   min-width: 0;
@@ -1542,13 +1185,13 @@ onUnmounted(() => {
 
 .ad-placeholder {
   width: 100%;
+  height: 320px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   color: #999;
   font-size: 14px;
-  min-height: 100px;
   border-radius: 12px;
 }
 
@@ -2187,6 +1830,22 @@ onUnmounted(() => {
     border-bottom: 1px solid #eee;
     padding-bottom: 12px;
     margin-bottom: 12px;
+  }
+
+  .ad-carousel,
+  .ad-placeholder {
+    height: 220px;
+    min-height: 220px;
+  }
+
+  .ad-frame,
+  .ad-image {
+    height: 200px;
+    min-height: 200px;
+  }
+
+  .ad-frame {
+    flex-basis: 200px;
   }
 
   .punch-card .ad-col,
