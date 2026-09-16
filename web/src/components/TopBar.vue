@@ -136,11 +136,6 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
-const openHomeAdManager = () => {
-  window.dispatchEvent(new CustomEvent('home-ad-manager-open'))
-  showAdminMenu.value = false
-}
-
 // 生命周期
 onMounted(() => {
   if (authStore.isAuthenticated) {
@@ -221,9 +216,9 @@ onUnmounted(() => {
           <router-link to="/admin/user" class="admin-menu-item" @click="showAdminMenu = false">
             <i class="fa-solid fa-users"></i> 用户管理
           </router-link>
-          <button class="admin-menu-item" @click="openHomeAdManager">
+          <router-link to="/admin/ads" class="admin-menu-item" @click="showAdminMenu = false">
             <i class="fa-solid fa-rectangle-ad"></i> 广告管理
-          </button>
+          </router-link>
         </div>
       </div>
     </div>

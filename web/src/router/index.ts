@@ -137,6 +137,12 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/ads',
+    name: 'AdminAds',
+    component: () => import('@/views/AdminAds.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/admin',
     redirect: '/admin/user'
   },
