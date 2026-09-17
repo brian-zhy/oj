@@ -69,9 +69,11 @@ const loadProblemByCode = async (code: string) => {
     loading.value = true
     error.value = ''
     problem.value = await problemsApi.getByCode(code)
+    document.title = `${problem.value.title} - NLNOJ`
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '加载失败'
     problem.value = null
+    document.title = '题目详情 - NLNOJ'
   } finally {
     loading.value = false
   }
@@ -106,9 +108,11 @@ const loadProblem = async () => {
     loading.value = true
     error.value = ''
     problem.value = await problemsApi.get(problemId.value)
+    document.title = `${problem.value.title} - NLNOJ`
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '加载失败'
     problem.value = null
+    document.title = '题目详情 - NLNOJ'
   } finally {
     loading.value = false
   }
@@ -117,6 +121,9 @@ const loadProblem = async () => {
 watch(problemId, loadProblem)
 watch(problemCode, (code) => { if (code) loadProblemByCode(code) })
 watch(contestId, loadContest)
+watch(() => problem.value?.title, (title) => {
+  if (title) document.title = `${title} - NLNOJ`
+})
 onMounted(() => {
   if (problemCode.value) loadProblemByCode(problemCode.value)
   else loadProblem()

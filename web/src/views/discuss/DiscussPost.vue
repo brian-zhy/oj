@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
@@ -145,12 +145,18 @@ const loadPost = async () => {
   error.value = ''
   try {
     post.value = await apiClient.get(`/api/forum/posts/${route.params.id}`)
+    document.title = `${post.value.title} - NLNOJ`
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '加载失败'
+    document.title = '讨论详情 - NLNOJ'
   } finally {
     loading.value = false
   }
 }
+
+watch(() => post.value?.title, (title) => {
+  if (title) document.title = `${title} - NLNOJ`
+})
 
 const submitReply = async () => {
   if (!replyContent.value.trim()) return
