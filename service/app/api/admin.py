@@ -173,7 +173,7 @@ async def reset_user_password(
 
 @router.get("/users", response_model=List[UserAdminResponse])
 async def get_users(
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     search: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
