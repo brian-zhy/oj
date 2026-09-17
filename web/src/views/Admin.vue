@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import Swal from 'sweetalert2'
@@ -124,6 +124,40 @@ const filteredUsers = computed(() => {
     return match
   })
 })
+
+// ===== 分页（前端切片：搜索/筛选在全量数据上计算，每页显示 20 条） =====
+const currentPage = ref(1)
+const pageSize = 20
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pageSize)))
+
+const pagedUsers = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  return filteredUsers.value.slice(start, start + pageSize)
+})
+
+// 紧凑页码：1 ... c-1 c c+1 ... N
+const pageNumbers = computed<(number | '...')[]>(() => {
+  const total = totalPages.value
+  const cur = currentPage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages: (number | '...')[] = [1]
+  if (cur > 3) pages.push('...')
+  for (let p = Math.max(2, cur - 1); p <= Math.min(total - 1, cur + 1); p++) pages.push(p)
+  if (cur < total - 2) pages.push('...')
+  pages.push(total)
+  return pages
+})
+
+function goToPage(p: number) {
+  if (p < 1 || p > totalPages.value || p === currentPage.value) return
+  currentPage.value = p
+}
+
+// 搜索/筛选变化回到第 1 页；数据刷新后页码越界则收回到最后一页
+watch(searchQuery, () => { currentPage.value = 1 })
+watch(filterStates, () => { currentPage.value = 1 }, { deep: true })
+watch(totalPages, (t) => { if (currentPage.value > t) currentPage.value = t })
 
 // ===== 工具函数（与目标项目完全一致） =====
 function formatTime(iso: string): string {
@@ -495,8 +529,8 @@ async function loadUsers() {
 
   loading.value = true
   try {
-    // 显式拉取 100 条（后端默认 limit=20，会截掉新注册的用户）
-    const data = await apiClient.get('/api/admin/users?limit=100')
+    // 一次拉全量（后端上限 1000）：搜索/筛选/分页都在前端切片完成
+    const data = await apiClient.get('/api/admin/users?limit=1000')
     users.value = (data as any) || []
     currentUser.value = authStore.currentUser
     currentProfile.value = authStore.currentUser
@@ -526,9 +560,10 @@ function toggleUserSelection(userNumber: number) {
 function toggleSelectAll(e: Event) {
   const checked = (e.target as HTMLInputElement).checked
   if (!checked) {
-    selectedUsers.value.clear()
+    // 只取消当前页的勾选：翻页挑选、跨页批量时已选用户保留
+    pagedUsers.value.forEach(user => selectedUsers.value.delete(user.user_number))
   } else {
-    filteredUsers.value.forEach(user => {
+    pagedUsers.value.forEach(user => {
       if (canModifyPermissions(user)) selectedUsers.value.add(user.user_number)
     })
   }
@@ -641,7 +676,7 @@ onUnmounted(() => {
             <div class="card-header">用户管理</div>
             <div class="search-bar">
               <input v-model="searchQuery" type="text">
-              <span class="result-count">共 {{ filteredUsers.length }} 位用户</span>
+              <span class="result-count">共 {{ filteredUsers.length }} 位用户 · 第 {{ currentPage }}/{{ totalPages }} 页</span>
             </div>
             <div class="filter-tags">
               <span
@@ -683,7 +718,7 @@ onUnmounted(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="user in filteredUsers" :key="user.user_number">
+                  <tr v-for="user in pagedUsers" :key="user.user_number">
                     <!-- 选择框（在线绿/离线红） -->
                     <td class="check-col">
                       <input
@@ -866,6 +901,21 @@ onUnmounted(() => {
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- ===== 分页控件 ===== -->
+            <div v-if="!loading && totalPages > 1" class="pagination-bar">
+              <button class="page-btn" :disabled="currentPage <= 1" @click="goToPage(currentPage - 1)">上一页</button>
+              <template v-for="(p, i) in pageNumbers" :key="`${p}-${i}`">
+                <span v-if="p === '...'" class="page-ellipsis">…</span>
+                <button
+                  v-else
+                  class="page-btn"
+                  :class="{ active: p === currentPage }"
+                  @click="goToPage(p)"
+                >{{ p }}</button>
+              </template>
+              <button class="page-btn" :disabled="currentPage >= totalPages" @click="goToPage(currentPage + 1)">下一页</button>
             </div>
 
             <!-- ===== 批量操作栏（与目标项目完全一致） ===== -->
@@ -1356,6 +1406,61 @@ td.check-col input {
   color: #999;
   text-align: center;
   padding: 40px;
+}
+
+/* ========== 分页控件 ========== */
+.pagination-bar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.page-btn {
+  min-width: 32px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #2c3e50;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, color .15s, background .15s;
+}
+
+.page-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.page-btn:disabled:hover {
+  border-color: #ddd;
+  color: #2c3e50;
+}
+
+.page-btn.active:disabled:hover {
+  color: white;
+}
+
+.page-ellipsis {
+  padding: 0 4px;
+  color: #999;
+  font-size: 13px;
+  user-select: none;
 }
 
 /* ========== 响应式（与目标项目完全一致） ========== */
