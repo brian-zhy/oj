@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.user import User
 from app.models.judgement import JudgementLog
+from app.services.auth import revoke_user_tokens
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -337,14 +338,20 @@ async def batch_update_users(
 
     try:
         await db.commit()
-        return {
-            "success": True,
-            "updated_count": len(updated_users),
-            "data": [format_user_for_original(user) for user in updated_users]
-        }
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"批量更新失败: {str(e)}")
+
+    # 封禁即踢下线：吊销被禁用户的全部刷新令牌，现有会话下一请求即失效
+    if updates.get('is_banned') is True:
+        for user in updated_users:
+            await revoke_user_tokens(db, user.id)
+
+    return {
+        "success": True,
+        "updated_count": len(updated_users),
+        "data": [format_user_for_original(user) for user in updated_users]
+    }
 
 
 @router.get("/stats")
