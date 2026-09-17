@@ -9,6 +9,35 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const isNavigating = ref(false)
+const DEFAULT_PAGE_TITLE = 'NLNOJ'
+const routeTitleMap: Record<string, string> = {
+  Home: '首页',
+  Login: '登录',
+  Register: '注册',
+  ForgotPassword: '找回密码',
+  ResetPassword: '重设密码',
+  Profile: '我的主页',
+  UserDetail: '用户主页',
+  Notifications: '消息通知',
+  Admin: '管理后台',
+  AdminAds: '广告管理',
+  Judgement: '评测',
+  Discuss: '讨论区',
+  DiscussNew: '发帖',
+  TeamList: '团队',
+  Tickets: '工单',
+  ProblemList: '题库',
+  ProblemDetail: '题目详情',
+  SubmissionList: '提交记录',
+  ContestList: '比赛'
+}
+
+const resolvePageTitle = () => {
+  const explicit = typeof route.meta.title === 'string' ? route.meta.title.trim() : ''
+  const fallback = routeTitleMap[String(route.name)] || String(route.name || '首页')
+  const title = String(explicit || fallback)
+  return `${title} - ${DEFAULT_PAGE_TITLE}`
+}
 
 router.beforeEach(() => {
   isNavigating.value = true
@@ -33,6 +62,8 @@ const showSidebar = computed(() => {
 
 // 监听路由变化，恢复认证状态
 watch(() => route.path, async () => {
+  document.title = resolvePageTitle()
+
   if (!authStore.accessToken && localStorage.getItem('accessToken')) {
     authStore.restoreState()
   }

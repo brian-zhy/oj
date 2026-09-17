@@ -29,7 +29,6 @@ const lastId = ref<number | null>(null)
 const failed = ref(false)
 
 const sentinelRef = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
 
 const isSelf = computed(
   () => authStore.currentUser?.user_number === props.userNumber,
@@ -42,7 +41,7 @@ const sentinelText = computed(() => {
   if (failed.value) return '加载出错，请刷新页面重试'
   if (loading.value) return '加载中...'
   if (list.value.length === 0) return ''
-  return hasMore.value ? '滚动加载更多...' : '没有更多动态了'
+  return hasMore.value ? '点击加载更多' : '没有更多动态了'
 })
 
 /* ---------------- 展示用的小工具（与首页保持一致） ---------------- */
@@ -113,36 +112,22 @@ async function remove(item: any) {
   }
 }
 
-/* ---------------- 滚动到底自动加载 ---------------- */
-
-function setupObserver() {
-  if (!sentinelRef.value) return
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) void loadMore(false)
-    },
-    { rootMargin: '120px' },
-  )
-  observer.observe(sentinelRef.value)
-}
+/* ---------------- 点击加载更多 ---------------- */
 
 onMounted(() => {
   void loadMore(true)
-  setupObserver()
 })
 
 // 在用户主页之间跳转时组件不会重建，得手动重新拉
 watch(
   () => props.userNumber,
   () => {
-    if (sentinelRef.value) observer?.unobserve(sentinelRef.value)
-    void loadMore(true).then(setupObserver)
+    void loadMore(true)
   },
 )
 
 onBeforeUnmount(() => {
-  observer?.disconnect()
-  observer = null
+  // no-op: click-to-load mode no longer requires an observer
 })
 </script>
 
@@ -195,7 +180,15 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="sentinelText" ref="sentinelRef" class="feed-sentinel">
-      {{ sentinelText }}
+      <button
+        v-if="hasMore && !loading && !failed"
+        class="feed-load-more"
+        type="button"
+        @click="loadMore(false)"
+      >
+        {{ sentinelText }}
+      </button>
+      <span v-else>{{ sentinelText }}</span>
     </div>
   </div>
 </template>

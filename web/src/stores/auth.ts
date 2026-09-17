@@ -3,6 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { authApi } from '@/api/auth'
 import type { LoginCredentials, RegisterData, User } from '@/types'
 
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
 export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref<User | null>(null)
@@ -95,6 +97,10 @@ export const useAuthStore = defineStore('auth', () => {
       accessToken.value = null
       refreshToken.value = null
       user.value = null
+      localStorage.removeItem('authPersistedAt')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
     } catch (error) {
       console.error('Logout failed:', error)
     }
@@ -155,6 +161,18 @@ export const useAuthStore = defineStore('auth', () => {
     const storedAccessToken = localStorage.getItem('accessToken')
     const storedRefreshToken = localStorage.getItem('refreshToken')
     const storedUser = localStorage.getItem('user')
+    const storedPersistedAt = Number(localStorage.getItem('authPersistedAt') || '0')
+
+    if (storedPersistedAt > 0 && Date.now() - storedPersistedAt > SESSION_TTL_MS) {
+      accessToken.value = null
+      refreshToken.value = null
+      user.value = null
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      localStorage.removeItem('authPersistedAt')
+      return
+    }
 
     if (storedAccessToken) {
       accessToken.value = storedAccessToken
@@ -171,7 +189,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // 持久化状态到 localStorage
+  // 持久化状态到 localStorage，并在 30 天后自动失效
   function persistState() {
     if (accessToken.value) {
       localStorage.setItem('accessToken', accessToken.value)
@@ -189,6 +207,12 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('user', JSON.stringify(user.value))
     } else {
       localStorage.removeItem('user')
+    }
+
+    if (accessToken.value || refreshToken.value) {
+      localStorage.setItem('authPersistedAt', String(Date.now()))
+    } else {
+      localStorage.removeItem('authPersistedAt')
     }
   }
 

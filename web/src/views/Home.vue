@@ -353,7 +353,6 @@ const sentinelVisible = ref(true)
 
 const benbenTextareaRef = ref<HTMLTextAreaElement | null>(null)
 const loadingSentinelRef = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
 
 // 是否被禁言
 const cannotSpeak = computed(() => currentUser.value?.can_speak === false)
@@ -372,7 +371,7 @@ const updateSentinel = () => {
     sentinelText.value = '加载中...'
     sentinelVisible.value = true
   } else {
-    sentinelText.value = '滚动加载更多...'
+    sentinelText.value = '点击加载更多'
     sentinelVisible.value = true
   }
 }
@@ -552,7 +551,7 @@ const loadBenbenList = async (reset = true) => {
         sentinelText.value = '没有更多动态了'
       } else {
         hasMore.value = true
-        sentinelText.value = '滚动加载更多...'
+        sentinelText.value = '点击加载更多'
       }
     } else {
       hasMore.value = false
@@ -716,14 +715,6 @@ onMounted(async () => {
   if (isLoggedIn.value) {
     await loadBenbenList(true)
 
-    // 无限滚动监听
-    observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !isLoading.value && hasMore.value && isLoggedIn.value) {
-        loadBenbenList(false)
-      }
-    }, { threshold: 0.1 })
-    if (loadingSentinelRef.value) observer.observe(loadingSentinelRef.value)
-
     // 犇犇自动刷新（切回标签页也会立刻刷一次）
     refreshTimer = window.setInterval(() => {
       void refreshBenben()
@@ -743,7 +734,6 @@ onUnmounted(() => {
   if (adTimer) clearInterval(adTimer)
   clearTimeout(flashTimer)
   document.removeEventListener('visibilitychange', handleVisibility)
-  if (observer) observer.disconnect()
 })
 </script>
 
@@ -1006,11 +996,17 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div
-            v-show="sentinelVisible"
-            ref="loadingSentinelRef"
-            class="loading-sentinel"
-          >{{ sentinelText }}</div>
+          <div v-show="sentinelVisible" ref="loadingSentinelRef" class="loading-sentinel">
+            <button
+              v-if="hasMore && !isLoading && sentinelText !== '加载出错，请刷新'"
+              type="button"
+              class="load-more-btn"
+              @click="loadBenbenList(false)"
+            >
+              {{ sentinelText }}
+            </button>
+            <span v-else>{{ sentinelText }}</span>
+          </div>
         </div>
       </div>
     </div>
