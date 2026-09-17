@@ -59,6 +59,27 @@ async def issue_token_pair(db: AsyncSession, user_id: int) -> tuple[str, str]:
     return access, raw_refresh
 
 
+async def revoke_user_tokens(db: AsyncSession, user_id: int) -> int:
+    """Revoke all live refresh tokens of *user_id* (e.g. on ban / password reset).
+
+    ``get_current_user`` treats "no live refresh token" as "logged out", so
+    revoking here kicks every existing session on the user's next request.
+    Returns the number of tokens revoked.
+    """
+    result = await db.execute(
+        select(RefreshToken).where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked == False,  # noqa: E712
+        )
+    )
+    tokens = result.scalars().all()
+    for token in tokens:
+        token.revoked = True
+    if tokens:
+        await db.commit()
+    return len(tokens)
+
+
 async def get_valid_refresh_token(
     db: AsyncSession, token_hash: str
 ) -> RefreshToken | None:

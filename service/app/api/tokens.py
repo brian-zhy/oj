@@ -12,6 +12,7 @@ from app.core.security import decode_token, hash_token
 from app.schemas.auth import RefreshRequest, TokenResponse
 from app.services import auth as auth_service
 from app.services.auth import get_valid_refresh_token, rotate_refresh_token
+from app.services.user import get_user_by_id
 
 router = APIRouter(prefix="/tokens", tags=["tokens"])
 
@@ -31,6 +32,11 @@ async def create_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    if user.is_banned:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被封禁，请联系管理员",
         )
     access, refresh = await auth_service.issue_token_pair(db, user.id)
     return TokenResponse(access_token=access, refresh_token=refresh)
@@ -56,6 +62,15 @@ async def rotate_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效或已过期的刷新令牌",
+        )
+    # 封禁用户不再续发令牌（封禁前已登录的会话由此断粮）
+    user = await get_user_by_id(db, token.user_id)
+    if user is None or user.is_banned:
+        token.revoked = True
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="账号已被封禁，请联系管理员",
         )
     access, new_refresh = await rotate_refresh_token(db, token)
     return TokenResponse(access_token=access, refresh_token=new_refresh)

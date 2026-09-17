@@ -162,6 +162,8 @@ async def create_team(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
+    if current_user.is_banned:
+        raise HTTPException(status_code=403, detail="你已被封禁，无法创建团队")
     name = (payload.get("name") or "").strip()
     description = (payload.get("description") or "").strip() or None
     if not name:
@@ -316,6 +318,8 @@ async def join_team(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
+    if current_user.is_banned:
+        raise HTTPException(status_code=403, detail="你已被封禁，无法加入团队")
     team = await _load_team(db, team_id)
     if team is None:
         raise HTTPException(status_code=404, detail="团队不存在")
@@ -470,6 +474,12 @@ async def approve_request(
     )).scalar_one_or_none()
     if req is None:
         raise HTTPException(status_code=404, detail="该申请不存在或已处理")
+    # 申请人在等待审核期间被封禁：拒绝入团并清掉申请
+    applicant = await db.get(User, user_id)
+    if applicant is None or applicant.is_banned:
+        await db.delete(req)
+        await db.commit()
+        raise HTTPException(status_code=403, detail="该用户已被封禁，无法加入团队")
     count = await _member_count(db, team_id)
     if count + 1 > MAX_MEMBERS_PER_TEAM:
         raise HTTPException(status_code=400, detail=f"团队成员已达上限（{MAX_MEMBERS_PER_TEAM} 人）")

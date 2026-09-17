@@ -12,6 +12,7 @@ from app.deps import get_current_user, get_current_user_optional
 from app.models.user import User
 from app.models.judgement import JudgementLog
 from app.schemas.user import UserAdminUpdate, UserAdminResponse
+from app.services.auth import revoke_user_tokens
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -327,6 +328,10 @@ async def update_user_permissions(
     for perm, value in apply_changes.items():
         if perm in allowed_permissions and hasattr(user, perm):
             setattr(user, perm, value)
+
+    # 封禁即踢下线：吊销其全部刷新令牌，现有会话下一请求即失效
+    if apply_changes.get("is_banned") is True:
+        await revoke_user_tokens(db, user.id)
 
     if action_type:
         await insert_judgement_log(
