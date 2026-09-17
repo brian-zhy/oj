@@ -54,7 +54,7 @@ const routes = [
     path: '/judgement',
     name: 'Judgement',
     component: () => import('@/views/Judgement.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false, title: '陶片放逐' }
   },
   {
     path: '/discuss',
