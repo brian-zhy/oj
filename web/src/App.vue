@@ -21,7 +21,7 @@ const routeTitleMap: Record<string, string> = {
   Notifications: '消息通知',
   Admin: '管理后台',
   AdminAds: '广告管理',
-  Judgement: '评测',
+  Judgement: '陶片放逐',
   Discuss: '讨论区',
   DiscussNew: '发帖',
   TeamList: '团队',
