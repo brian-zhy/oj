@@ -7,6 +7,7 @@ import 'sweetalert2/dist/sweetalert2.min.css'
 import App from './App.vue'
 import { useAuthStore } from './stores/auth'
 import { installCodeCopy } from './utils/codeCopy'
+import { startPresenceHeartbeat } from './utils/presence'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -17,6 +18,9 @@ app.use(router)
 // 恢复认证状态
 const authStore = useAuthStore()
 authStore.restoreState()
+if (authStore.isAuthenticated) {
+  startPresenceHeartbeat()
+}
 
 // 切回标签页时静默同步最新权限（60 秒节流）：
 // 管理员改完权限，用户切回来即生效，无需刷新

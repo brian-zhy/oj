@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
 import BenbenFeed from '@/components/BenbenFeed.vue'
+import UserAvatarStatus from '@/components/UserAvatarStatus.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -360,11 +361,13 @@ onMounted(() => {
 
             <div class="user-header-content">
               <div class="user-header-avatar">
-                <img
-                  :src="avatarDisplay"
-                  :alt="displayName"
-                  @error="($event.target as HTMLImageElement).src = letterAvatar(displayName)"
-                >
+                <UserAvatarStatus :user="profile" :size="12">
+                  <img
+                    :src="avatarDisplay"
+                    :alt="displayName"
+                    @error="($event.target as HTMLImageElement).src = letterAvatar(displayName)"
+                  >
+                </UserAvatarStatus>
               </div>
 
               <div class="user-header-info">

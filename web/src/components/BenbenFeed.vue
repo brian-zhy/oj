@@ -13,6 +13,7 @@ import apiClient from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
 import { userNameColor } from '@/utils/userColor'
 import { renderRichText as renderMarkdown } from '@/utils/markdown'
+import UserAvatarStatus from '@/components/UserAvatarStatus.vue'
 
 const props = defineProps<{
   /** 要展示谁的动态（用户的 user_number，不是数据库主键） */
@@ -138,13 +139,15 @@ onBeforeUnmount(() => {
     <div class="benben-list">
       <div v-for="item in list" :key="item.id" class="benben-item">
         <div class="benben-avatar">
-          <router-link :to="`/user/${item.user_number}`">
-            <img
-              :src="getUserAvatar(item)"
-              :alt="item.username"
-              @error="($event.target as HTMLImageElement).src = letterAvatar(item.username)"
-            >
-          </router-link>
+          <UserAvatarStatus :user="item" :size="8">
+            <router-link :to="`/user/${item.user_number}`">
+              <img
+                :src="getUserAvatar(item)"
+                :alt="item.username"
+                @error="($event.target as HTMLImageElement).src = letterAvatar(item.username)"
+              >
+            </router-link>
+          </UserAvatarStatus>
         </div>
 
         <div class="benben-content">

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import UserAvatarStatus from '@/components/UserAvatarStatus.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -181,14 +182,16 @@ onUnmounted(() => {
     <div class="auth-buttons" v-else>
       <!-- 头像下拉菜单 -->
       <div class="top-avatar-wrap">
-        <a :href="`/user/${userNumber}`" :title="displayName">
-          <img
-            :src="avatarUrl"
-            :alt="displayName"
-            class="avatar-img"
-            onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23e74c3c%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27white%27 font-size=%2716%27 font-family=%27Arial%27%3EU%3C/text%3E%3C/svg%3E'"
-          />
-        </a>
+        <UserAvatarStatus :user="authStore.currentUser" :size="10">
+          <a :href="`/user/${userNumber}`" :title="displayName">
+            <img
+              :src="avatarUrl"
+              :alt="displayName"
+              class="avatar-img"
+              onerror="this.onerror=null;this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 40 40%27%3E%3Crect width=%2740%27 height=%2740%27 fill=%27%23e74c3c%27/%3E%3Ctext x=%2750%25%27 y=%2750%25%27 text-anchor=%27middle%27 dy=%27.3em%27 fill=%27white%27 font-size=%2716%27 font-family=%27Arial%27%3EU%3C/text%3E%3C/svg%3E'"
+            />
+          </a>
+        </UserAvatarStatus>
         <div class="top-avatar-menu">
           <a :href="`/user/${userNumber}`" class="top-avatar-menu-link">个人主页</a>
           <button @click="handleLogout" class="auth-btn logout">登出</button>
