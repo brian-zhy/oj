@@ -20,6 +20,7 @@ export interface User {
   user_tag?: string | null
   username_color?: string | null
   bio?: string | null
+  last_seen?: string | null
   created_at: string
   updated_at?: string
 }
