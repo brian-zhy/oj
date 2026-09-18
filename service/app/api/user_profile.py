@@ -78,7 +78,7 @@ async def toggle_my_tag_card(
     return _card_dict(card)
 
 
-@router.post("/users/{user_id}/tag-cards", status_code=201,
+@router.post("/{user_id}/tag-cards", status_code=201,
              summary="授予 Tag 卡（需 Tag 管理权限）")
 async def grant_tag_card(
     user_id: int,
@@ -110,7 +110,7 @@ async def grant_tag_card(
     return _card_dict(card)
 
 
-@router.delete("/users/{user_id}/tag-cards/{card_id}", status_code=204,
+@router.delete("/{user_id}/tag-cards/{card_id}", status_code=204,
                summary="删除 Tag 卡（需 Tag 管理权限）")
 async def delete_tag_card(
     user_id: int,
