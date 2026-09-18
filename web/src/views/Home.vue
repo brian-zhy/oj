@@ -173,8 +173,17 @@ let clockTimer: number | null = null
 const dayStr = computed(() => String(now.value.getDate()).padStart(2, '0'))
 const weekday = computed(() => getChineseWeekday(now.value))
 const monthChineseFull = computed(() => getMonthChinese(now.value) + getMonthSize(now.value))
-const cspDays1 = computed(() => daysUntil(new Date(2026, 8, 18)))
+const cspDays1 = computed(() => daysUntil(new Date(2026, 8, 19)))
 const cspDays2 = computed(() => daysUntil(new Date(2026, 9, 30)))
+
+// 倒计时文案：当天显示「就是今天」，过期显示「已结束」
+const cspCountdownLabel = (days: number) => {
+  if (days === 0) return '就是今天！'
+  if (days < 0) return '已结束'
+  return `还剩 ${days} 天`
+}
+const cspLabel1 = computed(() => cspCountdownLabel(cspDays1.value))
+const cspLabel2 = computed(() => cspCountdownLabel(cspDays2.value))
 
 // 今日是否已打卡 / 连续打卡天数（均为服务端状态）
 const checkedInToday = computed(() => checkinState.value.today_checked)
@@ -251,9 +260,23 @@ const FORTUNE_LEVELS = [
   { label: '大凶', cls: 'terrible' }
 ]
 
+// 特殊日运势：全员固定（键为 YYYY-MM-DD，当日人人一样）
+// 2026-09-19：CSP-J/S 第一轮认证，全员大吉，宜 CSP RP++
+const SPECIAL_FORTUNES: Record<string, { goodItems: { name: string; desc: string }[] }> = {
+  '2026-09-19': { goodItems: [{ name: 'CSP', desc: 'RP++' }] }
+}
+
 // 计算今日运势（纯前端种子算法：同人同日恒定，无需持久化）
 const dailyFortune = computed(() => {
   if (!checkedInToday.value || !isLoggedIn.value) return null
+  // 特殊日优先：跳过随机，直接按预定的运势展示
+  const d = now.value
+  const special = SPECIAL_FORTUNES[
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  ]
+  if (special) {
+    return { label: '大吉', cls: 'good', goodItems: special.goodItems, badItems: [] }
+  }
   const userIdSeed = String(currentUser.value?.user_number || '')
   const rand = splitmix32(getDailySeed(userIdSeed))
   const fortuneIdx = Math.floor(rand() * FORTUNE_LEVELS.length)
@@ -795,8 +818,8 @@ onUnmounted(() => {
               </div>
 
               <div class="lg-small">
-                距 <strong>CSP-J/S 2026 第一轮</strong> 还剩 <strong>{{ cspDays1 }} 天</strong><br>
-                距 <strong>CSP-J/S 2026 第二轮</strong> 还剩 <strong>{{ cspDays2 }} 天</strong><br>
+                距 <strong>CSP-J/S 2026 第一轮</strong> <strong>{{ cspLabel1 }}</strong><br>
+                距 <strong>CSP-J/S 2026 第二轮</strong> <strong>{{ cspLabel2 }}</strong><br>
                 <button v-if="isLoggedIn" class="am-btn am-btn-warning" @click.stop="doPunch">点击打卡</button>
               </div>
             </template>
