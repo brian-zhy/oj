@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
+import UserAvatarStatus from '@/components/UserAvatarStatus.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -883,8 +884,10 @@ onUnmounted(() => {
           >
             <div class="post-card-body">
               <div class="post-avatar">
-                <img :src="getUserAvatar(p.author)" :alt="p.author?.username"
-                  @error="($event.target as HTMLImageElement).src = letterAvatar(p.author?.username)">
+                <UserAvatarStatus :user="p.author" :size="8">
+                  <img :src="getUserAvatar(p.author)" :alt="p.author?.username"
+                    @error="($event.target as HTMLImageElement).src = letterAvatar(p.author?.username)">
+                </UserAvatarStatus>
               </div>
               <div class="post-info">
                 <span class="post-title-link">{{ p.title }}</span>
@@ -951,13 +954,15 @@ onUnmounted(() => {
 
           <div v-for="item in benbenList" :key="item.id" class="benben-item" :data-id="item.id">
             <div class="benben-avatar">
-              <router-link :to="`/user/${item.user_number}`">
-                <img
-                  :src="getUserAvatar(item)"
-                  :alt="item.username"
-                  @error="($event.target as HTMLImageElement).src = letterAvatar(item.username)"
-                >
-              </router-link>
+              <UserAvatarStatus :user="item" :size="8">
+                <router-link :to="`/user/${item.user_number}`">
+                  <img
+                    :src="getUserAvatar(item)"
+                    :alt="item.username"
+                    @error="($event.target as HTMLImageElement).src = letterAvatar(item.username)"
+                  >
+                </router-link>
+              </UserAvatarStatus>
             </div>
 
             <div class="benben-content" :class="{ 'is-new': flashIds.has(item.id) }">

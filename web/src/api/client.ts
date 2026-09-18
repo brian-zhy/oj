@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import { pingUserPresence } from '@/utils/presence'
 
 // In development, use empty string to leverage Vite proxy
 // In production, use the environment variable or default to relative path
@@ -21,6 +22,10 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('accessToken')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
+      const requestUrl = (config.url || '').toLowerCase()
+      if (!requestUrl.includes('/users/me/seen')) {
+        void pingUserPresence()
+      }
     }
     // GET 请求统一加时间戳参数：绕开浏览器缓存的 301 跳转劫持
     //（按 URL 匹配，URL 不同即不命中缓存的错误重定向）

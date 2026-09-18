@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import Swal from 'sweetalert2'
 import { userNameColor as userColor } from '@/utils/userColor'
+import UserAvatarStatus from '@/components/UserAvatarStatus.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -206,11 +207,13 @@ onMounted(() => loadPost())
             <span v-if="post.is_pinned" class="pin-badge">置顶</span>
             <span v-if="post.is_locked" class="lock-badge"><i class="fa-solid fa-lock"></i> 已锁定</span>
             <div class="author-line">
-              <img
-                :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
-                class="author-avatar"
-                :alt="post.author?.username"
-              >
+              <UserAvatarStatus :user="post.author" :size="8">
+                <img
+                  :src="post.author?.avatar_url || letterAvatar(post.author?.username)"
+                  class="author-avatar"
+                  :alt="post.author?.username"
+                >
+              </UserAvatarStatus>
               <router-link
                 :to="post.author?.user_number ? `/user/${post.author.user_number}` : '#'"
                 class="post-author"
@@ -258,11 +261,13 @@ onMounted(() => loadPost())
           <div v-else class="comments">
             <div v-for="(c, i) in post.comments" :key="c.id" class="comment-item">
               <div class="comment-head">
-                <img
-                  :src="c.author?.avatar_url || letterAvatar(c.author?.username)"
-                  class="comment-avatar"
-                  :alt="c.author?.username"
-                >
+                <UserAvatarStatus :user="c.author" :size="8">
+                  <img
+                    :src="c.author?.avatar_url || letterAvatar(c.author?.username)"
+                    class="comment-avatar"
+                    :alt="c.author?.username"
+                  >
+                </UserAvatarStatus>
                 <router-link
                   :to="c.author?.user_number ? `/user/${c.author.user_number}` : '#'"
                   class="post-author"
