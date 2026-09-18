@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { authApi } from '@/api/auth'
 import type { LoginCredentials, RegisterData, User } from '@/types'
+import { startPresenceHeartbeat, stopPresenceHeartbeat } from '@/utils/presence'
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -29,8 +30,9 @@ export const useAuthStore = defineStore('auth', () => {
       persistState()
 
       console.log('AuthStore: 获取当前用户...')
-      const user = await fetchCurrentUser()
-      console.log('AuthStore: 当前用户信息', user)
+      const userInfo = await fetchCurrentUser()
+      console.log('AuthStore: 当前用户信息', userInfo)
+      if (userInfo) startPresenceHeartbeat()
 
       return true
     } catch (error: any) {
@@ -58,8 +60,9 @@ export const useAuthStore = defineStore('auth', () => {
       persistState()
 
       console.log('AuthStore: 获取当前用户...')
-      const user = await fetchCurrentUser()
-      console.log('AuthStore: 当前用户信息', user)
+      const userInfo = await fetchCurrentUser()
+      console.log('AuthStore: 当前用户信息', userInfo)
+      if (userInfo) startPresenceHeartbeat()
 
       return true
     } catch (error: any) {
@@ -84,6 +87,8 @@ export const useAuthStore = defineStore('auth', () => {
       // 持久化状态
       persistState()
 
+      startPresenceHeartbeat()
+
       return true
     } catch (error: any) {
       console.error('Registration failed:', error)
@@ -101,6 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
+      stopPresenceHeartbeat()
     } catch (error) {
       console.error('Logout failed:', error)
     }
@@ -117,6 +123,7 @@ export const useAuthStore = defineStore('auth', () => {
       const userData = await authApi.getCurrentUser()
       console.log('AuthStore: 获取到用户数据', userData)
       user.value = userData
+      if (user.value) startPresenceHeartbeat()
       return userData
     } catch (error) {
       console.error('AuthStore: 获取当前用户失败', error)
@@ -124,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
       accessToken.value = null
       refreshToken.value = null
       user.value = null
+      stopPresenceHeartbeat()
       return null
     }
   }
@@ -134,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!accessToken.value) return null
     try {
       user.value = await authApi.getCurrentUser()
+      if (user.value) startPresenceHeartbeat()
       return user.value
     } catch {
       // 静默失败：保留现有本地信息
@@ -186,6 +195,10 @@ export const useAuthStore = defineStore('auth', () => {
       } catch (error) {
         console.error('Failed to parse stored user:', error)
       }
+    }
+
+    if (accessToken.value && user.value) {
+      startPresenceHeartbeat()
     }
   }
 
