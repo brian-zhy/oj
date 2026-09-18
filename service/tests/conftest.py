@@ -31,3 +31,13 @@ def _prepare_db():
 
     with contextlib.suppress(OSError):
         os.remove("./_test.db")
+
+
+@pytest.fixture(autouse=True)
+def _isolate_rate_buckets():
+    """限流桶是进程级全局状态，用例之间必须隔离，否则按 IP 的限流会跨用例累积。"""
+    from app.utils import ratelimit
+
+    ratelimit.reset()
+    yield
+    ratelimit.reset()
