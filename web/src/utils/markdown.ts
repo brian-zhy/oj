@@ -23,6 +23,31 @@ hljs.registerLanguage('plaintext', plaintext)
 // 换行即换行（与聊天/犇犇的书写习惯一致），启用 GFM（表格/删除线/任务列表）
 marked.setOptions({ breaks: true, gfm: true })
 
+/**
+ * 用户 Markdown 转成 HTML 后使用的严格白名单。
+ *
+ * 这里不能只依赖 DOMPurify 的默认配置：默认配置允许 style/class/id，
+ * 恶意用户可以借此插入 fixed/absolute 的大尺寸遮罩，即使没有脚本也能
+ * 覆盖首页。代码块和公式使用占位符保护，因此这里处理的只有用户内容。
+ */
+const USER_HTML_CONFIG = {
+  ALLOWED_TAGS: [
+    'a', 'b', 'blockquote', 'br', 'code', 'del', 'em', 'h1', 'h2', 'h3',
+    'h4', 'h5', 'h6', 'hr', 'i', 'img', 'li', 'ol', 'p', 'pre', 's',
+    'strong', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'u',
+    'ul',
+  ],
+  ALLOWED_ATTR: ['alt', 'href', 'rel', 'src', 'target', 'title'],
+  ALLOW_DATA_ATTR: false,
+  FORBID_ATTR: ['class', 'id', 'style'],
+  FORBID_TAGS: [
+    'embed', 'form', 'iframe', 'input', 'link', 'meta', 'object', 'script',
+    'style', 'svg', 'template', 'textarea', 'video', 'audio',
+  ],
+  // 只允许普通网页链接和站内相对链接，拒绝 javascript:/data: 等协议。
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|\/|#)/i,
+}
+
 /** 代码围栏的语言标记 → highlight.js 语言名 */
 const FENCE_LANG: Record<string, string> = {
   cpp: 'cpp', 'c++': 'cpp', cc: 'cpp', cxx: 'cpp', 'c++14': 'cpp', 'c++17': 'cpp',
@@ -194,8 +219,10 @@ export function renderRichText(content: string): string {
   // 3. marked 解析标准 Markdown
   let html = marked.parse(content) as string
 
-  // 4. DOMPurify 消毒（随机标记原样保留）
-  html = DOMPurify.sanitize(html)
+  // 4. 先严格消毒用户可控的 HTML。
+  //    这一步发生在还原代码/公式之前，避免为了支持 KaTeX 和复制按钮而
+  //    放宽规则，导致用户 HTML 获得 style/class 等布局能力。
+  html = DOMPurify.sanitize(html, USER_HTML_CONFIG)
 
   // 4.5 @提及 → 用户主页链接。放在这一步是为了让代码块/公式
   //     内部的 @ 还能被占位符保护住（那些占位符要到第 6 步才还原）
