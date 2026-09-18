@@ -13,11 +13,21 @@ from threading import Lock
 _buckets: dict[str, deque[float]] = defaultdict(deque)
 _lock = Lock()
 
+# 按 IP 限流后 key 数量随攻击者 IP 池增长，超阈值时清扫过期桶防内存膨胀
+_SWEEP_THRESHOLD = 50_000
+
 
 def check(key: str, max_requests: int, window_seconds: int) -> tuple[bool, int]:
     """允许则在窗口内记账并返回 (True, 0)；超限返回 (False, 需等待秒数)。"""
     now = time.monotonic()
     with _lock:
+        if len(_buckets) > _SWEEP_THRESHOLD:
+            stale = [k for k, q in _buckets.items()
+                     if not q or q[-1] <= now - 3600]
+            for k in stale:
+                del _buckets[k]
+            if len(_buckets) > _SWEEP_THRESHOLD:
+                _buckets.clear()
         q = _buckets[key]
         while q and q[0] <= now - window_seconds:
             q.popleft()
@@ -26,3 +36,9 @@ def check(key: str, max_requests: int, window_seconds: int) -> tuple[bool, int]:
             return False, retry_after
         q.append(now)
         return True, 0
+
+
+def reset() -> None:
+    """清空全部计数（仅供测试隔离使用）。"""
+    with _lock:
+        _buckets.clear()

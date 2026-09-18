@@ -7,7 +7,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +42,7 @@ from app.services.email_verification import (
 )
 from app.services.email_service import email_service
 from app.utils.ratelimit import check
+from app.utils.ip import get_client_ip
 
 router = APIRouter(prefix="/auth", tags=["extended-auth"])
 
@@ -53,16 +54,31 @@ _captcha_store: dict[str, dict[str, Any]] = {}
 # 发信验证码的限流参数。这个接口无需登录且会把邮件真发出去，不设限等于对外
 # 提供了一个免费的邮件发送工具，SMTP 账号很快会被判定「异常发信」而封禁。
 #
-# 故意**不做按 IP 的限制**：请求经过「宝塔 nginx → 容器 nginx」两层代理，
-# 应用看到的 remote_addr 只是上一层代理的地址；而 nginx 用的
-# $proxy_add_x_forwarded_for 是「追加」语义，客户端可以自己伪造
-# X-Forwarded-For 的最左段来绕过按 IP 的限流。与其加一个能被绕过的假限制，
-# 不如用一个真能生效的全局限额兜底。
+# 早期版本因 XFF 可伪造而故意不做按 IP 限制；现容器 nginx 已透传宝塔覆盖写入
+# 的 X-Real-IP（不可伪造，见 web/nginx.conf 与 app/utils/ip.py），按 IP 限流
+# 重新生效，与邮箱维度、全站额度三道并存。
 #
 # 注意：这个值必须与前端注册页的倒计时一致（Register.vue 里 countdown = 60），
 # 否则前端倒计时结束、服务端还在冷却，用户会莫名吃 429。
 # 全站/单邮箱的额度在 config.py 里，方便开学注册高峰临时调大。
 _SEND_EMAIL_COOLDOWN_SECONDS = 60
+
+# 匿名接口的按 IP 限流阈值（正常用户远达不到，攻击脚本则会被卡住）
+_IP_LIMIT_LOGIN = (10, 60)          # 登录：10 次/分钟（防撞库）
+_IP_LIMIT_REGISTER = (5, 86400)     # 注册：5 次/天（批量造小号直接卡死）
+_IP_LIMIT_SEND_VERIFY = (5, 3600)   # 发验证码：5 次/小时
+_IP_LIMIT_PWD_RESET = (5, 3600)     # 忘记密码：5 次/小时
+
+
+def _check_ip_limit(request: Request, action: str, limit: tuple[int, int]) -> None:
+    """按「客户端真实 IP + 动作」限流，超限抛 429。"""
+    max_requests, window = limit
+    ok, wait = check(f"ip:{action}:{get_client_ip(request)}", max_requests, window)
+    if not ok:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"请求过于频繁，请 {wait} 秒后再试",
+        )
 
 
 def generate_captcha_id() -> str:
@@ -125,6 +141,7 @@ async def create_captcha() -> dict[str, str]:
 @router.post("/login", response_model=TokenResponse, summary="登录（支持多种标识符）")
 async def login_with_identifier(
     payload: UserLogin,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     """使用用户名/UID/手机/邮箱登录。
@@ -139,6 +156,7 @@ async def login_with_identifier(
     Raises:
         HTTPException: 认证失败时
     """
+    _check_ip_limit(request, "login", _IP_LIMIT_LOGIN)
     # 验证验证码
     if not payload.captcha_id or not payload.captcha:
         raise HTTPException(
@@ -199,7 +217,7 @@ async def login_with_identifier(
 
 
 @router.post("/send-verification", summary="发送邮箱验证码")
-async def send_verification_code(payload: dict[str, str]) -> dict[str, str]:
+async def send_verification_code(payload: dict[str, str], request: Request) -> dict[str, str]:
     """发送邮箱验证码。
 
     Args:
@@ -224,6 +242,9 @@ async def send_verification_code(payload: dict[str, str]) -> dict[str, str]:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="邮箱格式不正确"
         )
+
+    # 按 IP 限流：同一来源换着邮箱刷发信，会被这里先拦下
+    _check_ip_limit(request, "sendverify", _IP_LIMIT_SEND_VERIFY)
 
     # 限流。放在格式校验之后，免得垃圾请求白占额度。
     # 顺序也有讲究：先看邮箱自己的冷却，被自己的冷却拦住时不会消耗全站额度。
@@ -278,9 +299,10 @@ async def send_verification_code(payload: dict[str, str]) -> dict[str, str]:
 @router.post("/register", response_model=dict, summary="注册新用户")
 async def register_user(
     payload: UserCreate,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
-    """注册新用户（支持邮箱和手机注册）。
+    """注册新用户（仅支持邮箱注册）。
 
     Args:
         payload: 用户注册数据
@@ -292,6 +314,8 @@ async def register_user(
     Raises:
         HTTPException: 注册失败时
     """
+    _check_ip_limit(request, "register", _IP_LIMIT_REGISTER)
+
     # 确定注册方式：邮箱注册或手机注册
     is_email_register = payload.email is not None
     is_phone_register = payload.phone is not None
@@ -300,6 +324,14 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="请提供邮箱或手机号进行注册"
+        )
+
+    # 手机注册通道没有短信验证能力，填任意合法手机号即可注册成功，
+    # 等于向脚本开放免验证造号（站点曾遭批量注册攻击）。已焊死。
+    if is_phone_register:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="暂不支持手机号注册，请使用邮箱注册"
         )
 
     # 验证邮箱注册
@@ -444,6 +476,7 @@ async def get_current_user_info(
 @router.post("/password-reset/request", summary="请求密码重置")
 async def request_password_reset(
     payload: dict[str, str],
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ) -> dict[str, str]:
     """请求密码重置，发送重置链接到用户邮箱。
@@ -474,6 +507,9 @@ async def request_password_reset(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="邮箱格式不正确"
         )
+
+    # 按 IP 限流：这个接口同样会把邮件真发出去
+    _check_ip_limit(request, "pwdreset", _IP_LIMIT_PWD_RESET)
 
     # 检查邮箱是否存在于数据库中
     from sqlalchemy import select
