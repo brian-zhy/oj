@@ -19,7 +19,7 @@ type CarouselAd = {
   link: string
 }
 
-const DEFAULT_ADS: CarouselAd[] = [{ image: '/welcome.png', link: '/' }]
+const DEFAULT_ADS: CarouselAd[] = [{ image: '/', link: '/' }]
 
 const adItems = ref<CarouselAd[]>([...DEFAULT_ADS])
 const currentAdIndex = ref(0)
