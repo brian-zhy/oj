@@ -626,9 +626,8 @@ const onSidebarLeave = () => {
     visibility: visible;
     transform: translateY(0);
   }
-
   .nav-sidebar:hover {
-    width: 100%;
+    width: 70%;
   }
 
   .nav-sidebar::-webkit-scrollbar {
