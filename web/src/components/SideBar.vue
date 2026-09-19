@@ -386,12 +386,12 @@ const onSidebarLeave = () => {
 /* 侧边栏 */
 .nav-sidebar {
   position: fixed;
-  top: 50px;
+  top: 80px;
   left: 0;
-  height: calc(100vh - 50px);
-  width: 64px;
+  height: calc(100vh - 120px);
+  width: 55px;
   background: white;
-  border-radius: 0;
+  border-radius: 15px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   padding: 16px 0;
   transition: width 0.3s ease;
@@ -399,6 +399,7 @@ const onSidebarLeave = () => {
   overflow-x: hidden;
   white-space: nowrap;
   z-index: 150;
+  margin: 10px;
 }
 
 .nav-sidebar::-webkit-scrollbar {
@@ -603,13 +604,11 @@ const onSidebarLeave = () => {
      默认淡出+上移收起，展开时平滑滑入 */
   .nav-sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    left: 23%;
     bottom: 0;
-    width: 100%;
-    height: 100%;
-    padding: 24px 0 88px;      /* 底部留出右下角悬浮按钮的位置，避免遮挡最后一项 */
+  width: 70%;
+    height: 77%;
+    padding: 24px 0 88px;   
     background: #fff;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
     border-bottom: none;

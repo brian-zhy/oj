@@ -241,6 +241,8 @@ onUnmounted(() => {
   top: 0;
   z-index: 200;
   font-family: inherit;
+  margin: 10px;
+  border-radius: 15px;
 }
 
 .logo {
