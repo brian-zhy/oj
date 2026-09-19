@@ -238,7 +238,7 @@ onUnmounted(() => {
   padding: 12px 24px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   position: sticky;
-  top: 0;
+  top: 10px;
   z-index: 200;
   font-family: inherit;
   margin: 10px;
