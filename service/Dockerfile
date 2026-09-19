@@ -1,6 +1,5 @@
 # 使用官方 Python 镜像作为基础镜像
-# FROM python:3.13-slim
-FROM registry.cn-hangzhou.aliyuncs.com/library/python:3.13-slim
+FROM python:3.13-slim
 
 # 设置工作目录
 WORKDIR /app
