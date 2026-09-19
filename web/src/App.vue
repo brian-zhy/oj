@@ -9,7 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const isNavigating = ref(false)
-const DEFAULT_PAGE_TITLE = 'NLNOJ'
+const DEFAULT_PAGE_TITLE = 'NLNOJ - 新一代社交型 Online Judge 平台'
 const routeTitleMap: Record<string, string> = {
   Home: '首页',
   Login: '登录',

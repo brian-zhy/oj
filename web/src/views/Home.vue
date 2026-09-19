@@ -780,8 +780,8 @@ onUnmounted(() => {
                     <img :src="adItems[currentAdIndex].image" class="ad-image">
                   </a>
                 </Transition>
-                <button class="ad-arrow ad-arrow-left" @click.stop="cycleAdBackward" aria-label="上一张">‹</button>
-                <button class="ad-arrow ad-arrow-right" @click.stop="cycleAdForward" aria-label="下一张">›</button>
+                <button class="ad-arrow ad-arrow-left" @click.stop="cycleAdBackward" aria-label="上一张"><i class="fa-solid fa-caret-left"></i></button>
+                <button class="ad-arrow ad-arrow-right" @click.stop="cycleAdForward" aria-label="下一张"><i class="fa-solid fa-caret-right"></i></button>
               </div>
               <div class="ad-ctrl">
                 <span v-for="(ad, idx) in adItems" :key="idx" class="ad-dot" :class="{ active: idx === currentAdIndex }" @click="currentAdIndex = idx"></span>
@@ -1159,7 +1159,7 @@ onUnmounted(() => {
   border: none;
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
-  font-size: 26px;
+  font-size: 17px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.2s;
