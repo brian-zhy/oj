@@ -1851,7 +1851,6 @@ onUnmounted(() => {
   }
 
   .punch-card .ad-col {
-    border-bottom: 1px solid #eee;
     padding-bottom: 12px;
     margin-bottom: 12px;
   }
