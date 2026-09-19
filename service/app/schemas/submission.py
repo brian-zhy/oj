@@ -17,5 +17,7 @@ class SubmissionCreate(BaseModel):
 
 
 class TestCaseCreate(BaseModel):
-    input_data: str = Field(default="", max_length=1_000_000, description="测试点输入")
-    expected_output: str = Field(default="", max_length=1_000_000, description="期望输出")
+    # 直接导入文本文件时，单个输入/输出文件通常可能达到 ~10MB；
+    # 允许更大上限，避免因为 Pydantic 过早截断导致测试点丢失。
+    input_data: str = Field(default="", max_length=20_000_000, description="测试点输入")
+    expected_output: str = Field(default="", max_length=20_000_000, description="期望输出")

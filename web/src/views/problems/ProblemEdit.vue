@@ -12,28 +12,52 @@ import type { ProblemDifficulty, ProblemSample, TestCaseItem } from '@/types'
 const route = useRoute()
 const router = useRouter()
 
-const zipInputRef = ref<HTMLInputElement | null>(null)
-const zipUploading = ref(false)
+const MAX_TEXT_CASE_BYTES = 20 * 1024 * 1024
+const inputFileInputRef = ref<HTMLInputElement | null>(null)
+const outputFileInputRef = ref<HTMLInputElement | null>(null)
 
-const uploadZip = async (e: Event) => {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  if (!editingId.value) {
-    Swal.fire('请先保存题目', '创建题目后才能上传测试点', 'warning')
-    input.value = ''
-    return
+const readTextCaseFile = async (file: File): Promise<string> => {
+  if (file.size > MAX_TEXT_CASE_BYTES) {
+    throw new Error(`文件过大：${(file.size / (1024 * 1024)).toFixed(1)} MB，单个文本文件最多支持 20 MB`)
   }
-  zipUploading.value = true
+  return await file.text()
+}
+
+const importCaseInputFile = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+
   try {
-    const res = await testCasesApi.uploadZip(editingId.value, file)
-    await Swal.fire({ icon: 'success', title: `成功导入 ${res.imported} 个测试点`, timer: 1500, showConfirmButton: false })
-    loadTestCases()
+    newCase.input_data = await readTextCaseFile(file)
+    Swal.fire({
+      icon: 'success',
+      title: '已读取输入文件',
+      timer: 1000,
+      showConfirmButton: false,
+    })
   } catch (err: any) {
-    Swal.fire('导入失败', err.response?.data?.detail || '请重试', 'error')
-  } finally {
-    zipUploading.value = false
-    input.value = ''
+    Swal.fire('读取失败', err?.message || '请重试', 'error')
+  }
+}
+
+const importCaseOutputFile = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+
+  try {
+    newCase.expected_output = await readTextCaseFile(file)
+    Swal.fire({
+      icon: 'success',
+      title: '已读取输出文件',
+      timer: 1000,
+      showConfirmButton: false,
+    })
+  } catch (err: any) {
+    Swal.fire('读取失败', err?.message || '请重试', 'error')
   }
 }
 
@@ -133,6 +157,14 @@ const addCase = async () => {
     Swal.fire('请填写测试点内容', '', 'warning')
     return
   }
+
+  const inputBytes = new TextEncoder().encode(newCase.input_data).length
+  const outputBytes = new TextEncoder().encode(newCase.expected_output).length
+  if (inputBytes > MAX_TEXT_CASE_BYTES || outputBytes > MAX_TEXT_CASE_BYTES) {
+    Swal.fire('测试点文件过大', '单个输入/输出文本最多支持 20 MB', 'warning')
+    return
+  }
+
   try {
     await testCasesApi.create(editingId.value, {
       input_data: newCase.input_data,
@@ -313,7 +345,7 @@ onMounted(loadProblem)
         <div class="card">
           <div class="section-title">测试数据</div>
           <template v-if="editingId !== null">
-            <p class="tc-tip">评测用测试点：提交的代码将逐点运行并与期望输出比对（忽略行尾空白）。至少添加 1 个测试点，否则该题无法提交评测。</p>
+            <p class="tc-tip">评测用测试点：提交的代码将逐点运行并与期望输出比对（忽略行尾空白）。至少添加 1 个测试点，否则该题无法提交评测。每个测试点可手工输入，或直接从文本文件导入。</p>
             <div v-for="(tc, i) in testCases" :key="tc.id" class="sample-group">
               <div class="sample-head">
                 <span class="sample-name">测试点 #{{ i + 1 }}</span>
@@ -331,16 +363,28 @@ onMounted(loadProblem)
                 <textarea v-model="newCase.input_data" class="md-textarea plain" rows="3" placeholder="测试点输入"></textarea>
                 <textarea v-model="newCase.expected_output" class="md-textarea plain" rows="3" placeholder="期望输出"></textarea>
               </div>
+              <div class="tc-file-actions">
+                <button class="btn-ghost add-sample" @click="inputFileInputRef?.click()">
+                  <i class="fa-solid fa-file-import"></i> 导入输入文件
+                </button>
+                <button class="btn-ghost add-sample" @click="outputFileInputRef?.click()">
+                  <i class="fa-solid fa-file-import"></i> 导入输出文件
+                </button>
+              </div>
               <input
-                ref="zipInputRef"
+                ref="inputFileInputRef"
                 type="file"
-                accept=".zip"
+                accept=".txt,.in,.out,.ans,.data,.log,text/plain"
                 style="display: none"
-                @change="uploadZip"
+                @change="importCaseInputFile"
               />
-              <button class="btn-ghost add-sample" :disabled="zipUploading" @click="zipInputRef?.click()">
-                <i class="fa-solid fa-file-zipper"></i> {{ zipUploading ? '上传中...' : '上传 zip 压缩包' }}
-              </button>
+              <input
+                ref="outputFileInputRef"
+                type="file"
+                accept=".txt,.in,.out,.ans,.data,.log,text/plain"
+                style="display: none"
+                @change="importCaseOutputFile"
+              />
               <button class="btn-ghost add-sample" @click="addCase"><i class="fa-solid fa-plus"></i> 添加测试点</button>
             </div>
           </template>
@@ -607,6 +651,14 @@ onMounted(loadProblem)
   font-size: 13px;
   color: #5b6e8c;
   margin-bottom: 6px;
+}
+
+.tc-file-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .action-link.red {
