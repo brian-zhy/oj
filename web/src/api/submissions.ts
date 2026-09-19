@@ -55,9 +55,9 @@ export const testCasesApi = {
   ): Promise<{ success: boolean; imported: number }> {
     const fd = new FormData()
     fd.append('file', file)
-    return apiClient.post(`/api/problems/${problemId}/test-cases/upload-zip`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // 不能手动设置 multipart/form-data；浏览器需要自动附带 boundary
+    // 否则 FastAPI 不能正确解析 FormData，上传会出现 422 / 导入失败
+    return apiClient.post(`/api/problems/${problemId}/test-cases/upload-zip`, fd)
   },
 
   async list(problemId: number): Promise<TestCaseItem[]> {
