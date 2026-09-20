@@ -1068,7 +1068,7 @@ onUnmounted(() => {
 .card {
   background: white;
   border-radius: 16px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 20px 24px;
   margin-bottom: 24px;
 }
@@ -1421,7 +1421,7 @@ onUnmounted(() => {
 
 .recent-posts-card .post-card:hover {
   border-color: var(--primary);
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
 .post-card-body {
@@ -1784,7 +1784,7 @@ onUnmounted(() => {
   border: none;
   border-radius: 999px;
   cursor: pointer;
-  border: 1px solid var(--primary);
+  box-shadow: 0 4px 16px rgba(42, 142, 255, 0.4);
   transition: background 0.15s, transform 0.15s;
 }
 
@@ -1834,7 +1834,7 @@ onUnmounted(() => {
   height: 50px;
   font-size: 24px;
   cursor: pointer;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   z-index: 999;
   transition: opacity 0.3s, transform 0.3s;
 }

@@ -424,7 +424,7 @@ onBeforeUnmount(() => {
 .card {
   background: #fff;
   border-radius: 12px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .top-row {
@@ -666,7 +666,7 @@ onBeforeUnmount(() => {
 
 .img-card:hover {
   border-color: #dbe6f3;
-  border: 1px solid var(--primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
 }
 
 .img-thumb {

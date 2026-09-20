@@ -533,7 +533,7 @@ onMounted(() => {
   margin: 0 auto;
   background: white;
   border-radius: 16px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
@@ -591,7 +591,7 @@ onMounted(() => {
   height: 80px;
   border-radius: 50%;
   border: 4px solid white;
-  border: 1px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   object-fit: cover;
 }
 
@@ -818,7 +818,7 @@ onMounted(() => {
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary);
-  border: 1px solid var(--primary);
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
 .form-textarea {

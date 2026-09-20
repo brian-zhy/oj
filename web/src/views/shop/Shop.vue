@@ -125,7 +125,7 @@ onMounted(load)
 .shop-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
 .shop-container { max-width: 860px; margin: 0 auto; padding: 24px 20px; }
 
-.shop-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 20px 26px; margin-bottom: 16px; }
+.shop-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 26px; margin-bottom: 16px; }
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }
 .page-sub { color: #8e9aaf; font-size: 13px; margin: 6px 0 0; }
 .exp-box { text-align: center; background: #fff7e6; border: 1px solid #ffe7ba; border-radius: 12px; padding: 10px 26px; }
@@ -135,7 +135,7 @@ onMounted(load)
 .action-msg { background: #eafaf1; color: #27ae60; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
 
 .item-list { display: flex; flex-direction: column; gap: 12px; }
-.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fff; border-radius: 12px; border: 1px solid var(--primary); padding: 16px 20px; }
+.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 20px; }
 .item-card.owned { background: #fafff5; }
 .item-card.locked { opacity: .68; }
 .chain-line { position: absolute; left: 34px; top: -13px; width: 2px; height: 13px; background: #d9e2ec; }

@@ -378,7 +378,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
   max-width: 90%;
   border-radius: 16px;
   padding: 32px 28px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 /* 标题 */
@@ -458,7 +458,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  border: 1px solid var(--primary);
+  box-shadow: 0 0 0 2px rgba(42, 142, 255, 0.1);
   background: white;
 }
 

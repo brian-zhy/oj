@@ -392,7 +392,7 @@ const onSidebarLeave = () => {
   width: 55px;
   background: white;
   border-radius: 15px;
-  border: 1px solid var(--primary);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   padding: 16px 0;
   transition: width 0.3s ease;
   overflow-y: auto;
@@ -587,13 +587,13 @@ const onSidebarLeave = () => {
     font-size: 19px;
     line-height: 1;
     cursor: pointer;
-    border: 1px solid var(--primary);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.24);
     transition: transform 0.18s, box-shadow 0.18s;
     -webkit-tap-highlight-color: transparent;
   }
 
   .mobile-menu-toggle:hover {
-    border: 1px solid var(--primary);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
   }
 
   .mobile-menu-toggle:active {
@@ -610,7 +610,7 @@ const onSidebarLeave = () => {
     height: 77%;
     padding: 24px 0 88px;   
     background: #fff;
-    border: 1px solid var(--primary);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
     border-bottom: none;
     overflow-y: auto;
     overscroll-behavior: contain;

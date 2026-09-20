@@ -37,7 +37,7 @@ const from = computed(() => (route.query.from as string) || '')
 .no-access-card {
   background: #fff;
   border-radius: 16px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   padding: 48px 60px;
   text-align: center;
   max-width: 460px;

@@ -281,14 +281,14 @@ onMounted(() => loadPosts(false))
   gap: 14px;
   background: #fff;
   border-radius: 12px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 16px 18px;
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .post-card:hover {
-  border: 1px solid var(--primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 /* 置顶样式：底色/边框都是主色 #4a4ae0 的浅色调。

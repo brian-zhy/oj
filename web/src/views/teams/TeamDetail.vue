@@ -423,7 +423,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }
 .back-link a:hover { text-decoration: underline; }
 
-.card { background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 20px 26px; margin-bottom: 16px; }
+.card { background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 26px; margin-bottom: 16px; }
 .title-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .title-row h1 { color: var(--primary); font-size: 24px; margin: 0; }
 .team-desc { margin-top: 8px; color: #66708a; font-size: 14px; white-space: pre-wrap; }

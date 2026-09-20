@@ -170,7 +170,7 @@ onBeforeUnmount(() => {
 .card {
   background: #fff;
   border-radius: 16px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 20px 24px;
   margin-bottom: 16px;
 }
