@@ -351,7 +351,7 @@ onMounted(loadAds)
   border: 1px solid #e5eaf2;
   border-radius: 16px;
   background: #fff;
-  border: 1px solid var(--primary);
+  box-shadow: 0 8px 24px rgba(42, 58, 83, 0.05);
 }
 
 .section-heading {
@@ -389,7 +389,7 @@ onMounted(loadAds)
 .ad-edit-card:hover,
 .ad-edit-card.selected {
   border-color: #aebaf4;
-  border: 1px solid var(--primary);
+  box-shadow: 0 5px 16px rgba(80, 91, 190, 0.1);
 }
 
 .ad-edit-card.selected {

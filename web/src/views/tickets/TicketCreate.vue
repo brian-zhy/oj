@@ -306,7 +306,7 @@ const submit = async () => {
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   margin-top: 4px;
   overflow: hidden;
 }

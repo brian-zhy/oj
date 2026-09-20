@@ -311,14 +311,14 @@ onMounted(async () => {
   gap: 12px;
   background: #fff;
   border-radius: 12px;
-  border: 1px solid var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 14px 18px;
   cursor: pointer;
   transition: box-shadow 0.2s;
 }
 
 .notification-item:hover {
-  border: 1px solid var(--primary);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
 /* 未读底色：主色 #4a4ae0 的浅色调，比已读的白底明显一档。

@@ -42,7 +42,7 @@ const isOnline = computed(() => isUserOnline(props.user))
   height: var(--status-size);
   border-radius: 50%;
   border: 2px solid #fff;
-  border: 1px solid var(--primary);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
   z-index: 1;
 }
 
