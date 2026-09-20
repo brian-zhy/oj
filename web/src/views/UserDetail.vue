@@ -563,7 +563,7 @@ onMounted(() => {
   margin-bottom: 0;
   background: #1a1a2e;
   min-height: 250px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--primary);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -603,7 +603,7 @@ onMounted(() => {
   overflow: hidden;
   flex-shrink: 0;
   border: none;
-  box-shadow: none;
+  border: 1px solid var(--primary);
   background: #f0f2f5;
   display: flex;
   align-items: center;
@@ -793,7 +793,7 @@ onMounted(() => {
 
 .slogan-editor-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2);
+  border: 1px solid var(--primary);
 }
 
 /* ===== 选项卡导航卡片 ===== */
@@ -802,7 +802,7 @@ onMounted(() => {
   margin-bottom: 24px;
   padding: 0 30px 0 40px;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   overflow: hidden;
   height: 60px;
   display: flex;
@@ -882,7 +882,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 16px;
   padding: 18px 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   margin-bottom: 24px;
 }
 
@@ -1002,7 +1002,7 @@ onMounted(() => {
   padding: 32px 40px;
   max-width: 480px;
   width: 90%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--primary);
 }
 
 .cover-upload-panel h2 {

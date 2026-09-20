@@ -277,7 +277,7 @@ onMounted(() => loadTickets(false))
 .ticket-table-wrap {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   overflow: hidden;
 }
 

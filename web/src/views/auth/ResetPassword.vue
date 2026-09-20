@@ -172,7 +172,7 @@ const goToLogin = () => {
   max-width: 90%;
   border-radius: 16px;
   padding: 32px 28px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
 }
 
 /* 标题 */
@@ -215,7 +215,7 @@ const goToLogin = () => {
 .form-input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  border: 1px solid var(--primary);
   background: white;
 }
 

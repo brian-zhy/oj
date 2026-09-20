@@ -67,8 +67,8 @@ onMounted(load)
 .page-sub { color: #8e9aaf; font-size: 13px; margin: 6px 0 0; }
 
 .problem-list { display: flex; flex-direction: column; gap: 10px; }
-.problem-item { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 13px 18px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
-.problem-item:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.09); }
+.problem-item { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 10px; border: 1px solid var(--primary); padding: 13px 18px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.problem-item:hover { transform: translateY(-1px); border: 1px solid var(--primary); }
 .prob-no { font-weight: 700; color: var(--primary); min-width: 52px; font-size: 14px; }
 .prob-title { flex: 1; color: #2c3e50; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prob-team { color: #13c2c2; background: #e6fffb; font-size: 12px; padding: 2px 10px; border-radius: 20px; flex-shrink: 0; }

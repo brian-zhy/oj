@@ -159,8 +159,8 @@ onMounted(() => load())
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }
 
 .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
-.team-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 18px; cursor: pointer; transition: transform .12s, box-shadow .12s; display: flex; flex-direction: column; gap: 8px; }
-.team-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.09); }
+.team-card { background: #fff; border-radius: 12px; border: 1px solid var(--primary); padding: 16px 18px; cursor: pointer; transition: transform .12s, box-shadow .12s; display: flex; flex-direction: column; gap: 8px; }
+.team-card:hover { transform: translateY(-2px); border: 1px solid var(--primary); }
 .team-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .team-name { font-size: 16px; font-weight: 700; color: #2c3e50; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .team-count { flex-shrink: 0; font-size: 12px; color: var(--primary); background: #fef0ef; border-radius: 20px; padding: 2px 10px; font-weight: 600; }

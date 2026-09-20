@@ -20,7 +20,7 @@ import JudgementLogTable from '@/components/JudgementLogTable.vue'
 .card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 20px 24px;
   margin-bottom: 24px;
 }

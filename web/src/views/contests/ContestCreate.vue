@@ -284,7 +284,7 @@ onMounted(async () => {
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }
 .back-link a:hover { text-decoration: underline; }
 
-.card.form-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 26px 30px; }
+.card.form-card { background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 26px 30px; }
 .form-row { display: flex; align-items: center; gap: 18px; padding: 12px 0; border-bottom: 1px solid #f7f8fa; }
 .form-row.top { align-items: flex-start; }
 .row-label { width: 90px; flex-shrink: 0; font-size: 14px; font-weight: 600; color: #4b4b4b; text-align: right; }
