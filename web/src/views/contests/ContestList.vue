@@ -94,8 +94,8 @@ onMounted(load)
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }
 
 .contest-list { display: flex; flex-direction: column; gap: 12px; }
-.contest-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 20px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
-.contest-card:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(0,0,0,.09); }
+.contest-card { background: #fff; border-radius: 12px; border: 1px solid var(--primary); padding: 16px 20px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.contest-card:hover { transform: translateY(-1px); border: 1px solid var(--primary); }
 .c-title-row { display: flex; align-items: center; gap: 10px; }
 .type-badge { font-size: 12px; padding: 2px 10px; border-radius: 4px; color: #13c2c2; background: #e6fffb; font-weight: 600; }
 .c-title { font-size: 16px; font-weight: 700; color: #2c3e50; }

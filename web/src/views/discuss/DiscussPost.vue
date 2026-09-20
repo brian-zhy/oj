@@ -415,7 +415,7 @@ onMounted(() => loadPost())
 .post-head-card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 20px 24px 14px;
 }
 
@@ -514,7 +514,7 @@ onMounted(() => loadPost())
 .content-card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 20px 24px;
   color: #2d3748;
   font-size: 15px;
@@ -524,7 +524,7 @@ onMounted(() => loadPost())
 .edit-card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 20px 24px;
 }
 
@@ -620,7 +620,7 @@ onMounted(() => loadPost())
 .info-card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
@@ -733,7 +733,7 @@ onMounted(() => loadPost())
 .comment-item {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 14px 18px;
 }
 
@@ -799,7 +799,7 @@ onMounted(() => loadPost())
 .reply-box {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 16px 18px;
 }
 

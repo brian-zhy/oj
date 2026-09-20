@@ -625,7 +625,7 @@ onUnmounted(() => {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  border: 1px solid var(--primary);
 }
 
 #load-more:disabled {
@@ -669,7 +669,7 @@ onUnmounted(() => {
   height: 50px;
   font-size: 24px;
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--primary);
   z-index: 999;
   transition: opacity 0.3s, transform 0.3s;
 }

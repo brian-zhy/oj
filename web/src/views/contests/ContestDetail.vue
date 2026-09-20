@@ -329,7 +329,7 @@ const userColor = (u: Record<string, any>) => userNameColor(u)
 .back-link { margin-bottom: 12px; }
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }
 
-.card { background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 26px; margin-bottom: 16px; }
+.card { background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 20px 26px; margin-bottom: 16px; }
 
 .head-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
 .title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -359,9 +359,9 @@ const userColor = (u: Record<string, any>) => userNameColor(u)
 .action-msg { background: #eafaf1; color: #27ae60; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
 
 .detail-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-.body-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 26px; }
+.body-card { background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 20px 26px; }
 .side-col { display: flex; flex-direction: column; gap: 16px; }
-.side-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 18px 22px; }
+.side-card { background: #fff; border-radius: 14px; border: 1px solid var(--primary); padding: 18px 22px; }
 .side-tip { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
 .running-tip { color: #52c41a; }
 .pending-tip { color: #f39c11; }

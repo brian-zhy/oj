@@ -432,7 +432,7 @@ onMounted(() => loadTicket())
 .card {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 18px 22px;
 }
 
@@ -693,7 +693,7 @@ onMounted(() => loadTicket())
 .action-record {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 12px 18px;
 }
 
@@ -739,7 +739,7 @@ onMounted(() => loadTicket())
 .reply-item {
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--primary);
   padding: 14px 18px;
 }
 
