@@ -389,9 +389,9 @@ const onSidebarLeave = () => {
   top: 80px;
   left: 0;
   height: calc(100vh - 120px);
-  width: 55px;
+  width: 62px;
   background: white;
-  border-radius: 15px;
+  border-radius: 20px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   padding: 16px 0;
   transition: width 0.3s ease;
@@ -491,6 +491,7 @@ const onSidebarLeave = () => {
 .nav-item,
 .group-title {
   padding: 10px 16px;
+  margin:5px;
   font-size: 14px;
   color: #2c3e50;
   cursor: pointer;
@@ -505,11 +506,15 @@ const onSidebarLeave = () => {
   background: #f0f2f5;
   color: var(--primary);
   text-decoration: none;
+  border-radius: 15px;
+  margin: 5px;
 }
 
 .nav-item.active {
   background: #f0f2f5;
   color: var(--primary);
+  border-radius: 15px;
+  margin: 5px;
 }
 
 .nav-icon {
@@ -531,11 +536,12 @@ const onSidebarLeave = () => {
   padding: 10px 16px;
   font-size: 14px;
   font-weight: 600;
-  margin-top: 8px;
+  margin: 8px;
   display: flex;
   align-items: center;
   cursor: default;
   background: #f9fafb;
+  border-radius: 13px;
 }
 
 .group-title:first-of-type {
