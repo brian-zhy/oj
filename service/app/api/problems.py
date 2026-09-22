@@ -15,7 +15,11 @@ from app.models.problem import Problem
 from app.models.team import Team, TeamMember
 from app.models.user import User
 from app.schemas.problem import ProblemCreate, ProblemUpdate
-from app.services.judge import adjust_experience_on_difficulty_change
+from app.services.judge import (
+    adjust_experience_on_difficulty_change,
+    adjust_contribution_on_author_change,
+    adjust_contribution_on_difficulty_change,
+)
 from app.services.problem import ProblemService
 from sqlalchemy import func as sa_func, select
 
@@ -257,6 +261,10 @@ async def create_problem(
     _require_problem_manage(current_user)
     data["author_id"] = current_user.id
     problem = await ProblemService.create(db, data)
+    # 主题库题：创建者即出题人，按难度获得贡献值（团队题不计，防自建团刷分）
+    await adjust_contribution_on_author_change(
+        db, None, current_user.id, "暂无评定", problem.difficulty
+    )
     return ProblemService._dict(problem, with_description=True)
 
 
@@ -288,6 +296,7 @@ async def update_problem(
                 status_code=status.HTTP_403_FORBIDDEN, detail="需要团队管理权限"
             )
     old_difficulty = problem.difficulty
+    old_author_id = problem.author_id
     data = payload.model_dump(exclude_unset=True)
 
     # 指派出题人：按用户名或 UID 解析；空串 = 清除出题人
@@ -318,5 +327,18 @@ async def update_problem(
         await adjust_experience_on_difficulty_change(
             db, problem.id, old_difficulty, payload.difficulty
         )
+    # 主题库题：出题人变更或难度变更时结清出题人贡献
+    # （同一个人只按难度差调一次，两步互斥避免双重加减）
+    if problem.team_id is None:
+        if problem.author_id != old_author_id:
+            await adjust_contribution_on_author_change(
+                db, old_author_id, problem.author_id,
+                old_difficulty, problem.difficulty,
+            )
+        elif (payload.difficulty is not None
+                and payload.difficulty != old_difficulty):
+            await adjust_contribution_on_difficulty_change(
+                db, problem.author_id, old_difficulty, problem.difficulty
+            )
     return ProblemService._dict(problem, with_description=True)
 

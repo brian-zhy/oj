@@ -144,3 +144,109 @@ async def redeem(
         "name": item["name"],
         "experience": current_user.experience,
     }
+
+
+# ================================================================
+# 贡献商店：用出题攒下的贡献值兑换 Tag 卡（链式解锁，同经验商店）
+# ================================================================
+CONTRIBUTION_SHOP_ITEMS: list[dict[str, Any]] = [
+    {"id": 101, "name": "初执笔墨", "price": 100,
+     "prev": None,
+     "desc": "你写下了第一道题，题库因你而更完整"},
+    {"id": 102, "name": "命题新秀", "price": 400,
+     "prev": "初执笔墨",
+     "desc": "题面、数据、标算样样俱全，你的题让人欲罢不能"},
+    {"id": 103, "name": "题库基石", "price": 1000,
+     "prev": "命题新秀",
+     "desc": "你出的题撑起了题库的一片天"},
+    {"id": 104, "name": "命题专家", "price": 2500,
+     "prev": "题库基石",
+     "desc": "原创题、巧妙转化、一题多解，你的题被反复研讨"},
+    {"id": 105, "name": "金牌出题人", "price": 6000,
+     "prev": "命题专家",
+     "desc": "你的题是检验实力的标尺，AC 与否全看临场发挥"},
+    {"id": 106, "name": "传奇命题人", "price": 15000,
+     "prev": "金牌出题人",
+     "desc": "题库因你而有了灵魂，你的名字就是质量的保证"},
+]
+
+
+def _chain_view(
+    items: list[dict[str, Any]],
+    owned_names: set[str],
+    balance: int,
+) -> list[dict[str, Any]]:
+    """按解锁链生成商品视图（经验/贡献商店共用）。"""
+    views = []
+    prev_name = None
+    for item in items:
+        owned = item["name"] in owned_names
+        prev_owned = prev_name is None or prev_name in owned_names
+        views.append(_item_view(item, owned, prev_owned, balance))
+        prev_name = item["name"]
+    return views
+
+
+@router.get("/contribution/items", summary="贡献商店商品与我的状态")
+async def contribution_shop_items(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    cards = (await db.execute(
+        select(UserTagCard).where(UserTagCard.user_id == current_user.id)
+    )).scalars().all()
+    owned_names = {c.name for c in cards}
+    contribution = current_user.contribution or 0
+    return {
+        "contribution": contribution,
+        "items": _chain_view(CONTRIBUTION_SHOP_ITEMS, owned_names, contribution),
+    }
+
+
+@router.post("/contribution/redeem", summary="贡献商店兑换 Tag 卡")
+async def contribution_redeem(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    item_id = payload.get("item_id")
+    item = next(
+        (i for i in CONTRIBUTION_SHOP_ITEMS if i["id"] == item_id), None)
+    if item is None:
+        raise HTTPException(status_code=404, detail="商品不存在")
+
+    cards = (await db.execute(
+        select(UserTagCard).where(UserTagCard.user_id == current_user.id)
+    )).scalars().all()
+    owned_names = {c.name for c in cards}
+
+    if item["name"] in owned_names:
+        raise HTTPException(status_code=400, detail="你已经兑换过该 Tag")
+
+    idx = CONTRIBUTION_SHOP_ITEMS.index(item)
+    if idx > 0:
+        prev_name = CONTRIBUTION_SHOP_ITEMS[idx - 1]["name"]
+        if prev_name not in owned_names:
+            raise HTTPException(
+                status_code=400, detail=f"需要先兑换前置 Tag「{prev_name}」"
+            )
+
+    contribution = current_user.contribution or 0
+    if contribution < item["price"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"贡献不足：还需要 {item['price'] - contribution} 贡献",
+        )
+
+    current_user.contribution = contribution - item["price"]
+    # 兑换即自动佩戴（摘下其他卡）
+    for c in cards:
+        c.enabled = False
+    card = UserTagCard(user_id=current_user.id, name=item["name"], enabled=True)
+    db.add(card)
+    await db.commit()
+    return {
+        "success": True,
+        "name": item["name"],
+        "contribution": current_user.contribution,
+    }

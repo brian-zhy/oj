@@ -77,6 +77,11 @@ class User(Base, TimestampMixin):
         Integer, default=0, server_default=text("0"), nullable=False
     )
 
+    # 贡献值：出题获得（按题目难度），贡献商店货币
+    contribution: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=text("0"), nullable=False
+    )
+
     # 打卡：最近打卡日期（东八区）/ 当前连续天数 / 累计打卡天数
     last_checkin_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     checkin_streak: Mapped[int] = mapped_column(
