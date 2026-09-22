@@ -38,14 +38,15 @@ const load = async () => {
   loading.value = true
   error.value = ''
   try {
-    const [exp, contrib] = await Promise.all([
+    // 响应拦截器已解包一层：返回值就是 data 本身（类型标注沿用 any）
+    const [exp, contrib] = (await Promise.all([
       apiClient.get('/api/shop/items'),
       apiClient.get('/api/shop/contribution/items'),
-    ])
-    experience.value = exp.data.experience
-    expItems.value = exp.data.items
-    contribution.value = contrib.data.contribution
-    contribItems.value = contrib.data.items
+    ])) as any[]
+    experience.value = exp.experience
+    expItems.value = exp.items
+    contribution.value = contrib.contribution
+    contribItems.value = contrib.items
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '加载失败'
   } finally {
