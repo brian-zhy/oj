@@ -101,6 +101,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    // 贡献商店：用出题攒的贡献兑换 Tag 卡（独立路由，刷新/分享不丢状态）
+    path: '/shop/contribution',
+    name: 'ContributionShop',
+    component: () => import('@/views/shop/Shop.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/user/notification',
     name: 'Notifications',
     component: () => import('@/views/Notifications.vue'),

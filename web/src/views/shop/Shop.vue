@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 
 const authStore = useAuthStore()
+const route = useRoute()
+const router = useRouter()
 
 interface ShopItem {
   id: number
@@ -18,9 +21,16 @@ interface ShopItem {
   enough_exp: boolean
 }
 
-// 双商店：经验（刷题）/ 贡献（出题），同一套 Tag 卡链式解锁玩法
+// 双商店：经验（刷题）/ 贡献（出题），同一套 Tag 卡链式解锁玩法。
+// tab 即路由（/shop 与 /shop/contribution），刷新/分享链接不丢状态
 type Tab = 'exp' | 'contribution'
-const tab = ref<Tab>('exp')
+const tab = computed<Tab>(() =>
+  route.path.endsWith('/contribution') ? 'contribution' : 'exp')
+const switchTab = (t: Tab) => {
+  if (t === tab.value) return
+  actionMsg.value = ''
+  router.push(t === 'contribution' ? '/shop/contribution' : '/shop')
+}
 const experience = ref(0)
 const contribution = ref(0)
 const expItems = ref<ShopItem[]>([])
@@ -89,8 +99,8 @@ onMounted(load)
               : '用出题攒下的贡献兑换专属称号——题目难度越高，出题人获得的贡献越多' }}
           </p>
           <div class="shop-tabs">
-            <button class="shop-tab" :class="{ active: tab === 'exp' }" @click="tab = 'exp'">经验商店</button>
-            <button class="shop-tab" :class="{ active: tab === 'contribution' }" @click="tab = 'contribution'">贡献商店</button>
+            <button class="shop-tab" :class="{ active: tab === 'exp' }" @click="switchTab('exp')">经验商店</button>
+            <button class="shop-tab" :class="{ active: tab === 'contribution' }" @click="switchTab('contribution')">贡献商店</button>
           </div>
         </div>
         <div class="exp-box">
