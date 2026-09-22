@@ -110,6 +110,60 @@ async def adjust_experience_on_difficulty_change(
     return len(ac_user_ids)
 
 
+# 出题贡献表（经验表的 5 倍——出题比 AC 稀缺）。仅主题库题计入，
+# 团队私有题的出题人可由团队管理员自行指派，计入会被自建团刷分。
+CONTRIBUTION_BY_DIFFICULTY = {
+    k: v * 5 for k, v in XP_BY_DIFFICULTY.items()
+}
+
+
+async def _add_contribution(db: AsyncSession, user_id: int, delta: int) -> None:
+    if delta == 0:
+        return
+    await db.execute(
+        update(User)
+        .where(User.id == user_id)
+        .values(contribution=User.contribution + delta)
+    )
+
+
+async def adjust_contribution_on_author_change(
+    db: AsyncSession,
+    old_author_id: int | None,
+    new_author_id: int | None,
+    old_difficulty: str,
+    new_difficulty: str,
+) -> None:
+    """出题人变更时结清双方贡献：旧出题人按旧难度扣回，新出题人按新难度获得。
+
+    新旧为同一人时不动（换难度走 adjust_contribution_on_difficulty_change）。
+    """
+    if new_author_id == old_author_id:
+        return
+    if old_author_id is not None:
+        await _add_contribution(
+            db, old_author_id, -CONTRIBUTION_BY_DIFFICULTY.get(old_difficulty, 0))
+    if new_author_id is not None:
+        await _add_contribution(
+            db, new_author_id, CONTRIBUTION_BY_DIFFICULTY.get(new_difficulty, 0))
+    await db.commit()
+
+
+async def adjust_contribution_on_difficulty_change(
+    db: AsyncSession, author_id: int | None,
+    old_difficulty: str, new_difficulty: str,
+) -> None:
+    """题目难度变更时，同步调整出题人的贡献（差值增减，与经验同理）。"""
+    if author_id is None:
+        return
+    delta = (CONTRIBUTION_BY_DIFFICULTY.get(new_difficulty, 0)
+             - CONTRIBUTION_BY_DIFFICULTY.get(old_difficulty, 0))
+    if delta == 0:
+        return
+    await _add_contribution(db, author_id, delta)
+    await db.commit()
+
+
 # 沙箱资源参数
 COMPILE_CPU_NS = 30_000_000_000      # 编译 30s
 COMPILE_MEMORY = 1_073_741_824       # 1GB
