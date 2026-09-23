@@ -137,17 +137,18 @@ async def list_problems(
     source: Optional[str] = Query(None),
     tag: Optional[str] = Query(None),
     keyword: Optional[str] = Query(None, max_length=100),
-    all: bool = Query(False, description="含未公开题目（需题目管理权限）"),
+    all: bool = Query(False, description="含未公开题目（兼容旧参数，已被默认行为取代）"),
     page: int = Query(0, ge=0),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    """题库列表，支持难度 / 来源 / 标签 / 关键词筛选。"""
-    include_private = False
-    if all:
-        _require_problem_manage(current_user)
-        include_private = True
+    """题库列表，支持难度 / 来源 / 标签 / 关键词筛选。
+
+    有题目管理权限的人默认可见未公开题（列表中以「未公开」徽章标注），
+    其他人只看到公开题。
+    """
+    include_private = bool(all) or _can_manage_problems(current_user)
     return await ProblemService.list_problems(
         db,
         difficulty=difficulty,
