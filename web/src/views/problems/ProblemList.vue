@@ -25,11 +25,7 @@ const sourceFilter = computed({
   get: () => (route.query.source as string) || '',
   set: (v: string) => updateQuery({ source: v || undefined }),
 })
-// 含未公开题目（仅题目管理权限可见此开关；创建题目默认未公开，不开开关自己都找不到）
-const showPrivate = computed({
-  get: () => route.query.all === '1',
-  set: (v: boolean) => updateQuery({ all: v ? '1' : undefined, page: undefined }),
-})
+// 有题目管理权限的人默认可见未公开题（后端行为），列表中以「未公开」徽章标注
 
 // 关键词是「应用后」才进 URL：输入框是本地态，点搜索 / 回车才生效
 const keywordInput = ref((route.query.keyword as string) || '')
@@ -105,7 +101,6 @@ const fetchData = async () => {
       difficulty: difficultyFilter.value || undefined,
       source: sourceFilter.value || undefined,
       keyword: (route.query.keyword as string) || undefined,
-      all: showPrivate.value || undefined,
     })
     items.value = data.items || []
     total.value = data.total || 0
@@ -170,9 +165,6 @@ onMounted(() => {
           />
           <button class="btn-search" @click="applyFilters">搜索</button>
           <button class="btn-reset" @click="resetFilters">重置</button>
-          <label v-if="canManage" class="private-toggle">
-            <input v-model="showPrivate" type="checkbox" /> 含未公开
-          </label>
         </div>
 
         <div class="result-count">共 {{ total }} 条记录</div>
@@ -569,18 +561,6 @@ onMounted(() => {
   color: #909399;
   font-size: 12px;
   white-space: nowrap;
-}
-
-/* 含未公开开关 */
-.private-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  font-size: 13px;
-  color: #666;
-  cursor: pointer;
-  user-select: none;
 }
 
 @media (max-width: 600px) {
