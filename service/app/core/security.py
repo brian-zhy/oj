@@ -51,7 +51,8 @@ def _encode(user_id: int, token_type: TokenType, ttl: timedelta) -> str:
 
 
 def create_access_token(user_id: int) -> str:
-    """Short-lived access token."""
+    """Access token. 有效期由 ``ACCESS_TOKEN_EXPIRE_MINUTES`` 控制（默认 30 天，
+    与 refresh 令牌同寿命），避免用户隔天就被登出。"""
     return _encode(user_id, "access", timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
 
 
