@@ -150,6 +150,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * 滑动续期：只要本次会话仍有效（刷新成功），就把本地 30 天 TTL 重新起算，
+   * 避免「登录未满 30 天却因本地时间戳过期而被误踢下线」。
+   */
+  function touchSession() {
+    if (accessToken.value || refreshToken.value) {
+      localStorage.setItem('authPersistedAt', String(Date.now()))
+    }
+  }
+
   async function refreshAccessToken() {
     if (!refreshToken.value) return false
 
@@ -157,6 +167,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authApi.refreshToken(refreshToken.value)
       accessToken.value = response.access_token
       refreshToken.value = response.refresh_token
+      touchSession()
       return true
     } catch (error) {
       console.error('Token refresh failed:', error)

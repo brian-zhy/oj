@@ -72,6 +72,8 @@ const refreshTokens = async (): Promise<string> => {
   // 保存新 token
   localStorage.setItem('accessToken', access_token)
   localStorage.setItem('refreshToken', newRefreshToken)
+  // 滑动续期：本地会话有效期重新起算，避免被误判为过期而登出
+  localStorage.setItem('authPersistedAt', String(Date.now()))
   return access_token
 }
 

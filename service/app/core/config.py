@@ -19,7 +19,9 @@ class Settings(BaseSettings):
     # Auth
     JWT_SECRET: SecretStr | None = None
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    # access 令牌与 refresh 同寿命（30 天）：否则超过 2 小时就靠静默刷新续期，
+    # 一旦刷新链路失败（换设备/离线后首次请求并发）就会被踢回登录页。
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 * 24 * 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     BCRYPT_ROUNDS: int = 12
 
