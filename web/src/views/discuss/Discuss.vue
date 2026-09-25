@@ -279,9 +279,12 @@ onMounted(() => loadPosts(false))
 .post-card {
   display: flex;
   gap: 14px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   padding: 16px 18px;
   cursor: pointer;
   transition: box-shadow 0.2s;
@@ -409,8 +412,9 @@ onMounted(() => loadPosts(false))
   text-align: center;
   padding: 60px 20px;
   color: #999;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--surface);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .load-more-wrap {
