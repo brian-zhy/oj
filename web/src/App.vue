@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './stores/auth'
+import * as session from './utils/session'
 import TopBar from './components/TopBar.vue'
 import SideBar from './components/SideBar.vue'
 
@@ -61,20 +62,12 @@ const showSidebar = computed(() => {
 })
 
 // 监听路由变化，恢复认证状态
-watch(() => route.path, async () => {
+// 用户资料的补拉交给路由守卫统一处理，这里不再重复请求 /auth/me
+watch(() => route.path, () => {
   document.title = resolvePageTitle()
 
-  if (!authStore.accessToken && localStorage.getItem('accessToken')) {
+  if (!authStore.accessToken && session.hasSession()) {
     authStore.restoreState()
-  }
-
-  // 确保用户信息是最新的
-  if (authStore.accessToken && !authStore.currentUser) {
-    try {
-      await authStore.fetchCurrentUser()
-    } catch (error) {
-      console.error('恢复用户信息失败:', error)
-    }
   }
 }, { immediate: true })
 

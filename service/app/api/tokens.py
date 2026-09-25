@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import jwt
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,7 +13,11 @@ from app.core.database import get_db
 from app.core.security import decode_token, hash_token
 from app.schemas.auth import RefreshRequest, TokenResponse
 from app.services import auth as auth_service
-from app.services.auth import get_valid_refresh_token, rotate_refresh_token
+from app.services.auth import (
+    get_refresh_token_row,
+    rotate_refresh_token,
+    within_rotation_grace,
+)
 from app.services.user import get_user_by_id
 from app.utils.ip import get_client_ip
 from app.utils.ratelimit import check
@@ -68,7 +74,10 @@ async def rotate_token(
 ) -> TokenResponse:
     """用有效的 refresh 令牌换取新的一对令牌。
 
-    提交的 refresh 令牌会被作废（轮换），再次使用将返回 401。
+    提交的 refresh 令牌会被作废（轮换）。为避免「多标签页并发提交同一令牌时，
+    输掉的一方拿到 401 就把用户踢回登录页」，作废后
+    ``REFRESH_ROTATION_GRACE_SECONDS`` 内的重放仍按合法续期放行；超出该窗口
+    （或从未有过作废时刻记录）的旧令牌一律 401。
     """
     _check_ip_limit(request, "refresh", _TOKEN_REFRESH_LIMIT)
     try:
@@ -78,8 +87,13 @@ async def rotate_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效或已过期的刷新令牌",
         )
-    token = await get_valid_refresh_token(db, hash_token(payload.refresh_token))
+    token = await get_refresh_token_row(db, hash_token(payload.refresh_token))
     if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="无效或已过期的刷新令牌",
+        )
+    if token.revoked and not within_rotation_grace(token):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="无效或已过期的刷新令牌",
@@ -87,6 +101,7 @@ async def rotate_token(
     # 封禁用户不再续发令牌（封禁前已登录的会话由此断粮）
     user = await get_user_by_id(db, token.user_id)
     if user is None or user.is_banned:
+        # 只置 revoked，不写 rotated_at：主动作废不受轮换宽限期放行
         token.revoked = True
         await db.commit()
         raise HTTPException(

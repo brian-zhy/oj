@@ -62,9 +62,9 @@ async def test_register_login_me_refresh():
         assert r.status_code == 200, r.text
         new_refresh = r.json()["refresh_token"]
 
-        # old refresh now revoked (401)
+        # 旧 refresh 令牌处在轮换宽限期内，重放仍算合法续期（多标签页竞态的兜底）
         r = await ac.post("/tokens/refresh", json={"refresh_token": refresh})
-        assert r.status_code == 401
+        assert r.status_code == 200, r.text
 
         # new refresh still valid (200)
         r = await ac.post("/tokens/refresh", json={"refresh_token": new_refresh})

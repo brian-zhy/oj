@@ -29,6 +29,13 @@ class RefreshToken(Base):
     revoked: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=text("false"), nullable=False
     )
+    # 仅由「轮换」写入：本令牌已换成新对的时刻。并发/多标签页重放同一个已轮换
+    # 令牌时，只有在 rotated_at 之后极短窗口内的重放才被当作合法续期放行。
+    # 主动吊销（封禁、改密码踢全端、超量裁剪）保持为 NULL —— 这类令牌一律立即
+    # 失效，否则「改密码即登出所有会话」的保证会被宽限期窗口绕过。
+    rotated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

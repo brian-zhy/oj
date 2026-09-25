@@ -1,10 +1,17 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { pingUserPresence } from '@/utils/presence'
+import * as session from '@/utils/session'
 
 // In development, use empty string to leverage Vite proxy
 // In production, use the environment variable or default to relative path
 const BASE_URL = import.meta.env.MODE === 'development' ? '' : (import.meta.env.VITE_API_BASE_URL || '')
+
+interface RetriableRequest extends InternalAxiosRequestConfig {
+  _retry?: boolean
+  /** 发出该请求时使用的 refresh 令牌，用于判断「401 之后令牌是否已被别人换掉」 */
+  _refreshTokenUsed?: string
+}
 
 // 创建 axios 实例
 const apiClient: AxiosInstance = axios.create({
@@ -15,11 +22,19 @@ const apiClient: AxiosInstance = axios.create({
   timeout: 30000
 })
 
+// 这些端点的 401 是「凭据本身不对」，不能触发刷新，否则登录失败会被误判成会话失效
+const NO_REFRESH_PATHS = ['/tokens', '/tokens/refresh', '/auth/login', '/auth/register']
+
+function shouldAttemptRefresh(url: string | undefined): boolean {
+  if (!url) return true
+  const path = url.split('?')[0]
+  return !NO_REFRESH_PATHS.includes(path)
+}
+
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config) => {
-    // 从 localStorage 获取 token
-    const token = localStorage.getItem('accessToken')
+    const token = session.getAccessToken()
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
       const requestUrl = (config.url || '').toLowerCase()
@@ -27,6 +42,8 @@ apiClient.interceptors.request.use(
         void pingUserPresence()
       }
     }
+    // 记录此刻的 refresh 令牌，供 401 时判断是否已被其它请求/标签页轮换
+    ;(config as RetriableRequest)._refreshTokenUsed = session.getRefreshToken()
     // GET 请求统一加时间戳参数：绕开浏览器缓存的 301 跳转劫持
     //（按 URL 匹配，URL 不同即不命中缓存的错误重定向）
     if ((config.method || 'get').toLowerCase() === 'get') {
@@ -39,42 +56,67 @@ apiClient.interceptors.request.use(
   }
 )
 
-// 进行中的刷新请求（单飞）：后端 refresh token 是轮换机制（刷新即作废旧令牌），
-// access 过期时页面并发请求会各自收到 401，必须共享同一次刷新，
-// 否则后到的刷新带着已作废的 refresh token 会 401，把人踢回登录页
-let refreshingPromise: Promise<string> | null = null
+/**
+ * 真正执行一次刷新（在跨标签页锁内运行）。
+ *
+ * 返回新的 access 令牌；会话确实失效时返回 null；
+ * 刷新接口因网络或服务端异常失败时抛错——这三种结果必须区分开，
+ * 否则一次 502 就会把用户踢下线（这正是原来误登出的第二个根因）。
+ */
+async function doRefresh(staleRefreshToken: string | null): Promise<string | null> {
+  const current = session.getRefreshToken()
 
-// 刷新失败，清除 token 并跳转到登录页
-const clearAuthAndRedirect = () => {
-  localStorage.removeItem('accessToken')
-  localStorage.removeItem('refreshToken')
-  localStorage.removeItem('user')
+  // 已经有别人（本页其它请求或别的标签页）刷新成功：直接采用，绝不重复提交
+  if (current && staleRefreshToken && current !== staleRefreshToken) {
+    return session.getAccessToken()
+  }
+  if (!current) return null
 
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login'
+  try {
+    // 用裸 axios，避免带上过期 access token 触发拦截器递归
+    const response = await axios.post(`${BASE_URL}/tokens/refresh`, { refresh_token: current })
+    const { access_token, refresh_token } = response.data as {
+      access_token: string
+      refresh_token: string
+    }
+    session.setTokens(access_token, refresh_token)
+    return access_token
+  } catch (error) {
+    // 请求失败期间别人可能已经刷新成功，再确认一次
+    const after = session.getRefreshToken()
+    if (after && after !== current) return session.getAccessToken()
+
+    const status = (error as AxiosError).response?.status
+    // 没有响应（断网/超时）或 5xx / 429：会话没有失效证据，保留登录态交给调用方处理
+    if (!status || status >= 500 || status === 429) {
+      throw error
+    }
+    // 401/403：refresh 令牌确实失效，才允许清空会话
+    session.clearSession()
+    return null
   }
 }
 
-const refreshTokens = async (): Promise<string> => {
-  const refreshToken = localStorage.getItem('refreshToken')
-  if (!refreshToken) {
-    throw new Error('No refresh token available')
+// 本页内的刷新单飞：并发 401 共享同一次刷新（后端令牌是轮换制，重复提交必失败）
+let refreshingPromise: Promise<string | null> | null = null
+
+function refreshSession(staleRefreshToken: string | null): Promise<string | null> {
+  if (!refreshingPromise) {
+    const run = () => doRefresh(staleRefreshToken)
+    // 抢不到锁说明别的标签页正在刷新：排队等它完成，进去后大概率直接采用其结果
+    refreshingPromise = session
+      .withCrossTabLock(session.REFRESH_LOCK, run, run)
+      .finally(() => {
+        refreshingPromise = null
+      })
   }
+  return refreshingPromise
+}
 
-  // 调用刷新 token 接口（用裸 axios，避免带上过期 access token 的循环拦截）
-  const response = await axios.post(
-    '/tokens/refresh',
-    { refresh_token: refreshToken }
-  )
-
-  const { access_token, refresh_token: newRefreshToken } = response.data
-
-  // 保存新 token
-  localStorage.setItem('accessToken', access_token)
-  localStorage.setItem('refreshToken', newRefreshToken)
-  // 滑动续期：本地会话有效期重新起算，避免被误判为过期而登出
-  localStorage.setItem('authPersistedAt', String(Date.now()))
-  return access_token
+function redirectToLogin() {
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
 }
 
 // 响应拦截器
@@ -83,27 +125,33 @@ apiClient.interceptors.response.use(
     return response.data
   },
   async (error) => {
-    const originalRequest = error.config
+    const originalRequest = error.config as RetriableRequest | undefined
+    const status = error.response?.status
 
     // Token 过期，尝试刷新（并发 401 复用同一个进行中的刷新）
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      shouldAttemptRefresh(originalRequest.url)
+    ) {
       originalRequest._retry = true
 
+      let accessToken: string | null = null
       try {
-        if (!refreshingPromise) {
-          refreshingPromise = refreshTokens().finally(() => {
-            refreshingPromise = null
-          })
-        }
-        const accessToken = await refreshingPromise
+        accessToken = await refreshSession(originalRequest._refreshTokenUsed ?? null)
+      } catch {
+        // 刷新接口本身不可用（断网/502）：保持登录态，把原始错误抛给业务层
+        return Promise.reject(error)
+      }
 
-        // 用新 token 重试原请求
+      if (accessToken) {
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
         return apiClient(originalRequest)
-      } catch (refreshError) {
-        clearAuthAndRedirect()
-        return Promise.reject(refreshError)
       }
+
+      redirectToLogin()
+      return Promise.reject(error)
     }
 
     return Promise.reject(error)
