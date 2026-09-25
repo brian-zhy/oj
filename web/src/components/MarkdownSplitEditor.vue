@@ -218,7 +218,17 @@ const cmTheme = EditorView.theme(
       borderLeftWidth: '1px',
       borderLeftColor: '#2d3748',
     },
-    '.cm-placeholder': { color: '#b6c0cd' },
+    // placeholder 必须保持单行：折行的 placeholder 会把空文档的行盒撑成
+    // 多行高，CodeMirror 的光标按行盒绘制，于是出现贯穿两行的巨大光标
+    '.cm-placeholder': {
+      color: '#b6c0cd',
+      display: 'inline-block',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      verticalAlign: 'top',
+    },
   },
   { dark: false },
 )
