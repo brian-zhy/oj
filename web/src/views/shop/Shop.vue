@@ -158,7 +158,7 @@ onMounted(load)
 .shop-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
 .shop-container { max-width: 860px; margin: 0 auto; padding: 24px 20px; }
 
-.shop-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; background: #fff; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 20px 26px; margin-bottom: 16px; }
+.shop-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 20px 26px; margin-bottom: 16px; }
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }
 .contrib .page-title { color: #27ae60; }
 .page-sub { color: #8e9aaf; font-size: 13px; margin: 6px 0 0; }
@@ -177,7 +177,7 @@ onMounted(load)
 .action-msg { background: #eafaf1; color: #27ae60; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
 
 .item-list { display: flex; flex-direction: column; gap: 12px; }
-.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.05); padding: 16px 20px; }
+.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--surface); backdrop-filter: blur(var(--surface-blur)) saturate(1.5); -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5); border: var(--border-width) solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 16px 20px; }
 .item-card.owned { background: #fafff5; }
 .item-card.locked { opacity: .68; }
 .chain-line { position: absolute; left: 34px; top: -13px; width: 2px; height: 13px; background: #d9e2ec; }
@@ -206,5 +206,5 @@ onMounted(load)
 .btn-redeem:disabled { opacity: .45; cursor: not-allowed; }
 .owned-badge { color: #52c41a; font-weight: 700; font-size: 14px; }
 
-.empty { text-align: center; color: #999; padding: 48px 0; background: #fff; border-radius: 12px; }
+.empty { text-align: center; color: #999; padding: 48px 0; background: var(--surface); border: var(--border-width) solid var(--border-color); border-radius: var(--radius-md); }
 </style>

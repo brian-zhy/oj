@@ -234,15 +234,18 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: var(--surface-strong);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
   padding: 12px 24px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-card);
   position: sticky;
   top: 10px;
   z-index: 200;
   font-family: inherit;
   margin: 10px;
-  border-radius: 27px;
+  border-radius: var(--radius-lg);
 }
 
 .logo {

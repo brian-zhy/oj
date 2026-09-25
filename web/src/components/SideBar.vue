@@ -390,9 +390,12 @@ const onSidebarLeave = () => {
   left: 0;
   height: calc(100vh - 120px);
   width: 62px;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+  background: var(--surface-strong);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   padding: 16px 0;
   transition: width 0.3s ease;
   overflow-y: auto;

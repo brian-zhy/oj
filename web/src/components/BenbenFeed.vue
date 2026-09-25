@@ -134,6 +134,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="benben-feed">
+    <div v-if="loading && list.length === 0" class="loading-state">
+      <span class="loading-spinner"></span>
+      <span>犇犇加载中…</span>
+    </div>
+
     <div v-if="isEmpty" class="benben-empty">{{ emptyText }}</div>
 
     <div class="benben-list">
@@ -235,9 +240,11 @@ onBeforeUnmount(() => {
 
 .benben-content {
   flex: 1;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 16px;
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: 8px 16px;
   position: relative;
 }
