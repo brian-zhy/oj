@@ -204,12 +204,20 @@ const cmTheme = EditorView.theme(
     },
     // CodeMirror 基础样式会直接在 .cm-content 上设 font-family，
     // 仅写在 .cm-scroller 上会被它覆盖，所以这里必须再声明一次。
+    // 字号与行高在内容/行上钉死：光标（caret）高度=行盒行高，
+    // 若靠继承，祖先的大行高会让光标巨大而文字依旧 13px。
     '.cm-content': {
       padding: '10px 12px',
       caretColor: '#2d3748',
       fontFamily: "Consolas, Monaco, 'Courier New', monospace",
+      fontSize: '13px',
+      lineHeight: '1.6',
     },
-    '.cm-line': { padding: '0' },
+    '.cm-line': { padding: '0', fontSize: '13px', lineHeight: '1.6' },
+    '.cm-cursor': {
+      borderLeftWidth: '1px',
+      borderLeftColor: '#2d3748',
+    },
     '.cm-placeholder': { color: '#b6c0cd' },
   },
   { dark: false },
