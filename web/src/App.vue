@@ -99,10 +99,12 @@ const themeStyle = computed(() => {
     backgroundPosition: 'center',
   }
 })
+// 主题启用时挂 theme-on：卡片悬停提亮成白色方便阅读（见 style.css）
+const themeOn = computed(() => !!themeStyle.value)
 </script>
 
 <template>
-  <div id="app">
+  <div id="app" :class="{ 'theme-on': themeOn }">
     <div class="app-background" :style="themeStyle" aria-hidden="true"></div>
     <div class="route-loading-bar" :class="{ active: isNavigating }" aria-hidden="true"></div>
     <!-- 顶部导航栏 -->

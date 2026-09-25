@@ -26,6 +26,7 @@
   /* 卡片表面：半透明亚克力 */
   --surface: rgba(255, 255, 255, 0.62);
   --surface-strong: rgba(255, 255, 255, 0.78);   /* 导航栏等需要更实的场合 */
+  --surface-hover: rgba(255, 255, 255, 0.94);    /* 主题模式下悬停提亮 */
   --surface-blur: 16px;
 
   /* 边框：浅灰细边 */
@@ -72,6 +73,43 @@
 .loading-state .loading-spinner {
   width: 20px;
   height: 20px;
+}
+
+/* ===== 主题模式（自定义背景启用）：卡片悬停提亮成白色 =====
+   背景图上文字可能看不清，鼠标移到哪张卡片，哪张就变白方便阅读。
+   #app.theme-on 由 App.vue 在 theme_enabled 时挂上。 */
+#app.theme-on .card,
+#app.theme-on .post-card,
+#app.theme-on .item-card,
+#app.theme-on .benben-content,
+#app.theme-on .comment-item,
+#app.theme-on .reply-item,
+#app.theme-on .reply-box,
+#app.theme-on .notification-item,
+#app.theme-on .content-card,
+#app.theme-on .post-head-card,
+#app.theme-on .info-card,
+#app.theme-on .edit-card,
+#app.theme-on .action-record,
+#app.theme-on .empty {
+  transition: background 0.18s ease;
+}
+
+#app.theme-on .card:hover,
+#app.theme-on .post-card:hover,
+#app.theme-on .item-card:hover,
+#app.theme-on .benben-content:hover,
+#app.theme-on .comment-item:hover,
+#app.theme-on .reply-item:hover,
+#app.theme-on .reply-box:hover,
+#app.theme-on .notification-item:hover,
+#app.theme-on .content-card:hover,
+#app.theme-on .post-head-card:hover,
+#app.theme-on .info-card:hover,
+#app.theme-on .edit-card:hover,
+#app.theme-on .action-record:hover,
+#app.theme-on .empty:hover {
+  background: var(--surface-hover);
 }
 
 body {
