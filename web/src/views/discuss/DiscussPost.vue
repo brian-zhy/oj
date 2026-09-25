@@ -300,7 +300,7 @@ onMounted(() => loadPost())
               ref="replyEditor"
               v-model="replyContent"
               height="220px"
-              placeholder="支持 Markdown：**粗体**、*斜体*、```代码块```、$公式$"
+              placeholder="支持 Markdown：**粗体**、*斜体*、代码块、$公式$"
               :maxlength="10000"
             />
             <div class="reply-actions">
