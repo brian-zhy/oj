@@ -95,6 +95,15 @@ class User(Base, TimestampMixin):
     avatar_url: Mapped[str | None] = mapped_column(
         String(500), nullable=True
     )
+
+    # 主题商店：自定义背景。None = 默认背景；值形如
+    # "/static/uploads/themes/xxx.png"（上传图）或 "preset:dawn"（内置渐变）
+    theme_background: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )
+    theme_enabled: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=text("false"), nullable=False
+    )
     user_tag: Mapped[str | None] = mapped_column(
         String(100), nullable=True
     )
