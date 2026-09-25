@@ -9,11 +9,69 @@
   --primary-hover: #1a7ae0;
   */
     --primary: #4a4ae0;        /* 原 #5a5aff 降明度，约 hsl(240, 100%, 58%) */
-  --primary-hover: #3a3ac0;  /* 再深一点，hover 用 */  
+  --primary-hover: #3a3ac0;  /* 再深一点，hover 用 */
   --accent: #9c45ff;          /* 紫，点缀/渐变 */
   --success: #10b981;         /* AC 绿 */
   --danger: #ef4444;          /* WA 红 */
   --warning: #f59e0b;         /* TLE 橙 */
+
+  /* ===== 设计令牌：统一改这里，别在组件里写死 ===== */
+
+  /* 页面背景：整体提亮，底色叠淡蓝紫光斑（亚克力卡片需要有色彩可透） */
+  --bg-page: #f3f6fd;
+  --bg-page-glow-1: rgba(122, 138, 255, 0.16);
+  --bg-page-glow-2: rgba(156, 69, 255, 0.10);
+  --bg-page-glow-3: rgba(42, 142, 255, 0.10);
+
+  /* 卡片表面：半透明亚克力 */
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-strong: rgba(255, 255, 255, 0.78);   /* 导航栏等需要更实的场合 */
+  --surface-blur: 16px;
+
+  /* 边框：浅灰细边 */
+  --border-color: rgba(148, 163, 184, 0.38);
+  --border-width: 1px;
+
+  /* 圆角：全站加大 */
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  /* 阴影 */
+  --shadow-card: 0 4px 24px rgba(31, 41, 85, 0.07);
+  --shadow-card-hover: 0 8px 32px rgba(31, 41, 85, 0.12);
+
+  /* 文本 */
+  --text-main: #2c3e50;
+  --text-sub: #8e9aaf;
+}
+
+/* ===== 全局卡片基类：半透明亚克力 + 浅灰细边 + 大圆角 =====
+   页面里自己的 .card 若还写 background/border-radius 会盖掉这里，
+   新代码直接用基类，老样式建议逐步删掉本地硬编码。 */
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+/* 加载态容器：spinner + 文案，各列表页统一复用 */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 52px 0;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.loading-state .loading-spinner {
+  width: 20px;
+  height: 20px;
 }
 
 body {

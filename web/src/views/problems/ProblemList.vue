@@ -170,8 +170,12 @@ onMounted(() => {
         <div class="result-count">共 {{ total }} 条记录</div>
 
         <!-- 列表 -->
-        <div v-if="error" class="empty">{{ error }}</div>
-        <div v-else-if="!loading && items.length === 0" class="empty">暂无题目</div>
+        <div v-if="loading" class="loading-state">
+          <span class="loading-spinner"></span>
+          <span>题目加载中…</span>
+        </div>
+        <div v-else-if="error" class="empty">{{ error }}</div>
+        <div v-else-if="items.length === 0" class="empty">暂无题目</div>
 
         <div v-else class="table-wrap">
           <table class="problem-table">
@@ -298,10 +302,8 @@ onMounted(() => {
   margin-top: 4px;
 }
 
+/* 背景/圆角/边框/阴影由全局 .card 基类统一提供（亚克力），这里只管布局 */
 .card {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 20px 24px;
 }
 

@@ -125,12 +125,18 @@ body {
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f5f7fa;
+  background: var(--bg-page);
 }
 
+/* 页面底色叠淡蓝紫光斑：固定在视口，亚克力卡片滚动时有色彩可透 */
 #app {
   min-height: 100vh;
-  background: #f5f7fa;
+  background:
+    radial-gradient(560px 420px at 12% 8%, var(--bg-page-glow-1), transparent 70%),
+    radial-gradient(620px 460px at 88% 18%, var(--bg-page-glow-2), transparent 70%),
+    radial-gradient(720px 520px at 50% 96%, var(--bg-page-glow-3), transparent 70%),
+    var(--bg-page);
+  background-attachment: fixed;
 }
 
 .route-loading-bar {
@@ -245,19 +251,21 @@ input, textarea, select {
   transition: all 0.3s ease;
 }
 
+/* 页面跳转过渡：淡入 + 轻微上浮回正，顺滑曲线（配合顶部加载条） */
 .route-enter-active,
 .route-leave-active {
-  transition: opacity 0.24s ease, transform 0.24s ease;
+  transition: opacity 0.28s cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .route-enter-from {
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(14px) scale(0.992);
 }
 
 .route-leave-to {
   opacity: 0;
-  transform: translateY(-5px);
+  transform: translateY(-8px) scale(0.996);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -296,8 +304,10 @@ input, textarea, select {
 
 /* 页脚 */
 .page-footer {
-  background: white;
-  border-top: 1px solid #e5e7eb;
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border-top: var(--border-width) solid var(--border-color);
   padding: 20px 24px;
   text-align: center;
   margin-top: 20px;
