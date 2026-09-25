@@ -115,6 +115,13 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    // 主题商店：自定义全站背景图/内置配色（主题只影响自己）
+    path: '/themes',
+    name: 'ThemeShop',
+    component: () => import('@/views/themes/ThemeShop.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/tickets',
     name: 'Tickets',
     component: () => import('@/views/tickets/Tickets.vue'),
@@ -262,7 +269,6 @@ const comingSoonPaths = [
   '/articles',      // 文章广场
   '/ranking',       // 排行榜
   '/clipboard',     // 云剪贴板
-  '/themes',        // 主题商店
   '/help',          // 帮助中心
   '/contact',       // 联系我们
   '/rules',         // 社区规则

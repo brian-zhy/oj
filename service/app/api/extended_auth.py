@@ -466,6 +466,8 @@ async def get_current_user_info(
         "can_assign_admin": current_user.can_assign_admin,
         "experience": current_user.experience,
         "contribution": current_user.contribution,
+        "theme_background": current_user.theme_background,
+        "theme_enabled": current_user.theme_enabled,
         "avatar_url": current_user.avatar_url,
         "user_tag": current_user.display_tag,
         "username_color": current_user.username_color,

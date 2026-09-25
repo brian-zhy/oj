@@ -17,6 +17,8 @@ export interface User {
   can_assign_admin: boolean
   experience?: number
   contribution?: number
+  theme_background?: string | null
+  theme_enabled?: boolean
   avatar_url?: string | null
   user_tag?: string | null
   username_color?: string | null

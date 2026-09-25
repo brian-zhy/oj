@@ -75,10 +75,34 @@ const handleLogout = async () => {
   await authStore.logout()
   router.push('/login')
 }
+
+// ===== 用户主题背景（主题商店设置，只影响自己的浏览效果） =====
+// 与 ThemeShop.vue / 后端 _ALLOWED_THEME_PRESETS 保持同一组 key
+const PRESET_GRADIENTS: Record<string, string> = {
+  dawn: 'linear-gradient(135deg, #ffd8a8 0%, #ff9db8 50%, #a8c8ff 100%)',
+  ocean: 'linear-gradient(160deg, #0f3057 0%, #00587a 55%, #008891 100%)',
+  dusk: 'linear-gradient(160deg, #2b1b4d 0%, #7a3b8f 55%, #ff7e5f 100%)',
+  sakura: 'linear-gradient(150deg, #ffe3ec 0%, #ffc7de 55%, #ffd8b1 100%)',
+}
+const themeStyle = computed(() => {
+  const me = authStore.currentUser
+  if (!me?.theme_enabled || !me.theme_background) return undefined
+  const bg = me.theme_background
+  if (bg.startsWith('preset:')) {
+    const css = PRESET_GRADIENTS[bg.split(':')[1]]
+    if (!css) return undefined
+    return { backgroundImage: `linear-gradient(rgba(15,23,52,.38), rgba(15,23,52,.38)), ${css}` }
+  }
+  return {
+    backgroundImage: `linear-gradient(rgba(15,23,52,.42), rgba(15,23,52,.42)), url(${bg})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }
+})
 </script>
 
 <template>
-  <div id="app">
+  <div id="app" :style="themeStyle">
     <div class="route-loading-bar" :class="{ active: isNavigating }" aria-hidden="true"></div>
     <!-- 顶部导航栏 -->
     <TopBar v-if="showNav" />

@@ -6,6 +6,8 @@ import re
 import time
 from pathlib import Path
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +23,9 @@ router = APIRouter(prefix="/users", tags=["user-profile"])
 
 _ALLOWED_AVATAR_EXT = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
+
+# 主题商店：内置渐变预设（前端按 key 渲染对应 CSS 渐变）
+_ALLOWED_THEME_PRESETS = {"dawn", "ocean", "dusk", "sakura"}
 
 
 async def _require_tag_manager(user: User) -> None:
@@ -262,6 +267,95 @@ async def upload_avatar(
     await db.commit()
 
     return {"success": True, "avatar_url": avatar_url}
+
+
+@router.post("/me/theme/background", summary="上传主题背景图")
+async def upload_theme_background(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """上传自定义背景图（multipart/form-data，字段名 file），上传后自动启用。
+
+    存到 static/uploads/themes/；图片类型与大小限制与头像一致。
+    """
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_AVATAR_EXT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="仅支持 jpg/jpeg/png/gif/webp 图片",
+        )
+
+    content = await file.read()
+    if len(content) > _MAX_AVATAR_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片不能超过 5MB",
+        )
+
+    upload_dir = Path(__file__).resolve().parent.parent.parent / "static" / "uploads" / "themes"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"{current_user.user_number}_theme_{int(time.time() * 1000)}{ext}"
+    (upload_dir / filename).write_bytes(content)
+
+    # 覆盖旧的自定义图，保留/启用状态由用户后续 PUT 控制
+    current_user.theme_background = f"/static/uploads/themes/{filename}"
+    current_user.theme_enabled = True
+    await db.commit()
+
+    return {
+        "success": True,
+        "theme_background": current_user.theme_background,
+        "theme_enabled": current_user.theme_enabled,
+    }
+
+
+@router.put("/me/theme", summary="设置主题背景（选择/清除/开关）")
+async def update_theme(
+    payload: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """更新主题：``background`` 传图片 URL、``preset:xxx``（内置渐变）或
+    null（恢复默认）；``enabled`` 控制是否应用。二者均可选。"""
+    if "background" in payload:
+        bg = payload.get("background")
+        if bg is None or bg == "":
+            current_user.theme_background = None
+            current_user.theme_enabled = False
+        elif str(bg).startswith("preset:"):
+            preset = str(bg).split(":", 1)[1]
+            if preset not in _ALLOWED_THEME_PRESETS:
+                raise HTTPException(
+                    status_code=400, detail=f"未知主题预设：{preset}"
+                )
+            current_user.theme_background = str(bg)
+            current_user.theme_enabled = True
+        elif str(bg).startswith("/static/uploads/themes/"):
+            # 仅接受本站上传目录内的路径，防外链/注入
+            current_user.theme_background = str(bg)
+            current_user.theme_enabled = True
+        else:
+            raise HTTPException(
+                status_code=400, detail="background 需为本站上传路径或 preset:xxx"
+            )
+
+    if "enabled" in payload:
+        if not isinstance(payload["enabled"], bool):
+            raise HTTPException(status_code=400, detail="enabled 需为布尔值")
+        if payload["enabled"] and current_user.theme_background is None:
+            raise HTTPException(
+                status_code=400, detail="还没有可选用的主题背景，请先上传或选择预设"
+            )
+        current_user.theme_enabled = payload["enabled"]
+
+    await db.commit()
+    return {
+        "success": True,
+        "theme_background": current_user.theme_background,
+        "theme_enabled": current_user.theme_enabled,
+    }
 
 
 @router.get("/{user_id}", response_model=UserOut, summary="获取指定用户信息")
