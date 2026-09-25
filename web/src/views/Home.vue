@@ -1065,10 +1065,8 @@ onUnmounted(() => {
 }
 
 /* ========== 卡片 ========== */
+/* 背景/圆角/边框/阴影由全局 .card 基类统一提供（亚克力），这里只管布局 */
 .card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   padding: 20px 24px;
   margin-bottom: 24px;
 }
@@ -1409,9 +1407,9 @@ onUnmounted(() => {
 }
 
 .recent-posts-card .post-card {
-  background: #fff;
-  border: 1px solid #e8ecf1;
-  border-radius: 8px;
+  background: var(--surface);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sm);
   transition: border-color 0.2s, box-shadow 0.2s;
   height: 100%;
   display: flex;
@@ -1562,7 +1560,7 @@ onUnmounted(() => {
 
 .benben-tab.active {
   color: var(--primary);
-  background: white;
+  background: var(--surface-strong);
   border-bottom-color: var(--primary);
 }
 
@@ -1597,9 +1595,11 @@ onUnmounted(() => {
 
 .benben-content {
   flex: 1;
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 16px;
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-lg);
   padding: 8px 16px;
   position: relative;
 }

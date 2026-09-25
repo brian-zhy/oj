@@ -309,9 +309,12 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: var(--surface);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   padding: 14px 18px;
   cursor: pointer;
   transition: box-shadow 0.2s;
