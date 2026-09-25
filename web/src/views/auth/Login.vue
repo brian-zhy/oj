@@ -302,7 +302,7 @@ watch(currentCaptcha, () => {
 /* 页面容器 */
 .login-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  
   display: flex;
   justify-content: center;
   align-items: center;

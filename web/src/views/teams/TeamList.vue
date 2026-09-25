@@ -153,7 +153,7 @@ onMounted(() => load())
 </template>
 
 <style scoped>
-.teams-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.teams-page { min-height: calc(100vh - 60px); }
 .teams-container { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }

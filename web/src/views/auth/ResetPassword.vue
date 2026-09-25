@@ -157,7 +157,7 @@ const goToLogin = () => {
 /* 页面容器 */
 .reset-password-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  
   display: flex;
   justify-content: center;
   align-items: center;

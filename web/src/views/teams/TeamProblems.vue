@@ -60,7 +60,7 @@ onMounted(load)
 </template>
 
 <style scoped>
-.team-problems-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.team-problems-page { min-height: calc(100vh - 60px); }
 .team-problems-container { max-width: 1000px; margin: 0 auto; padding: 24px 20px; }
 .page-head { margin-bottom: 16px; }
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }

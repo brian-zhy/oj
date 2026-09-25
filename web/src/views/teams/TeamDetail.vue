@@ -417,7 +417,7 @@ const handleRequest = async (userId: number, approve: boolean) => {
 </template>
 
 <style scoped>
-.team-detail-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.team-detail-page { min-height: calc(100vh - 60px); }
 .team-detail-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 .back-link { margin-bottom: 12px; }
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }

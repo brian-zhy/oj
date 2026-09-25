@@ -524,7 +524,7 @@ onMounted(() => {
 /* 页面容器 */
 .profile-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  
   padding: 20px;
 }
 
