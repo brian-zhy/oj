@@ -41,6 +41,14 @@ const uploading = ref(false)
 const acting = ref(false)
 const msg = ref('')
 
+// FastAPI 校验错误（422）的 detail 是数组，拼成人话
+const formatError = (err: any, fallback: string) => {
+  const d = err?.response?.data?.detail
+  if (typeof d === 'string') return d
+  if (Array.isArray(d)) return d.map((x: any) => x.msg || '').join('；') || fallback
+  return fallback
+}
+
 const pickFile = () => fileInput.value?.click()
 
 const onFileChange = async (e: Event) => {
@@ -57,11 +65,15 @@ const onFileChange = async (e: Event) => {
   try {
     const form = new FormData()
     form.append('file', file)
-    await apiClient.post('/api/users/me/theme/background', form)
+    // 实例默认 Content-Type 是 application/json，上传必须显式声明 multipart，
+    // 否则后端收不到 file 字段（FastAPI 422 Field required）
+    await apiClient.post('/api/users/me/theme/background', form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
     msg.value = '背景已上传并启用'
     await authStore.syncCurrentUser()
   } catch (err: any) {
-    msg.value = err.response?.data?.detail || '上传失败'
+    msg.value = formatError(err, '上传失败')
   } finally {
     uploading.value = false
   }
@@ -89,7 +101,7 @@ const applyPreset = async (key: string) => {
   } catch (err: any) {
     me.theme_background = prev.bg
     me.theme_enabled = prev.on
-    msg.value = err.response?.data?.detail || '设置失败'
+    msg.value = formatError(err, '设置失败')
   } finally {
     acting.value = false
   }
@@ -106,7 +118,7 @@ const toggleEnabled = async () => {
     await apiClient.put('/api/users/me/theme', { enabled: !prev })
   } catch (err: any) {
     me.theme_enabled = prev
-    msg.value = err.response?.data?.detail || '操作失败'
+    msg.value = formatError(err, '操作失败')
   } finally {
     acting.value = false
   }
@@ -125,7 +137,7 @@ const resetTheme = async () => {
   } catch (err: any) {
     me.theme_background = prev.bg
     me.theme_enabled = prev.on
-    msg.value = err.response?.data?.detail || '操作失败'
+    msg.value = formatError(err, '操作失败')
   } finally {
     acting.value = false
   }
