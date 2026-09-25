@@ -358,7 +358,7 @@ const showMessage = (msg: string, type: 'success' | 'error') => {
 /* 页面容器 */
 .register-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  
   display: flex;
   justify-content: center;
   align-items: center;

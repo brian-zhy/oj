@@ -102,7 +102,8 @@ const themeStyle = computed(() => {
 </script>
 
 <template>
-  <div id="app" :style="themeStyle">
+  <div id="app">
+    <div class="app-background" :style="themeStyle" aria-hidden="true"></div>
     <div class="route-loading-bar" :class="{ active: isNavigating }" aria-hidden="true"></div>
     <!-- 顶部导航栏 -->
     <TopBar v-if="showNav" />
@@ -152,15 +153,24 @@ body {
   background: var(--bg-page);
 }
 
-/* 页面底色叠淡蓝紫光斑：固定在视口，亚克力卡片滚动时有色彩可透 */
-#app {
-  min-height: 100vh;
+/* 页面背景层：光斑/主题图独立成 fixed 图层。
+   不用 background-attachment:fixed —— 那会让每帧滚动/重绘都全屏
+   重采样（叠加全站 backdrop-filter 时点击切换主题肉眼可见地卡），
+   独立图层只合成一次，卡片毛玻璃对它采样也快得多。 */
+.app-background {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(560px 420px at 12% 8%, var(--bg-page-glow-1), transparent 70%),
     radial-gradient(620px 460px at 88% 18%, var(--bg-page-glow-2), transparent 70%),
     radial-gradient(720px 520px at 50% 96%, var(--bg-page-glow-3), transparent 70%),
     var(--bg-page);
-  background-attachment: fixed;
+}
+
+#app {
+  min-height: 100vh;
 }
 
 .route-loading-bar {

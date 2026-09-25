@@ -324,7 +324,7 @@ const userColor = (u: Record<string, any>) => userNameColor(u)
 </template>
 
 <style scoped>
-.contest-detail-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.contest-detail-page { min-height: calc(100vh - 60px); }
 .contest-detail-container { max-width: 1100px; margin: 0 auto; padding: 20px; }
 .back-link { margin-bottom: 12px; }
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }

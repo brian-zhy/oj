@@ -278,7 +278,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.contest-create-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.contest-create-page { min-height: calc(100vh - 60px); }
 .contest-create-container { max-width: 920px; margin: 0 auto; padding: 20px; }
 .back-link { margin-bottom: 12px; }
 .back-link a { color: var(--primary); font-size: 14px; cursor: pointer; text-decoration: none; }

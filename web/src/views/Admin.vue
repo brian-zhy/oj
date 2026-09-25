@@ -948,7 +948,7 @@ onUnmounted(() => {
 }
 
 .admin-page {
-  background: #f5f7fa;
+  
   font-family: inherit;
   line-height: 1.5;
 }

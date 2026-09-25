@@ -155,7 +155,7 @@ onMounted(load)
 </template>
 
 <style scoped>
-.shop-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.shop-page { min-height: calc(100vh - 60px); }
 .shop-container { max-width: 860px; margin: 0 auto; padding: 24px 20px; }
 
 .shop-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding: 20px 26px; margin-bottom: 16px; }

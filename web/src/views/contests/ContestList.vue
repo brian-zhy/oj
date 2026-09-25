@@ -88,7 +88,7 @@ onMounted(load)
 </template>
 
 <style scoped>
-.contests-page { background: #f5f7fa; min-height: calc(100vh - 60px); }
+.contests-page { min-height: calc(100vh - 60px); }
 .contests-container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
 .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .page-title { color: var(--primary); font-size: 22px; margin: 0; }

@@ -67,13 +67,28 @@ const onFileChange = async (e: Event) => {
   }
 }
 
+// 乐观更新：先改本地状态立即生效（背景切换不等网络往返），失败再回滚。
+// 之前每次都等 syncCurrentUser 往返，点击内置配色会有明显的「卡一下」。
+const patchLocal = (bg: string | null, on: boolean | null) => {
+  const me = authStore.currentUser
+  if (!me) return false
+  me.theme_background = bg
+  if (on !== null) me.theme_enabled = on
+  return true
+}
+
 const applyPreset = async (key: string) => {
+  const me = authStore.currentUser
+  if (!me) return
+  const prev = { bg: me.theme_background, on: me.theme_enabled }
+  patchLocal(`preset:${key}`, true)
   acting.value = true
   msg.value = ''
   try {
     await apiClient.put('/api/users/me/theme', { background: `preset:${key}` })
-    await authStore.syncCurrentUser()
   } catch (err: any) {
+    me.theme_background = prev.bg
+    me.theme_enabled = prev.on
     msg.value = err.response?.data?.detail || '设置失败'
   } finally {
     acting.value = false
@@ -81,12 +96,16 @@ const applyPreset = async (key: string) => {
 }
 
 const toggleEnabled = async () => {
+  const me = authStore.currentUser
+  if (!me) return
+  const prev = me.theme_enabled
+  me.theme_enabled = !prev
   acting.value = true
   msg.value = ''
   try {
-    await apiClient.put('/api/users/me/theme', { enabled: !enabled.value })
-    await authStore.syncCurrentUser()
+    await apiClient.put('/api/users/me/theme', { enabled: !prev })
   } catch (err: any) {
+    me.theme_enabled = prev
     msg.value = err.response?.data?.detail || '操作失败'
   } finally {
     acting.value = false
@@ -94,13 +113,18 @@ const toggleEnabled = async () => {
 }
 
 const resetTheme = async () => {
+  const me = authStore.currentUser
+  if (!me) return
+  const prev = { bg: me.theme_background, on: me.theme_enabled }
+  patchLocal(null, false)
   acting.value = true
   msg.value = ''
   try {
     await apiClient.put('/api/users/me/theme', { background: null })
-    await authStore.syncCurrentUser()
     msg.value = '已恢复默认主题'
   } catch (err: any) {
+    me.theme_background = prev.bg
+    me.theme_enabled = prev.on
     msg.value = err.response?.data?.detail || '操作失败'
   } finally {
     acting.value = false

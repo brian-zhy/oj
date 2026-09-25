@@ -364,7 +364,7 @@ onMounted(() => {
 }
 
 .btn-reset:hover {
-  background: #f5f7fa;
+  
 }
 
 .result-count {
