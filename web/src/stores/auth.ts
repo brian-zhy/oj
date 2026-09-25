@@ -1,13 +1,14 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onScopeDispose } from 'vue'
 import { authApi } from '@/api/auth'
 import type { LoginCredentials, RegisterData, User } from '@/types'
 import { startPresenceHeartbeat, stopPresenceHeartbeat } from '@/utils/presence'
+import * as session from '@/utils/session'
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
+  // State（内存副本，真实来源始终是 utils/session）
   const user = ref<User | null>(null)
   const accessToken = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
@@ -16,26 +17,31 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
   const currentUser = computed(() => user.value)
 
+  /**
+   * 把存储里的登录态同步进内存。
+   *
+   * 令牌只有 utils/session 一个写入者，store 只读不回写；否则 store 的滞后副本
+   * 会把刚轮换出来的新令牌覆盖成旧的，下一次刷新就会 401 并踢掉全部标签页。
+   */
+  function applySession() {
+    accessToken.value = session.getAccessToken() || null
+    refreshToken.value = session.getRefreshToken() || null
+    user.value = (session.getUser() as User | null) ?? null
+    if (accessToken.value && user.value) startPresenceHeartbeat()
+  }
+
   // Actions
   async function login(credentials: LoginCredentials) {
     try {
-      console.log('AuthStore: 开始登录请求', credentials.username)
       const response = await authApi.login(credentials)
-      console.log('AuthStore: 登录响应', response)
+      session.setTokens(response.access_token, response.refresh_token)
+      applySession()
 
-      accessToken.value = response.access_token
-      refreshToken.value = response.refresh_token
-
-      // 立即持久化状态到localStorage，确保后续请求能获取到token
-      persistState()
-
-      console.log('AuthStore: 获取当前用户...')
       const userInfo = await fetchCurrentUser()
-      console.log('AuthStore: 当前用户信息', userInfo)
       if (userInfo) startPresenceHeartbeat()
 
       return true
-    } catch (error: any) {
+    } catch (error) {
       console.error('AuthStore: 登录失败', error)
       // 抛出错误以便上层处理
       throw error
@@ -49,23 +55,15 @@ export const useAuthStore = defineStore('auth', () => {
     captcha: string
   }) {
     try {
-      console.log('AuthStore: 开始登录请求', credentials.identifier)
       const response = await authApi.loginWithIdentifier(credentials)
-      console.log('AuthStore: 登录响应', response)
+      session.setTokens(response.access_token, response.refresh_token)
+      applySession()
 
-      accessToken.value = response.access_token
-      refreshToken.value = response.refresh_token
-
-      // 立即持久化状态到localStorage，确保后续请求能获取到token
-      persistState()
-
-      console.log('AuthStore: 获取当前用户...')
       const userInfo = await fetchCurrentUser()
-      console.log('AuthStore: 当前用户信息', userInfo)
       if (userInfo) startPresenceHeartbeat()
 
       return true
-    } catch (error: any) {
+    } catch (error) {
       console.error('AuthStore: 登录失败', error)
       throw error
     }
@@ -73,24 +71,16 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function register(data: RegisterData) {
     try {
-      console.log('AuthStore: 开始注册请求', data)
       const response = await authApi.register(data)
-      console.log('AuthStore: 注册响应', response)
 
-      // 设置令牌
-      accessToken.value = response.tokens.access_token
-      refreshToken.value = response.tokens.refresh_token
-
-      // 设置用户信息
-      user.value = response.user
-
-      // 持久化状态
-      persistState()
+      session.setTokens(response.tokens.access_token, response.tokens.refresh_token)
+      session.setUser(response.user)
+      applySession()
 
       startPresenceHeartbeat()
 
       return true
-    } catch (error: any) {
+    } catch (error) {
       console.error('Registration failed:', error)
       throw error
     }
@@ -98,40 +88,35 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      // 可以选择调用后端登出接口（如果有）
+      session.clearSession()
       accessToken.value = null
       refreshToken.value = null
       user.value = null
-      localStorage.removeItem('authPersistedAt')
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
       stopPresenceHeartbeat()
     } catch (error) {
       console.error('Logout failed:', error)
     }
   }
 
+  /**
+   * 拉取当前用户。
+   *
+   * 失败时**不再**清除登录态：access 过期由 axios 拦截器负责刷新并重试，
+   * 刷新真失败时拦截器已经清过会话；这里再清一次只会把网络抖动、502
+   * 之类的临时故障放大成「被退出登录」。
+   */
   async function fetchCurrentUser() {
     if (!accessToken.value) {
-      console.log('AuthStore: 没有访问令牌，跳过获取用户')
       return null
     }
 
     try {
-      console.log('AuthStore: 正在获取当前用户...')
       const userData = await authApi.getCurrentUser()
-      console.log('AuthStore: 获取到用户数据', userData)
       user.value = userData
       if (user.value) startPresenceHeartbeat()
       return userData
     } catch (error) {
       console.error('AuthStore: 获取当前用户失败', error)
-      // Token 可能已过期，清除认证状态
-      accessToken.value = null
-      refreshToken.value = null
-      user.value = null
-      stopPresenceHeartbeat()
       return null
     }
   }
@@ -151,99 +136,41 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * 滑动续期：只要本次会话仍有效（刷新成功），就把本地 30 天 TTL 重新起算，
-   * 避免「登录未满 30 天却因本地时间戳过期而被误踢下线」。
+   * 初始化：从存储恢复状态。
+   *
+   * 本地 30 天 TTL 只是「太久没打开就别装登录」的兜底；令牌本身是否有效
+   * 由服务端判定（过期时拦截器会自动刷新）。
    */
-  function touchSession() {
-    if (accessToken.value || refreshToken.value) {
-      localStorage.setItem('authPersistedAt', String(Date.now()))
-    }
-  }
-
-  async function refreshAccessToken() {
-    if (!refreshToken.value) return false
-
-    try {
-      const response = await authApi.refreshToken(refreshToken.value)
-      accessToken.value = response.access_token
-      refreshToken.value = response.refresh_token
-      touchSession()
-      return true
-    } catch (error) {
-      console.error('Token refresh failed:', error)
-      await logout()
-      return false
-    }
-  }
-
-  // 初始化：从 localStorage 恢复状态
   function restoreState() {
-    const storedAccessToken = localStorage.getItem('accessToken')
-    const storedRefreshToken = localStorage.getItem('refreshToken')
-    const storedUser = localStorage.getItem('user')
-    const storedPersistedAt = Number(localStorage.getItem('authPersistedAt') || '0')
-
-    if (storedPersistedAt > 0 && Date.now() - storedPersistedAt > SESSION_TTL_MS) {
+    if (!session.hasSession()) {
       accessToken.value = null
       refreshToken.value = null
       user.value = null
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('refreshToken')
-      localStorage.removeItem('user')
-      localStorage.removeItem('authPersistedAt')
       return
     }
 
-    if (storedAccessToken) {
-      accessToken.value = storedAccessToken
-    }
-    if (storedRefreshToken) {
-      refreshToken.value = storedRefreshToken
-    }
-    if (storedUser) {
-      try {
-        user.value = JSON.parse(storedUser)
-      } catch (error) {
-        console.error('Failed to parse stored user:', error)
-      }
+    const persistedAt = session.getPersistedAt()
+    if (persistedAt > 0 && Date.now() - persistedAt > SESSION_TTL_MS) {
+      session.clearSession()
+      accessToken.value = null
+      refreshToken.value = null
+      user.value = null
+      stopPresenceHeartbeat()
+      return
     }
 
-    if (accessToken.value && user.value) {
-      startPresenceHeartbeat()
-    }
+    applySession()
   }
 
-  // 持久化状态到 localStorage，并在 30 天后自动失效
-  function persistState() {
-    if (accessToken.value) {
-      localStorage.setItem('accessToken', accessToken.value)
-    } else {
-      localStorage.removeItem('accessToken')
-    }
-
-    if (refreshToken.value) {
-      localStorage.setItem('refreshToken', refreshToken.value)
-    } else {
-      localStorage.removeItem('refreshToken')
-    }
-
-    if (user.value) {
-      localStorage.setItem('user', JSON.stringify(user.value))
-    } else {
-      localStorage.removeItem('user')
-    }
-
-    if (accessToken.value || refreshToken.value) {
-      localStorage.setItem('authPersistedAt', String(Date.now()))
-    } else {
-      localStorage.removeItem('authPersistedAt')
-    }
-  }
-
-  // 监听状态变化并持久化
-  watch([accessToken, refreshToken, user], () => {
-    persistState()
+  // 用户资料允许就地修改（如换头像），因此只把「用户」这一项写回存储；
+  // 令牌不参与这个 watch，避免覆盖拦截器刚换到的新令牌。
+  watch(user, (value) => {
+    session.setUser(value as session.StoredUser | null)
   })
+
+  // 跨标签页保持一致：别的标签页刷新了令牌或登出了，本页内存状态跟着更新
+  const unsubscribe = session.onSessionChange(applySession)
+  onScopeDispose(unsubscribe)
 
   return {
     // State
@@ -260,7 +187,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchCurrentUser,
     syncCurrentUser,
-    refreshAccessToken,
     restoreState
   }
 })

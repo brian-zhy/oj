@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30 * 24 * 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     BCRYPT_ROUNDS: int = 12
+    # 令牌轮换宽限期（秒）：refresh 令牌一经使用即作废，但多标签页 / 并发请求
+    # 会把同一个令牌几乎同时提交两次，输的一方拿到 401 就会被前端登出。
+    # 宽限期内的重放视为同一次合法续期放行（受 /tokens/refresh 的 IP 限流约束）。
+    REFRESH_ROTATION_GRACE_SECONDS: int = 60
+    # 单用户最多保留的有效 refresh 行数。宽限期允许重放多签出几行，需设上限
+    # 防止被循环重放撑爆；超出时撤销最早的行（正常多设备用量远低于此）。
+    MAX_LIVE_REFRESH_TOKENS: int = 30
 
     # Runtime mode
     ENV: Literal["dev", "prod"] = "dev"

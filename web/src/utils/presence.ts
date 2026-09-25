@@ -1,3 +1,5 @@
+import { getAccessToken } from '@/utils/session'
+
 export const USER_ONLINE_THRESHOLD_MS = 60_000
 
 let lastPresencePingAt = 0
@@ -17,7 +19,7 @@ export function isUserOnline(
 }
 
 export async function pingUserPresence(): Promise<boolean> {
-  const accessToken = localStorage.getItem('accessToken')
+  const accessToken = getAccessToken()
   if (!accessToken) return false
 
   const now = Date.now()

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import * as session from '@/utils/session'
 
 const routes = [
   {
@@ -306,12 +307,19 @@ router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
   // 恢复认证状态
-  if (!authStore.accessToken && localStorage.getItem('accessToken')) {
+  if (!authStore.accessToken && session.hasSession()) {
     authStore.restoreState()
   }
 
   const requiresAuth = to.meta.requiresAuth || false
   const requiresAdmin = to.meta.requiresAdmin || false
+
+  // 有令牌但本地没有用户资料：先补拉一次再判定。
+  // isAuthenticated 同时要求 user 存在，直接放行到 Login 会让「令牌有效、
+  // 只是本地缓存丢了」的用户被误当成未登录。
+  if (!authStore.currentUser && authStore.accessToken) {
+    await authStore.fetchCurrentUser()
+  }
 
   console.log('路由守卫:', to.path, '需要认证:', requiresAuth, '需要管理员:', requiresAdmin)
   console.log('accessToken:', !!authStore.accessToken)
@@ -324,20 +332,8 @@ router.beforeEach(async (to) => {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
-  // 如果已登录但没有用户信息，尝试获取
-  if (authStore.isAuthenticated && !authStore.currentUser) {
-    console.log('有token但没有用户信息，尝试获取...')
-    try {
-      await authStore.fetchCurrentUser()
-      console.log('获取用户信息成功:', authStore.currentUser)
-    } catch (error) {
-      console.error('获取用户信息失败:', error)
-      // 获取用户信息失败，清除无效token
-      authStore.logout()
-      return { name: 'Login', query: { redirect: to.fullPath } }
-    }
-  } else if (authStore.isAuthenticated && !userSyncedThisLoad) {
-    // 本地有缓存的用户信息：整页加载后静默同步一次最新权限
+  // 本地有缓存的用户信息：整页加载后静默同步一次最新权限
+  if (authStore.isAuthenticated && !userSyncedThisLoad) {
     userSyncedThisLoad = true
     await authStore.syncCurrentUser()
   }
