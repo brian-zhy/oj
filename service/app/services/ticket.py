@@ -332,7 +332,10 @@ class TicketService:
         user: User,
         title: str,
     ) -> None:
-        """修改工单标题（创建者或管理员；工单未完结时创建者可改，管理员随时可改）。"""
+        """修改工单标题（创建者或管理员；工单未完结时创建者可改，管理员随时可改）。
+
+        在时间线留下动作记录：将标题从「旧」修改为「新」。
+        """
         title = (title or "").strip()
         if not (2 <= len(title) <= 100):
             raise ValueError("标题长度须在 2~100 字之间")
@@ -343,7 +346,18 @@ class TicketService:
         if not is_staff and ticket.status not in OPEN_STATUSES:
             raise PermissionError("工单已完结，标题不可修改")
 
+        old_title = ticket.title
+        if title == old_title:
+            return
         ticket.title = title
+        # 动作记录（前端渲染为「某某 将标题从 旧 修改为 新」）
+        db.add(TicketReply(
+            ticket_id=ticket.id,
+            user_id=user.id,
+            content="",
+            is_staff=is_staff,
+            action_text=f"将标题从「{old_title}」修改为「{title}」",
+        ))
         await db.commit()
 
     @staticmethod
@@ -446,6 +460,14 @@ class TicketService:
             raise ValueError("工单缺少描述")
 
         ticket.replies[0].content = content.strip()
+        # 动作记录（前端渲染为「某某 修改了工单内容」）
+        db.add(TicketReply(
+            ticket_id=ticket.id,
+            user_id=user.id,
+            content="",
+            is_staff=TicketService.is_staff_user(user),
+            action_text="修改了工单内容",
+        ))
         await db.commit()
 
     @staticmethod
