@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -28,6 +29,22 @@ const title = ref('')
 const content = ref('')
 const submitting = ref(false)
 const error = ref('')
+
+// 附件（创建成功后自动上传，挂到工单描述）
+const attachFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const onFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const f = input.files?.[0] || null
+  input.value = ''
+  if (!f) return
+  if (f.size > 10 * 1024 * 1024) {
+    error.value = '附件不能超过 10MB'
+    return
+  }
+  attachFile.value = f
+  error.value = ''
+}
 
 // 相似工单查询（标题防抖）
 const similar = ref<any[]>([])
@@ -83,6 +100,18 @@ const submit = async () => {
       category: category.value,
       content: content.value.trim()
     })
+    // 附件：创建成功后自动上传，挂到工单描述（首条回复）
+    if (attachFile.value) {
+      try {
+        const form = new FormData()
+        form.append('file', attachFile.value)
+        await apiClient.post(`/api/tickets/${data.id}/attachments`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+      } catch {
+        // 附件失败不阻断跳转，详情页可补传
+      }
+    }
     router.push(`/tickets/${data.id}`)
   } catch (err: any) {
     error.value = err.response?.data?.detail || err.message || '提交失败'
@@ -157,13 +186,22 @@ const submit = async () => {
 
       <!-- 内容 -->
       <div class="section-label">详细内容 <span class="required">*</span></div>
-      <textarea
+      <MarkdownSplitEditor
         v-model="content"
-        class="content-input"
-        rows="8"
-        placeholder="请详细描述你的问题、建议或 Bug 的复现步骤……"
-        maxlength="5000"
-      ></textarea>
+        height="260px"
+        placeholder="请详细描述你的问题、建议或 Bug 的复现步骤……支持 Markdown 与 $公式$"
+        :maxlength="5000"
+      />
+
+      <!-- 附件 -->
+      <div class="section-label">附件 <span class="optional">（可选，10MB 以内）</span></div>
+      <div class="attach-row">
+        <button class="btn-attach" type="button" @click="fileInput?.click()">
+          <i class="fa-solid fa-paperclip"></i> {{ attachFile ? attachFile.name : '添加附件' }}
+        </button>
+        <button v-if="attachFile" class="btn-attach-clear" type="button" @click="attachFile = null">移除</button>
+        <input ref="fileInput" type="file" hidden @change="onFileChange">
+      </div>
 
       <!-- 错误提示 -->
       <div v-if="error" class="error-tip">❌ {{ error }}</div>
@@ -225,6 +263,44 @@ const submit = async () => {
 .required {
   color: var(--primary);
 }
+
+.optional {
+  color: #8a9aa8;
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-attach {
+  border: var(--border-width) solid var(--border-color);
+  background: #fff;
+  color: #4a5568;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-attach:hover { color: var(--primary); border-color: var(--primary); }
+
+.btn-attach-clear {
+  border: none;
+  background: transparent;
+  color: #8a9aa8;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-attach-clear:hover { color: var(--danger); }
 
 .category-grid {
   display: grid;
