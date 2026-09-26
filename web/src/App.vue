@@ -342,7 +342,7 @@ input, textarea, select {
 .page-footer {
   background: var(--surface);
   backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
-  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
   border-top: var(--border-width) solid var(--border-color);
   padding: 20px 24px;
   text-align: center;

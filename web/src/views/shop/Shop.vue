@@ -177,7 +177,7 @@ onMounted(load)
 .action-msg { background: #eafaf1; color: #27ae60; padding: 10px 16px; border-radius: 8px; margin-bottom: 14px; font-size: 14px; }
 
 .item-list { display: flex; flex-direction: column; gap: 12px; }
-.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--surface); backdrop-filter: blur(var(--surface-blur)) saturate(1.5); -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5); border: var(--border-width) solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 16px 20px; }
+.item-card { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--surface); backdrop-filter: blur(var(--surface-blur)) saturate(1.5); backdrop-filter: blur(var(--surface-blur)) saturate(1.5); border: var(--border-width) solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: 16px 20px; }
 .item-card.owned { background: #fafff5; }
 .item-card.locked { opacity: .68; }
 .chain-line { position: absolute; left: 34px; top: -13px; width: 2px; height: 13px; background: #d9e2ec; }

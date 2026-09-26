@@ -236,7 +236,7 @@ onUnmounted(() => {
   align-items: center;
   background: var(--surface-strong);
   backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
-  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
   border: var(--border-width) solid var(--border-color);
   padding: 12px 24px;
   box-shadow: var(--shadow-card);
