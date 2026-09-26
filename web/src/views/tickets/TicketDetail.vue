@@ -141,8 +141,9 @@ const saveTitle = async () => {
   titleSaving.value = true
   try {
     await apiClient.put(`/api/tickets/${route.params.id}/title`, { title: t })
-    ticket.value.title = t
     editingTitle.value = false
+    // 重新拉取，让时间线里的标题修改记录立即出现
+    await loadTicket()
   } catch (err: any) {
     alert(err.response?.data?.detail || '保存失败')
   } finally {
@@ -509,7 +510,7 @@ onMounted(() => loadTicket())
                   >{{ r.action_target.user_tag }}</span>
                 </span>
                 <span v-else-if="r.action_text.startsWith('将标题从')" class="action-text">
-                  把工单标题从 <s class="title-old">{{ parseTitleAction(r.action_text).old }}</s> 修改为
+                  把工单标题从 <span class="title-old">{{ parseTitleAction(r.action_text).old }}</span> 修改为
                   <b class="title-new">{{ parseTitleAction(r.action_text).new }}</b>
                 </span>
                 <span v-else-if="r.action_text === '修改了工单内容'" class="action-text">修改了工单内容</span>
