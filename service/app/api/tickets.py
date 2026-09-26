@@ -185,6 +185,26 @@ async def update_ticket_title(
     return {"success": True, "title": ticket.title}
 
 
+@router.put("/{ticket_id}/description", summary="编辑工单描述")
+async def update_ticket_description(
+    ticket_id: int,
+    payload: TicketReplyCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """编辑工单描述（仅创建者，工单未完结时）。"""
+    ticket = await TicketService.get_ticket(db, ticket_id)
+    if not ticket or ticket.status == "deleted":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+    try:
+        await TicketService.update_description(db, ticket, current_user, payload.content)
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"success": True}
+
+
 @router.post("/{ticket_id}/attachments", summary="上传工单附件")
 async def upload_ticket_attachment(
     ticket_id: int,

@@ -63,6 +63,14 @@ async def test_ticket_title_edit_and_attachments():
         r = await ac.put(f"/tickets/{tid}/title", json={"title": "短"}, headers=ch)
         assert r.status_code == 400, r.text
 
+        # 标题与内容修改要留下动作记录（时间线横幅）
+        r = await ac.put(f"/tickets/{tid}/description", json={"content": "更新后的问题描述"}, headers=ch)
+        assert r.status_code == 200, r.text
+        r = await ac.get(f"/tickets/{tid}", headers=ch)
+        actions = [x["action_text"] for x in r.json()["replies"] if x["action_text"]]
+        assert any(t.startswith("将标题从「原始标题哦」修改为") for t in actions), actions
+        assert "修改了工单内容" in actions, actions
+
         # 描述附件（缺省挂到首条回复）
         r = await ac.post(f"/tickets/{tid}/attachments",
                           files={"file": (f"desc_{uuid.uuid4().hex[:4]}.txt", TXT, "text/plain")},

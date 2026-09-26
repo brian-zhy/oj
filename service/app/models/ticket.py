@@ -72,8 +72,9 @@ class TicketReply(Base, TimestampMixin):
     user_tag: Mapped[str | None] = mapped_column(String(100), nullable=True)
     # 是否为管理员（处理者）回复
     is_staff: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    # 状态变更动作记录（非空 = 系统动作横幅，如「将工单状态设置为 已完成」）
-    action_text: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # 系统动作记录（非空 = 动作横幅：状态变更 / 标题修改 / 内容修改等）
+    # Text：标题修改记录含新旧标题全文，可能超过 100 字
+    action_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     # 动作关联的目标用户（如被指派的责任人）
     action_target_user_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("users.id"), nullable=True
