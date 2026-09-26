@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -103,17 +103,27 @@ async def revoke_user_tokens(db: AsyncSession, user_id: int) -> int:
     Returns the number of tokens revoked.
 
     同样只置 ``revoked`` 而不写 ``rotated_at``：改密/封禁这类主动作废必须立刻
-    失效，不能被轮换宽限期放行。
+    失效，不能被轮换宽限期放行。另外必须把**正处于轮换宽限期内**的行
+    （revoked=True 且 rotated_at 非空）的宽限资格一并取消——否则封禁后
+    旧令牌仍能在宽限窗内换出新对，踢人形同虚设。
     """
     result = await db.execute(
         select(RefreshToken).where(
             RefreshToken.user_id == user_id,
-            RefreshToken.revoked == False,  # noqa: E712
+            or_(
+                RefreshToken.revoked == False,  # noqa: E712
+                RefreshToken.rotated_at.isnot(None),
+            ),
         )
     )
     tokens = result.scalars().all()
+    grace = timedelta(seconds=settings.REFRESH_ROTATION_GRACE_SECONDS + 1)
     for token in tokens:
         token.revoked = True
+        # 处于轮换宽限期的行：把 rotated_at 回拨出宽限窗口（保留非空以维持
+        # 「曾轮换」的语义），主动作废因此不会被宽限期放行
+        if token.rotated_at is not None:
+            token.rotated_at = _as_utc(token.rotated_at) - grace
     if tokens:
         await db.commit()
     return len(tokens)
