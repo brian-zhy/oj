@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.deps import get_current_user
-from app.models.ticket import TicketReply
+from app.models.ticket import TicketAttachment, TicketReply
 from app.models.user import User
 from app.schemas.ticket import TicketCreate, TicketReplyCreate, TicketStatusUpdate
 from app.services.ticket import TicketService
@@ -19,13 +21,30 @@ from app.utils.ratelimit import check
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
+# 附件限制：10MB；扩展名黑名单（拦可执行文件），其余放行
+_MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024
+_FORBIDDEN_ATTACHMENT_EXT = {
+    ".exe", ".bat", ".cmd", ".sh", ".msi", ".dll", ".so", ".jar", ".apk", ".ps1",
+}
+
 
 def _require_staff(user: User) -> None:
     if not TicketService.is_staff_user(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要用户管理权限")
 
 
-def _reply_dict(reply: TicketReply) -> dict:
+def _attachment_dict(att: TicketAttachment) -> dict:
+    return {
+        "id": att.id,
+        "reply_id": att.reply_id,
+        "orig_name": att.orig_name,
+        "stored_path": att.stored_path,
+        "size_bytes": att.size_bytes,
+        "uploader_id": att.uploader_id,
+    }
+
+
+def _reply_dict(reply: TicketReply, attachments: Optional[list] = None) -> dict:
     user = reply.user
     return {
         "id": reply.id,
@@ -36,6 +55,7 @@ def _reply_dict(reply: TicketReply) -> dict:
         "action_target": TicketService._user_brief(reply.action_target) if reply.action_target_user_id else None,
         "created_at": reply.created_at.isoformat() if reply.created_at else None,
         "user": TicketService._user_brief(user),
+        "attachments": attachments or [],
     }
 
 
@@ -125,30 +145,118 @@ async def get_ticket_detail(
     data = TicketService._ticket_dict(ticket)
     # 工单描述 = 创建时的首条内容（独立于回复展示）
     data["description"] = ticket.replies[0].content if ticket.replies else ""
-    data["replies"] = [_reply_dict(r) for r in ticket.replies]
+    # 附件：一次性查出，按 reply 分组（描述附件 = 首条回复的附件）
+    att_rows = (await db.execute(
+        select(TicketAttachment)
+        .where(TicketAttachment.ticket_id == ticket.id)
+        .order_by(TicketAttachment.id)
+    )).scalars().all()
+    by_reply: dict[int, list] = {}
+    for a in att_rows:
+        by_reply.setdefault(a.reply_id, []).append(_attachment_dict(a))
+    data["description_attachments"] = by_reply.get(ticket.replies[0].id, []) if ticket.replies else []
+    data["replies"] = [{**_reply_dict(r), "attachments": by_reply.get(r.id, [])} for r in ticket.replies]
     data["can_manage"] = TicketService.is_staff_user(current_user)
     data["is_creator"] = ticket.creator_id == current_user.id
     return data
 
 
-@router.put("/{ticket_id}/description", summary="编辑工单描述")
-async def update_ticket_description(
+class TicketTitleUpdate(BaseModel):
+    title: str
+
+
+@router.put("/{ticket_id}/title", summary="修改工单标题")
+async def update_ticket_title(
     ticket_id: int,
-    payload: TicketReplyCreate,
+    payload: TicketTitleUpdate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
-    """编辑工单描述（仅创建者，工单未完结时）。"""
+    """修改工单标题（创建者或管理员；工单完结后仅管理员可改）。"""
     ticket = await TicketService.get_ticket(db, ticket_id)
     if not ticket or ticket.status == "deleted":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
     try:
-        await TicketService.update_description(db, ticket, current_user, payload.content)
+        await TicketService.update_title(db, ticket, current_user, payload.title)
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"success": True, "title": ticket.title}
+
+
+@router.post("/{ticket_id}/attachments", summary="上传工单附件")
+async def upload_ticket_attachment(
+    ticket_id: int,
+    file: UploadFile = File(...),
+    reply_id: Optional[int] = Query(None, description="挂到指定回复；缺省挂到工单描述"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """上传附件（multipart，字段名 file）。创建者或管理员可传，工单未完结。
+
+    reply_id 缺省时自动挂到工单描述（首条回复）。
+    """
+    ticket = await TicketService.get_ticket(db, ticket_id)
+    if not ticket or ticket.status == "deleted":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+
+    orig_name = file.filename or "附件"
+    ext = Path(orig_name).suffix.lower()
+    if ext in _FORBIDDEN_ATTACHMENT_EXT:
+        raise HTTPException(status_code=400, detail=f"不允许上传 {ext} 类型的文件")
+
+    content = await file.read()
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="文件为空")
+    if len(content) > _MAX_ATTACHMENT_SIZE:
+        raise HTTPException(status_code=400, detail="附件不能超过 10MB")
+
+    upload_dir = Path(__file__).resolve().parent.parent.parent / "static" / "uploads" / "tickets" / str(ticket_id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    stored_name = f"{uuid.uuid4().hex}{ext}"
+    (upload_dir / stored_name).write_bytes(content)
+    stored_path = f"/static/uploads/tickets/{ticket_id}/{stored_name}"
+
+    try:
+        att = await TicketService.add_attachment(
+            db, ticket, current_user, reply_id,
+            orig_name=orig_name, stored_path=stored_path, size_bytes=len(content),
+        )
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return {"success": True, "attachment": _attachment_dict(att)}
+
+
+@router.delete("/{ticket_id}/attachments/{attachment_id}", summary="删除工单附件")
+async def delete_ticket_attachment(
+    ticket_id: int,
+    attachment_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict:
+    """删除附件（上传者本人或管理员）。"""
+    ticket = await TicketService.get_ticket(db, ticket_id)
+    if not ticket or ticket.status == "deleted":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
+    try:
+        path = await TicketService.delete_attachment(db, ticket, current_user, attachment_id)
+    except PermissionError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    # 磁盘文件一并清理（相对路径映射到 static 目录）
+    disk = Path(__file__).resolve().parent.parent.parent / path.lstrip("/").removeprefix("static/")
+    try:
+        disk.unlink(missing_ok=True)
+    except OSError:
+        pass
     return {"success": True}
+
+
+@router.put("/{ticket_id}/description", summary="编辑工单描述")
 
 
 @router.post("/{ticket_id}/replies", summary="回复工单")
@@ -162,10 +270,11 @@ async def reply_ticket(
     if not ticket or ticket.status == "deleted":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="工单不存在")
     try:
-        await TicketService.add_reply(db, ticket, current_user, payload.content)
+        reply = await TicketService.add_reply(db, ticket, current_user, payload.content)
     except PermissionError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-    return {"success": True}
+    # reply_id 供前端挂附件
+    return {"success": True, "reply_id": reply.id}
 
 
 class TicketAssignPayload(BaseModel):

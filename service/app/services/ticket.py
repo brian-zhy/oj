@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.notification import Notification
-from app.models.ticket import Ticket, TicketReply
+from app.models.ticket import Ticket, TicketAttachment, TicketReply
 from app.models.user import User
 from app.schemas.ticket import TICKET_STATUSES
 from app.services.notification import TITLE_MAX, clip, notify_mentions
@@ -324,6 +324,111 @@ class TicketService:
         await db.commit()
         await db.refresh(reply)
         return reply
+
+    @staticmethod
+    async def update_title(
+        db: AsyncSession,
+        ticket: Ticket,
+        user: User,
+        title: str,
+    ) -> None:
+        """修改工单标题（创建者或管理员；工单未完结时创建者可改，管理员随时可改）。"""
+        title = (title or "").strip()
+        if not (2 <= len(title) <= 100):
+            raise ValueError("标题长度须在 2~100 字之间")
+        is_staff = TicketService.is_staff_user(user)
+        is_creator = ticket.creator_id == user.id
+        if not (is_creator or is_staff):
+            raise PermissionError("只有创建者或管理员可以修改标题")
+        if not is_staff and ticket.status not in OPEN_STATUSES:
+            raise PermissionError("工单已完结，标题不可修改")
+
+        ticket.title = title
+        await db.commit()
+
+    @staticmethod
+    def _attachment_dict(att) -> dict[str, Any]:
+        return {
+            "id": att.id,
+            "reply_id": att.reply_id,
+            "orig_name": att.orig_name,
+            "stored_path": att.stored_path,
+            "size_bytes": att.size_bytes,
+            "uploader_id": att.uploader_id,
+        }
+
+    @staticmethod
+    async def add_attachment(
+        db: AsyncSession,
+        ticket: Ticket,
+        user: User,
+        reply_id: Optional[int],
+        orig_name: str,
+        stored_path: str,
+        size_bytes: int,
+    ) -> "TicketAttachment":
+        """为工单添加附件。
+
+        reply_id 为空时自动挂到工单描述（首条回复）；上传者须为创建者或
+        管理员，且工单未完结。
+        """
+        is_staff = TicketService.is_staff_user(user)
+        is_creator = ticket.creator_id == user.id
+        if not (is_creator or is_staff):
+            raise PermissionError("只有创建者或管理员可以上传附件")
+        if not is_staff and ticket.status not in OPEN_STATUSES:
+            raise PermissionError("工单已完结，附件不可上传")
+
+        if reply_id is None:
+            if not ticket.replies:
+                raise ValueError("工单缺少描述，无法挂载附件")
+            reply_id = ticket.replies[0].id
+        else:
+            reply = (await db.execute(
+                select(TicketReply).where(
+                    TicketReply.id == reply_id,
+                    TicketReply.ticket_id == ticket.id,
+                )
+            )).scalar_one_or_none()
+            if reply is None:
+                raise ValueError("回复不存在")
+
+        att = TicketAttachment(
+            ticket_id=ticket.id,
+            reply_id=reply_id,
+            uploader_id=user.id,
+            orig_name=(orig_name or "附件")[:255],
+            stored_path=stored_path,
+            size_bytes=size_bytes,
+        )
+        db.add(att)
+        await db.commit()
+        await db.refresh(att)
+        return att
+
+    @staticmethod
+    async def delete_attachment(
+        db: AsyncSession,
+        ticket: Ticket,
+        user: User,
+        attachment_id: int,
+    ) -> None:
+        """删除附件（上传者本人或管理员）。返回被删附件的存储路径。"""
+        att = (await db.execute(
+            select(TicketAttachment).where(
+                TicketAttachment.id == attachment_id,
+                TicketAttachment.ticket_id == ticket.id,
+            )
+        )).scalar_one_or_none()
+        if att is None:
+            raise ValueError("附件不存在")
+        if att.uploader_id != user.id and not TicketService.is_staff_user(user):
+            raise PermissionError("只有上传者本人或管理员可以删除附件")
+
+        path = att.stored_path
+        await db.delete(att)
+        await db.commit()
+        return path
 
     @staticmethod
     async def update_description(

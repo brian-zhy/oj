@@ -86,3 +86,31 @@ class TicketReply(Base, TimestampMixin):
         "User", foreign_keys=[action_target_user_id], lazy="joined"
     )
     ticket: Mapped["Ticket"] = relationship(back_populates="replies")
+    attachments: Mapped[list["TicketAttachment"]] = relationship(
+        back_populates="reply", cascade="all, delete-orphan",
+        order_by="TicketAttachment.id",
+    )
+
+
+class TicketAttachment(Base, TimestampMixin):
+    """工单附件：挂在回复上（创建工单时的描述附件挂首条回复）。"""
+
+    __tablename__ = "ticket_attachments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ticket_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("tickets.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    reply_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("ticket_replies.id", ondelete="CASCADE"),
+        index=True, nullable=False,
+    )
+    uploader_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), index=True, nullable=False
+    )
+    # 展示用原始文件名 / 磁盘存储路径
+    orig_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    stored_path: Mapped[str] = mapped_column(String(500), nullable=False, unique=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    reply: Mapped["TicketReply"] = relationship(back_populates="attachments")

@@ -4,7 +4,8 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
-import { renderMentionText } from '@/utils/markdown'
+import { renderRichText } from '@/utils/markdown'
+import MarkdownSplitEditor from '@/components/MarkdownSplitEditor.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -89,6 +90,15 @@ const saveDesc = async () => {
   descSaving.value = true
   try {
     await apiClient.put(`/api/tickets/${route.params.id}/description`, { content: descContent.value.trim() })
+    // 编辑描述时选择的附件挂到描述（首条回复）
+    if (descFile.value) {
+      try {
+        await uploadAttachment(route.params.id as string, descFile.value)
+      } catch (err: any) {
+        alert(err.response?.data?.detail || '附件上传失败，描述已保存')
+      }
+      descFile.value = null
+    }
     editingDesc.value = false
     await loadTicket()
   } catch (err: any) {
@@ -108,6 +118,87 @@ const canReply = computed(() => {
   // 其他登录用户可评论他人的公开、未完结工单
   return !!ticket.value.is_public && OPEN_STATUSES.includes(ticket.value.status)
 })
+
+// ===== 标题修改（创建者或管理员；完结后仅管理员） =====
+const editingTitle = ref(false)
+const titleInput = ref('')
+const titleSaving = ref(false)
+const canEditTitle = computed(() => {
+  if (!ticket.value) return false
+  if (isStaff.value) return true
+  return isCreator.value && OPEN_STATUSES.includes(ticket.value.status)
+})
+const startEditTitle = () => {
+  titleInput.value = ticket.value.title
+  editingTitle.value = true
+}
+const saveTitle = async () => {
+  const t = titleInput.value.trim()
+  if (t.length < 2 || t.length > 100) {
+    alert('标题长度须在 2~100 字之间')
+    return
+  }
+  titleSaving.value = true
+  try {
+    await apiClient.put(`/api/tickets/${route.params.id}/title`, { title: t })
+    ticket.value.title = t
+    editingTitle.value = false
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '保存失败')
+  } finally {
+    titleSaving.value = false
+  }
+}
+
+// ===== 附件 =====
+const formatSize = (n: number) => {
+  if (n < 1024) return `${n} B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(1)} MB`
+}
+
+// 描述附件：编辑描述时选择，保存后自动挂到描述（首条回复）
+const descFile = ref<File | null>(null)
+// 回复附件：提交回复时一并上传到该回复
+const replyFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const pickingFor = ref<'' | 'desc' | 'reply'>('')
+
+const pickFile = (target: 'desc' | 'reply') => {
+  pickingFor.value = target
+  fileInput.value?.click()
+}
+const onFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const f = input.files?.[0] || null
+  input.value = ''
+  if (!f) return
+  if (f.size > 10 * 1024 * 1024) {
+    alert('附件不能超过 10MB')
+    return
+  }
+  if (pickingFor.value === 'desc') descFile.value = f
+  else replyFile.value = f
+}
+
+const uploadAttachment = async (ticketId: number | string, f: File, replyId?: number) => {
+  const form = new FormData()
+  form.append('file', f)
+  const query = replyId ? `?reply_id=${replyId}` : ''
+  await apiClient.post(`/api/tickets/${ticketId}/attachments${query}`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+const removeAttachment = async (att: any) => {
+  if (!confirm(`删除附件「${att.orig_name}」？`)) return
+  try {
+    await apiClient.delete(`/api/tickets/${route.params.id}/attachments/${att.id}`)
+    await loadTicket()
+  } catch (err: any) {
+    alert(err.response?.data?.detail || '删除失败')
+  }
+}
 
 const letterAvatar = (name: string) => {
   const ch = (name || 'U').trim().charAt(0).toUpperCase() || 'U'
@@ -158,8 +249,17 @@ const submitReply = async () => {
   if (!replyContent.value.trim()) return
   replySubmitting.value = true
   try {
-    await apiClient.post(`/api/tickets/${route.params.id}/replies`, { content: replyContent.value.trim() })
+    const res: any = await apiClient.post(`/api/tickets/${route.params.id}/replies`, { content: replyContent.value.trim() })
+    // 有附件则挂到刚发的这条回复上
+    if (replyFile.value && res?.reply_id) {
+      try {
+        await uploadAttachment(route.params.id as string, replyFile.value, res.reply_id)
+      } catch (err: any) {
+        alert(err.response?.data?.detail || '附件上传失败，回复已发布')
+      }
+    }
     replyContent.value = ''
+    replyFile.value = null
     await loadTicket()
   } catch (err: any) {
     alert(err.response?.data?.detail || '回复失败')
@@ -205,7 +305,27 @@ onMounted(() => loadTicket())
         <div class="ticket-head card">
           <div class="head-row">
             <span class="ticket-no">{{ ticket.ticket_no }}</span>
-            <h2 class="ticket-title">{{ ticket.title }}</h2>
+            <template v-if="!editingTitle">
+              <h2 class="ticket-title">{{ ticket.title }}</h2>
+              <button
+                v-if="canEditTitle"
+                class="btn-edit-title"
+                title="修改标题"
+                @click="startEditTitle"
+              ><i class="fa-solid fa-pen"></i></button>
+            </template>
+            <template v-else>
+              <input
+                v-model="titleInput"
+                class="title-input"
+                maxlength="100"
+                @keyup.enter="saveTitle"
+              >
+              <button class="btn-status" :disabled="titleSaving" @click="saveTitle">
+                {{ titleSaving ? '保存中...' : '保存' }}
+              </button>
+              <button class="btn-status cancel" :disabled="titleSaving" @click="editingTitle = false">取消</button>
+            </template>
             <span class="status-badge" :style="{ color: STATUS[ticket.status]?.color, backgroundColor: STATUS[ticket.status]?.bg }">
               {{ STATUS[ticket.status]?.text || ticket.status }}
             </span>
@@ -288,16 +408,35 @@ onMounted(() => loadTicket())
             >编辑</button>
           </div>
           <template v-if="!editingDesc">
-            <div class="desc-content" v-html="renderMentionText(ticket.description)"></div>
+            <div class="desc-content prose" v-html="renderRichText(ticket.description)"></div>
+            <div v-if="ticket.description_attachments?.length" class="att-list">
+              <span class="att-title">附件：</span>
+              <span v-for="a in ticket.description_attachments" :key="a.id" class="att-chip">
+                <a :href="a.stored_path" target="_blank" rel="noopener" class="att-name">
+                  <i class="fa-solid fa-paperclip"></i> {{ a.orig_name }}
+                </a>
+                <span class="att-size">{{ formatSize(a.size_bytes) }}</span>
+                <button
+                  v-if="isCreator || isStaff"
+                  class="att-del"
+                  title="删除附件"
+                  @click="removeAttachment(a)"
+                >×</button>
+              </span>
+            </div>
           </template>
           <template v-else>
-            <textarea
+            <MarkdownSplitEditor
               v-model="descContent"
-              rows="5"
-              class="reply-textarea"
-              maxlength="5000"
-            ></textarea>
+              height="200px"
+              placeholder="描述问题……支持 Markdown 与 $公式$"
+              :maxlength="5000"
+            />
             <div class="reply-actions">
+              <button class="btn-attach" @click="pickFile('desc')">
+                <i class="fa-solid fa-paperclip"></i> {{ descFile ? descFile.name : '添加附件' }}
+              </button>
+              <span class="reply-actions-spacer"></span>
               <button class="btn-submit" :disabled="descSaving || !descContent.trim()" @click="saveDesc">
                 {{ descSaving ? '保存中...' : '保存' }}
               </button>
@@ -385,7 +524,21 @@ onMounted(() => loadTicket())
                 <span v-if="r.user_id === ticket.creator_id" class="creator-badge">发起人</span>
                 <span class="reply-time">{{ fmtTime(r.created_at) }}</span>
               </div>
-              <div class="reply-content" v-html="renderMentionText(r.content)"></div>
+              <div class="reply-content prose" v-html="renderRichText(r.content)"></div>
+              <div v-if="r.attachments?.length" class="att-list">
+                <span v-for="a in r.attachments" :key="a.id" class="att-chip">
+                  <a :href="a.stored_path" target="_blank" rel="noopener" class="att-name">
+                    <i class="fa-solid fa-paperclip"></i> {{ a.orig_name }}
+                  </a>
+                  <span class="att-size">{{ formatSize(a.size_bytes) }}</span>
+                  <button
+                    v-if="isStaff || r.user_id === me?.id"
+                    class="att-del"
+                    title="删除附件"
+                    @click="removeAttachment(a)"
+                  >×</button>
+                </span>
+              </div>
             </div>
           </template>
         </div>
@@ -395,14 +548,17 @@ onMounted(() => loadTicket())
           <div class="reply-box-head">
             {{ isStaff ? '以管理员身份回复（仅「待处理」工单会自动变为「待补充」，其他状态保持不变）' : isCreator ? '补充信息 / 追问' : '发表评论' }}
           </div>
-          <textarea
+          <MarkdownSplitEditor
             v-model="replyContent"
-            rows="4"
-            class="reply-textarea"
-            placeholder="请输入回复内容……"
-            maxlength="5000"
-          ></textarea>
+            height="180px"
+            placeholder="请输入回复内容……支持 Markdown 与 $公式$"
+            :maxlength="5000"
+          />
           <div class="reply-actions">
+            <button class="btn-attach" @click="pickFile('reply')">
+              <i class="fa-solid fa-paperclip"></i> {{ replyFile ? replyFile.name : '添加附件' }}
+            </button>
+            <span class="reply-actions-spacer"></span>
             <button class="btn-submit" :disabled="replySubmitting || !replyContent.trim()" @click="submitReply">
               {{ replySubmitting ? '发送中...' : '回复' }}
             </button>
@@ -413,6 +569,7 @@ onMounted(() => loadTicket())
         <div class="back-bar">
           <button class="btn-back" @click="router.push('/tickets')">← 返回工单中心</button>
         </div>
+        <input ref="fileInput" type="file" hidden @change="onFileChange">
       </template>
     </div>
   </div>
@@ -481,6 +638,76 @@ onMounted(() => loadTicket())
   min-width: 200px;
   word-break: break-word;
 }
+
+/* 标题编辑 */
+.btn-edit-title {
+  border: none;
+  background: transparent;
+  color: #8a9aa8;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+.btn-edit-title:hover { background: rgba(148, 163, 184, 0.16); color: var(--primary); }
+.title-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 6px 10px;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  outline: none;
+}
+.title-input:focus { border-color: var(--primary); }
+.btn-status.cancel { background: #f2f4f7; color: #66708c; }
+
+/* 附件列表 */
+.att-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+.att-title { color: var(--text-sub); font-size: 12px; }
+.att-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(148, 163, 184, 0.14);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.att-name { color: var(--primary); text-decoration: none; font-weight: 600; }
+.att-name:hover { text-decoration: underline; }
+.att-size { color: var(--text-sub); font-size: 11px; }
+.att-del {
+  border: none;
+  background: transparent;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.att-del:hover { color: var(--danger); }
+
+/* 附件选择按钮（回复框操作行左侧） */
+.btn-attach {
+  border: var(--border-width) solid var(--border-color);
+  background: var(--surface-strong);
+  color: #4a5568;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn-attach:hover { color: var(--primary); border-color: var(--primary); }
+.reply-actions-spacer { flex: 1; }
+.reply-actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 
 .status-badge {
   display: inline-block;
