@@ -19,7 +19,7 @@ async def test_admins_lists_only_permitted_and_is_public():
         "usermgmt": {"can_manage_users": True},
         "postmgmt": {"can_manage_posts": True},
         "tagmgmt": {"can_manage_tags": True},
-        "super": {"is_super_admin": True},
+        "problemgmt": {"can_manage_problems": True},
         "plain": {},
     }
 
@@ -41,10 +41,10 @@ async def test_admins_lists_only_permitted_and_is_public():
         assert r.status_code == 200, r.text
         data = {a["username"]: a for a in r.json()["admins"]}
 
-        # 持有任何管理权限的都上榜
-        for key in ("usermgmt", "postmgmt", "tagmgmt", "super"):
+        # 持有任何一项管理权限的都上榜
+        for key in ("usermgmt", "postmgmt", "tagmgmt", "problemgmt"):
             assert f"{key}_{suffix}" in data, f"{key} 应在名单中"
-        # 无任何管理权限的普通用户不上榜
+        # 无任何管理权限的普通用户不上榜（仅 is_super_admin 不算四项管理权限）
         assert f"plain_{suffix}" not in data
 
         # 公开字段里不泄露权限以外的敏感信息
