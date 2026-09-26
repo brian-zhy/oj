@@ -232,6 +232,12 @@ const statusColorByText = (text: string) => {
   return key ? STATUS[key].color : '#52C41A'
 }
 
+// 解析标题修改记录：将标题从「A」修改为「B」→ { old: A, new: B }
+const parseTitleAction = (text: string) => {
+  const m = text.match(/^将标题从「([\s\S]*)」修改为「([\s\S]*)」$/)
+  return m ? { old: m[1], new: m[2] } : { old: '', new: text }
+}
+
 const loadTicket = async () => {
   loading.value = true
   error.value = ''
@@ -502,7 +508,11 @@ onMounted(() => loadTicket())
                     :style="{ backgroundColor: userColor(r.action_target) }"
                   >{{ r.action_target.user_tag }}</span>
                 </span>
-                <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>
+                <span v-else-if="r.action_text.startsWith('将标题从')" class="action-text">
+                  把工单标题从 <s class="title-old">{{ parseTitleAction(r.action_text).old }}</s> 修改为
+                  <b class="title-new">{{ parseTitleAction(r.action_text).new }}</b>
+                </span>
+                <span v-else-if="r.action_text === '修改了工单内容'" class="action-text">修改了工单内容</span>
                 <span v-else class="action-text">将工单状态设置为 <b class="action-status" :style="{ color: statusColorByText(r.action_text) }">{{ r.action_text }}</b></span>
               </div>
               <div class="action-time-line">{{ relTime(r.created_at) }}</div>
@@ -944,6 +954,17 @@ onMounted(() => loadTicket())
 
 .action-status {
   font-weight: 700;
+}
+
+/* 标题修改记录：旧标题划线弱化、新标题加粗 */
+.title-old {
+  color: #8a9aa8;
+  word-break: break-word;
+}
+
+.title-new {
+  font-weight: 700;
+  word-break: break-word;
 }
 
 .action-user {
