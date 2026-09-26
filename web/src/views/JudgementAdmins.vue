@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import apiClient from '@/api/client'
 import { userNameColor } from '@/utils/userColor'
 
-// 参考站 /judgement/admins：公示「用户管理」与「秩序管理」持有者
+// 参考站 /judgement/admins：公示所有管理权限持有者
 interface AdminUser {
   id: number
   username: string
@@ -14,14 +14,14 @@ interface AdminUser {
   is_admin: boolean
   can_manage_users: boolean
   can_manage_posts: boolean
+  can_manage_problems: boolean
+  can_manage_tags: boolean
+  can_assign_admin: boolean
 }
 
 const admins = ref<AdminUser[]>([])
 const loading = ref(true)
 const error = ref('')
-
-const userMgmt = computed(() => admins.value.filter(u => u.can_manage_users))
-const postMgmt = computed(() => admins.value.filter(u => u.can_manage_posts))
 
 const load = async () => {
   loading.value = true
@@ -50,6 +50,19 @@ const tagOf = (u: AdminUser) => {
   return '成员'
 }
 
+// 该用户持有的管理权限徽章（不设限的全部列出）
+const permsOf = (u: AdminUser) => {
+  const list: string[] = []
+  if (u.is_super_admin) list.push('超级管理员')
+  if (u.is_admin) list.push('管理员')
+  if (u.can_manage_users) list.push('用户管理')
+  if (u.can_manage_posts) list.push('秩序管理')
+  if (u.can_manage_problems) list.push('题目管理')
+  if (u.can_manage_tags) list.push('Tag 管理')
+  if (u.can_assign_admin) list.push('授予管理员')
+  return list
+}
+
 onMounted(load)
 </script>
 
@@ -58,7 +71,7 @@ onMounted(load)
     <div class="admins-container">
       <div class="card head-card">
         <h2 class="page-title">管理名单</h2>
-        <p class="page-sub">此处列出拥有「用户管理」或「秩序管理」权限的管理员。</p>
+        <p class="page-sub">此处列出拥有管理权限的成员及其权限明细。</p>
       </div>
 
       <div v-if="loading" class="loading-state">
@@ -68,41 +81,20 @@ onMounted(load)
       <div v-else-if="error" class="card empty">{{ error }}</div>
       <div v-else-if="admins.length === 0" class="card empty">暂无管理员</div>
 
-      <div v-else class="two-col">
-        <div class="card col">
-          <div class="col-header">👤 用户管理 <span class="count">({{ userMgmt.length }})</span></div>
-          <div v-if="userMgmt.length === 0" class="col-empty">暂无</div>
-          <div v-for="u in userMgmt" :key="'u' + u.id" class="entry">
-            <img class="avatar" :src="avatarOf(u)" :alt="u.username">
-            <div class="entry-main">
+      <div v-else class="card list-card">
+        <div v-for="u in admins" :key="u.id" class="entry">
+          <img class="avatar" :src="avatarOf(u)" :alt="u.username">
+          <div class="entry-main">
+            <div class="name-row">
               <router-link
                 :to="`/user/${u.user_number}`"
                 class="name"
                 :style="{ color: userNameColor(u) }"
               >{{ u.username }}</router-link>
-              <div class="entry-sub">
-                <span class="tag" :style="{ backgroundColor: userNameColor(u) }">{{ tagOf(u) }}</span>
-                <span class="uid">UID {{ u.user_number }}</span>
-              </div>
+              <span class="user-tag-display" :style="{ backgroundColor: userNameColor(u) }">{{ tagOf(u) }}</span>
             </div>
-          </div>
-        </div>
-
-        <div class="card col">
-          <div class="col-header">⚖️ 秩序管理 <span class="count">({{ postMgmt.length }})</span></div>
-          <div v-if="postMgmt.length === 0" class="col-empty">暂无</div>
-          <div v-for="u in postMgmt" :key="'p' + u.id" class="entry">
-            <img class="avatar" :src="avatarOf(u)" :alt="u.username">
-            <div class="entry-main">
-              <router-link
-                :to="`/user/${u.user_number}`"
-                class="name"
-                :style="{ color: userNameColor(u) }"
-              >{{ u.username }}</router-link>
-              <div class="entry-sub">
-                <span class="tag" :style="{ backgroundColor: userNameColor(u) }">{{ tagOf(u) }}</span>
-                <span class="uid">UID {{ u.user_number }}</span>
-              </div>
+            <div class="perm-row">
+              <span v-for="p in permsOf(u)" :key="p" class="perm-badge">{{ p }}</span>
             </div>
           </div>
         </div>
@@ -121,23 +113,39 @@ onMounted(load)
 
 .empty { text-align: center; color: #999; padding: 48px 0; }
 
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.col { padding: 18px 20px; }
-.col-header { font-weight: 800; color: var(--text-main); font-size: 15px; margin-bottom: 12px; }
-.col-header .count { color: var(--text-sub); font-weight: 700; }
-.col-empty { color: #999; font-size: 13px; padding: 8px 4px; }
+.list-card { padding: 10px 20px; }
 
-.entry { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-radius: var(--radius-sm); transition: background 0.15s; }
-.entry:hover { background: rgba(148, 163, 184, 0.12); }
+.entry { display: flex; align-items: center; gap: 14px; padding: 12px 6px; }
+.entry + .entry { border-top: var(--border-width) solid var(--border-color); }
 .avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
 .entry-main { min-width: 0; }
+
+.name-row { display: flex; align-items: center; gap: 2px; }
 .name { font-weight: 700; font-size: 14px; text-decoration: none; }
 .name:hover { text-decoration: underline; }
-.entry-sub { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
-.tag { color: #fff; font-size: 11px; padding: 1px 8px; border-radius: 9px; }
-.uid { color: var(--text-sub); font-size: 12px; }
 
-@media (max-width: 640px) {
-  .two-col { grid-template-columns: 1fr; }
+/* 与主站一致：用户名后方的方框称号 */
+.user-tag-display {
+  display: inline-block;
+  border-radius: 2px;
+  padding: 2px 9px;
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin: 0 0 0 4px;
+  cursor: default;
+  transition: filter 0.15s;
+  vertical-align: middle;
+}
+.user-tag-display:hover { filter: brightness(0.9); }
+
+.perm-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.perm-badge {
+  font-size: 11px;
+  color: #5a6b85;
+  background: rgba(148, 163, 184, 0.16);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 7px;
 }
 </style>

@@ -117,14 +117,22 @@ async def delete_judgement_log(
 
 @router.get("/admins", summary="管理名单（公开公示）")
 async def admin_list(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
-    """列出拥有「用户管理」或「秩序管理」权限的用户，供管理名单页公示。
+    """列出拥有任意管理权限的用户，供管理名单页公示。
 
+    口径：超管 / 管理员 / 用户 / 秩序 / 题目 / Tag 管理 / 授予管理员。
     无需登录；按用户编号升序。
     """
     rows = (await db.execute(
         select(User)
-        .where(or_(User.can_manage_users == True,  # noqa: E712
-                   User.can_manage_posts == True))  # noqa: E712
+        .where(or_(
+            User.is_super_admin == True,   # noqa: E712
+            User.is_admin == True,         # noqa: E712
+            User.can_manage_users == True,   # noqa: E712
+            User.can_manage_posts == True,   # noqa: E712
+            User.can_manage_problems == True,  # noqa: E712
+            User.can_manage_tags == True,    # noqa: E712
+            User.can_assign_admin == True,   # noqa: E712
+        ))
         .order_by(User.user_number)
     )).scalars().all()
 
