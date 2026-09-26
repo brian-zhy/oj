@@ -213,6 +213,7 @@ async def get_users(
 async def update_user(
     user_number: int,
     user_update: UserAdminUpdate,
+    reason: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> UserAdminResponse:
@@ -244,6 +245,18 @@ async def update_user(
 
     # 更新用户信息
     update_data = user_update.model_dump(exclude_unset=True)
+
+    # 理由强制：涉及权限/封禁类字段的更新必须填写理由（保证可追溯）
+    perm_like = {
+        "is_admin", "is_banned", "is_cheater", "can_speak",
+        "can_manage_users", "can_manage_posts", "can_manage_problems", "can_manage_tags",
+    }
+    if set(update_data) & perm_like and not str(reason or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="权限操作必须填写理由"
+        )
+
     for field, value in update_data.items():
         if hasattr(user, field):
             setattr(user, field, value)
@@ -313,6 +326,13 @@ async def update_user_permissions(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+
+    # 理由强制：不填理由的权限操作直接拒绝（保证陶片放逐日志可追溯）
+    if not (reason and str(reason).strip()):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="权限操作必须填写理由",
         )
 
     # 更新权限（授予用户/秩序管理不再自动附带进入后台 is_admin，

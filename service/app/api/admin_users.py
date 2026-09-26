@@ -132,6 +132,7 @@ async def get_user_by_number(
 async def update_user(
     user_number: int,
     updates: Dict[str, Any],
+    reason: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -154,6 +155,12 @@ async def update_user(
     # 超级管理是固定身份：拒绝任何针对 is_super_admin 的修改
     if 'is_super_admin' in updates:
         raise HTTPException(status_code=400, detail="超级管理员权限不可修改")
+
+    # 理由强制：涉及权限/封禁类字段的更新必须填写理由（保证可追溯）
+    perm_like = {'is_active', 'is_banned', 'is_cheater', 'is_admin', 'can_speak',
+                 'can_manage_users', 'can_manage_posts', 'can_manage_problems', 'can_manage_tags'}
+    if set(updates) & perm_like and not str(reason or '').strip():
+        raise HTTPException(status_code=400, detail="权限操作必须填写理由")
 
     # 更新允许的字段
     updatable_fields = [
@@ -183,11 +190,16 @@ async def update_user(
 async def update_user_permissions(
     user_number: int,
     permission_updates: Dict[str, bool],
+    reason: Optional[str] = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """更新用户权限"""
+    """更新用户权限（reason 必填：保证权限变更可追溯）"""
     await check_admin_permission(current_user)
+
+    # 理由强制：不填理由的权限操作直接拒绝
+    if not str(reason or '').strip():
+        raise HTTPException(status_code=400, detail="权限操作必须填写理由")
 
     result = await db.execute(
         select(User).where(User.user_number == user_number)
@@ -197,6 +209,18 @@ async def update_user_permissions(
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
 
+    # 写入陶片放逐日志
+    action_detail = {
+        "changes": [{"permission": k, "new_value": v} for k, v in permission_updates.items()],
+        "category": "admin",
+    }
+    db.add(JudgementLog(
+        admin_id=current_user.id,
+        target_user_id=user.id,
+        action_type="admin_rotation",
+        action_detail=action_detail,
+        reason=str(reason).strip(),
+    ))
     # 权限检查
     if not current_user.is_super_admin and user.is_super_admin:
         raise HTTPException(status_code=403, detail="不能修改超级管理员权限")
@@ -271,6 +295,10 @@ async def batch_update_users(
     # 超级管理是固定身份：拒绝任何针对 is_super_admin 的修改
     if 'is_super_admin' in updates:
         raise HTTPException(status_code=400, detail="超级管理员权限不可修改")
+
+    # 理由强制：批量权限操作必须填写理由（保证陶片放逐日志可追溯）
+    if not str(reason or '').strip():
+        raise HTTPException(status_code=400, detail="批量权限操作必须填写理由")
 
     # 查询用户
     result = await db.execute(
