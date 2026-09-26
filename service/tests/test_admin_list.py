@@ -1,4 +1,4 @@
-"""管理名单公示接口回归测试（参考站 /judgement/admins 的口径）。"""
+"""管理名单公示接口回归测试（参考站 /judgement/admins 的口径：任意管理权限）。"""
 
 import uuid
 
@@ -18,11 +18,13 @@ async def test_admins_lists_only_permitted_and_is_public():
     names = {
         "usermgmt": {"can_manage_users": True},
         "postmgmt": {"can_manage_posts": True},
+        "tagmgmt": {"can_manage_tags": True},
+        "super": {"is_super_admin": True},
         "plain": {},
     }
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as ac:
-        for i, (name, perms) in enumerate(names.items()):
+        for name, perms in names.items():
             uname = f"{name}_{suffix}"
             r = await ac.post("/users", json={
                 "username": uname, "email": f"{uname}@example.com", "password": pwd})
@@ -39,8 +41,9 @@ async def test_admins_lists_only_permitted_and_is_public():
         assert r.status_code == 200, r.text
         data = {a["username"]: a for a in r.json()["admins"]}
 
-        assert data[f"usermgmt_{suffix}"]["can_manage_users"] is True
-        assert data[f"postmgmt_{suffix}"]["can_manage_posts"] is True
+        # 持有任何管理权限的都上榜
+        for key in ("usermgmt", "postmgmt", "tagmgmt", "super"):
+            assert f"{key}_{suffix}" in data, f"{key} 应在名单中"
         # 无任何管理权限的普通用户不上榜
         assert f"plain_{suffix}" not in data
 
