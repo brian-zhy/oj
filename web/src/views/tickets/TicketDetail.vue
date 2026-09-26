@@ -910,7 +910,6 @@ onMounted(() => loadTicket())
 .desc-content {
   color: #2d3748;
   font-size: 14px;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -1054,7 +1053,6 @@ onMounted(() => loadTicket())
 .reply-content {
   color: #2d3748;
   font-size: 14px;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
