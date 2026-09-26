@@ -143,6 +143,8 @@ async def admin_list(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
             "is_admin": bool(u.is_admin),
             "can_manage_users": bool(u.can_manage_users),
             "can_manage_posts": bool(u.can_manage_posts),
+            "can_manage_problems": bool(u.can_manage_problems),
+            "can_manage_tags": bool(u.can_manage_tags),
         }
 
     return {"admins": [brief(u) for u in rows]}
