@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -113,3 +113,32 @@ async def delete_judgement_log(
     await db.delete(log)
     await db.commit()
     return {"success": True}
+
+
+@router.get("/admins", summary="管理名单（公开公示）")
+async def admin_list(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+    """列出拥有「用户管理」或「秩序管理」权限的用户，供管理名单页公示。
+
+    无需登录；按用户编号升序。
+    """
+    rows = (await db.execute(
+        select(User)
+        .where(or_(User.can_manage_users == True,  # noqa: E712
+                   User.can_manage_posts == True))  # noqa: E712
+        .order_by(User.user_number)
+    )).scalars().all()
+
+    def brief(u: User) -> Dict[str, Any]:
+        return {
+            "id": u.id,
+            "username": u.username,
+            "avatar_url": u.avatar_url or "",
+            "user_tag": u.display_tag,
+            "user_number": u.user_number,
+            "is_super_admin": bool(u.is_super_admin),
+            "is_admin": bool(u.is_admin),
+            "can_manage_users": bool(u.can_manage_users),
+            "can_manage_posts": bool(u.can_manage_posts),
+        }
+
+    return {"admins": [brief(u) for u in rows]}

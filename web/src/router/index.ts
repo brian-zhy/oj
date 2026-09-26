@@ -58,6 +58,13 @@ const routes = [
     meta: { requiresAuth: false, title: '陶片放逐' }
   },
   {
+    // 管理名单：公示用户管理/秩序管理持有者（参考站 /judgement/admins）
+    path: '/judgement/admins',
+    name: 'JudgementAdmins',
+    component: () => import('@/views/JudgementAdmins.vue'),
+    meta: { requiresAuth: false, title: '管理名单' }
+  },
+  {
     path: '/discuss',
     name: 'Discuss',
     component: () => import('@/views/discuss/Discuss.vue'),
