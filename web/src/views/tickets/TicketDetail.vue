@@ -509,6 +509,7 @@ onMounted(() => loadTicket())
                     :style="{ backgroundColor: userColor(r.action_target) }"
                   >{{ r.action_target.user_tag }}</span>
                 </span>
+                <span v-else-if="r.action_text === '取消了责任人'" class="action-text">取消了责任人</span>
                 <span v-else-if="r.action_text.startsWith('将标题从')" class="action-text">
                   把工单标题从 <span class="title-old">{{ parseTitleAction(r.action_text).old }}</span> 修改为
                   <b class="title-new">{{ parseTitleAction(r.action_text).new }}</b>
