@@ -966,7 +966,7 @@ onUnmounted(() => {
 .card {
   background: var(--surface);
   backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
-  -webkit-backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
+  backdrop-filter: blur(var(--surface-blur)) saturate(1.5);
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
