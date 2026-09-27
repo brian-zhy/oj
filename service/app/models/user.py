@@ -160,6 +160,9 @@ class User(Base, TimestampMixin):
         enabled = [c.name for c in cards if c.enabled]
         if enabled:
             return enabled[0]
+        # 管理后台设置的自定义头衔（Tag 卡系统上线后此分支曾被遗漏）
+        if self.user_tag:
+            return self.user_tag
         if self.is_admin or self.is_super_admin:
             return "管理员"
         return ""
