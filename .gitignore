@@ -3,3 +3,6 @@ notes/
 .env
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
+service/.env.bak.*
+.env
+.env.*
